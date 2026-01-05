@@ -3,6 +3,7 @@
 <head>
     <title>语音交互Demo</title>
     <meta charset="UTF-8">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%234A90E2'/%3E%3Cpath d='M30 40v20h40v-20z' fill='white'/%3E%3Ccircle cx='40' cy='50' r='5' fill='%234A90E2'/%3E%3Ccircle cx='60' cy='50' r='5' fill='%234A90E2'/%3E%3C/svg%3E" type="image/svg+xml">
     <style>
         body { font-family: Arial,serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
         .container { padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
@@ -184,7 +185,7 @@
                 initAudioContext();
 
                 // 建立WebSocket连接
-                ws = new WebSocket(`ws://${window.location.host}/api/ast-tts/tts`);
+                ws = new WebSocket(`ws://${window.location.host}/api/ast-tts/tts/ws`);
                 
                 ws.onopen = () => {
                     updateStatus("正在连接TTS服务...", 'info');

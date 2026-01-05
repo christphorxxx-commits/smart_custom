@@ -238,167 +238,167 @@ async def get_available_voices():
         "voices": [voice.value for voice in TTSVoiceEnum]
     }
 
-# ==================== WebSocket 端点 ====================
+# # ==================== WebSocket 端点 ====================
+#
+# @ASTTTSRouter.websocket("/stream")
+# async def audio_stream_handler(websocket: WebSocket):
+#     """
+#     实时音频流处理WebSocket端点
+#     """
+#     await manager.connect(websocket)
+#
+#     # 创建音频播放器
+#     audio_player = AudioPlayer()
+#
+#     try:
+#         while True:
+#             # 接收客户端消息
+#             data = await websocket.receive()
+#
+#             if "text" in data:
+#                 # 处理文本消息，进行TTS
+#                 text = data["text"]
+#                 logger.info(f"收到TTS请求: {text[:50]}...")
+#
+#                 # 启动TTS处理
+#                 asyncio.create_task(perform_tts_stream(websocket, text, audio_player))
+#
+#             elif "bytes" in data:
+#                 # 处理音频字节数据，进行ASR
+#                 audio_data = data["bytes"]
+#                 logger.info(f"收到音频数据: {len(audio_data)} bytes")
+#
+#                 # 保存临时音频文件
+#                 temp_path = f"/tmp/stream_{int(time.time())}.wav"
+#                 with open(temp_path, "wb") as f:
+#                     f.write(audio_data)
+#
+#                 # 启动ASR处理
+#                 asyncio.create_task(perform_asr_stream(websocket, temp_path))
+#
+#     except WebSocketDisconnect:
+#         logger.info("WebSocket连接断开")
+#     except Exception as e:
+#         logger.error(f"WebSocket处理错误: {e}")
+#         await websocket.close(code=1011, reason=f"服务器错误: {str(e)}")
+#     finally:
+#         manager.disconnect(websocket)
+#         audio_player.close()
 
-@ASTTTSRouter.websocket("/stream")
-async def audio_stream_handler(websocket: WebSocket):
-    """
-    实时音频流处理WebSocket端点
-    """
-    await manager.connect(websocket)
-    
-    # 创建音频播放器
-    audio_player = AudioPlayer()
-    
-    try:
-        while True:
-            # 接收客户端消息
-            data = await websocket.receive()
-            
-            if "text" in data:
-                # 处理文本消息，进行TTS
-                text = data["text"]
-                logger.info(f"收到TTS请求: {text[:50]}...")
-                
-                # 启动TTS处理
-                asyncio.create_task(perform_tts_stream(websocket, text, audio_player))
-                
-            elif "bytes" in data:
-                # 处理音频字节数据，进行ASR
-                audio_data = data["bytes"]
-                logger.info(f"收到音频数据: {len(audio_data)} bytes")
-                
-                # 保存临时音频文件
-                temp_path = f"/tmp/stream_{int(time.time())}.wav"
-                with open(temp_path, "wb") as f:
-                    f.write(audio_data)
-                
-                # 启动ASR处理
-                asyncio.create_task(perform_asr_stream(websocket, temp_path))
-                
-    except WebSocketDisconnect:
-        logger.info("WebSocket连接断开")
-    except Exception as e:
-        logger.error(f"WebSocket处理错误: {e}")
-        await websocket.close(code=1011, reason=f"服务器错误: {str(e)}")
-    finally:
-        manager.disconnect(websocket)
-        audio_player.close()
+# @ASTTTSRouter.websocket("/tts")
+# async def tts_websocket_handler(websocket: WebSocket):
+#     """
+#     专门的TTS WebSocket端点
+#     """
+#     await manager.connect(websocket)
+#     audio_player = AudioPlayer()
+#
+#     try:
+#         while True:
+#             # 接收文本
+#             text = await websocket.receive_text()
+#             logger.info(f"收到TTS文本: {text[:50]}...")
+#
+#             # 执行TTS流式处理
+#             await perform_tts_stream(websocket, text, audio_player)
+#
+#     except WebSocketDisconnect:
+#         logger.info("TTS WebSocket连接断开")
+#     except Exception as e:
+#         logger.error(f"TTS WebSocket错误: {e}")
+#         await websocket.close(code=1011, reason=f"TTS处理错误: {str(e)}")
+#     finally:
+#         manager.disconnect(websocket)
+#         audio_player.close()
+#
+# @ASTTTSRouter.websocket("/asr")
+# async def asr_websocket_handler(websocket: WebSocket):
+#     """
+#     专门的ASR WebSocket端点
+#     """
+#     await manager.connect(websocket)
+#
+#     try:
+#         while True:
+#             # 接收音频数据
+#             audio_data = await websocket.receive_bytes()
+#             logger.info(f"收到ASR音频: {len(audio_data)} bytes")
+#
+#             # 保存临时文件
+#             temp_path = f"/tmp/asr_{int(time.time())}.wav"
+#             with open(temp_path, "wb") as f:
+#                 f.write(audio_data)
+#
+#             # 执行ASR处理
+#             text = await AsrService.asr_service(temp_path)
+#
+#             # 返回识别结果
+#             await websocket.send_text(text)
+#
+#             # 清理临时文件
+#             try:
+#                 os.remove(temp_path)
+#             except:
+#                 pass
+#
+#     except WebSocketDisconnect:
+#         logger.info("ASR WebSocket连接断开")
+#     except Exception as e:
+#         logger.error(f"ASR WebSocket错误: {e}")
+#         await websocket.close(code=1011, reason=f"ASR处理错误: {str(e)}")
+#     finally:
+#         manager.disconnect(websocket)
+#
+# # ==================== 辅助函数 ====================
+#
+# async def perform_tts_stream(websocket: WebSocket, text: str, audio_player: AudioPlayer):
+#     """
+#     执行TTS流式处理
+#     """
+#     try:
+#         # 启动TTS服务
+#         await AsrService.tts_service(text)
+#
+#         # 发送完成信号
+#         await websocket.send_text("TTS_COMPLETE")
+#
+#     except Exception as e:
+#         logger.error(f"TTS流式处理失败: {e}")
+#         await websocket.send_text(f"TTS_ERROR: {str(e)}")
+#
+# async def perform_asr_stream(websocket: WebSocket, audio_path: str):
+#     """
+#     执行ASR流式处理
+#     """
+#     try:
+#         # 执行ASR转换
+#         text = await AsrService.asr_service(audio_path)
+#
+#         # 发送识别结果
+#         await websocket.send_text(text)
+#
+#     except Exception as e:
+#         logger.error(f"ASR流式处理失败: {e}")
+#         await websocket.send_text(f"ASR_ERROR: {str(e)}")
+#     finally:
+#         # 清理临时文件
+#         try:
+#             os.remove(audio_path)
+#         except:
+#             pass
+#
+# # ==================== 服务启动函数 ====================
+#
+# async def start_ast_tts_services():
+#     """
+#     启动AST-TTS相关服务
+#     """
+#     logger.info("启动AST-TTS服务...")
+#
+#     # 这里可以添加启动TTS WebSocket服务器的逻辑
+#     # 如果需要单独的WebSocket服务器，可以在这里启动
+#
+#     logger.info("AST-TTS服务启动完成")
 
-@ASTTTSRouter.websocket("/tts")
-async def tts_websocket_handler(websocket: WebSocket):
-    """
-    专门的TTS WebSocket端点
-    """
-    await manager.connect(websocket)
-    audio_player = AudioPlayer()
-    
-    try:
-        while True:
-            # 接收文本
-            text = await websocket.receive_text()
-            logger.info(f"收到TTS文本: {text[:50]}...")
-            
-            # 执行TTS流式处理
-            await perform_tts_stream(websocket, text, audio_player)
-            
-    except WebSocketDisconnect:
-        logger.info("TTS WebSocket连接断开")
-    except Exception as e:
-        logger.error(f"TTS WebSocket错误: {e}")
-        await websocket.close(code=1011, reason=f"TTS处理错误: {str(e)}")
-    finally:
-        manager.disconnect(websocket)
-        audio_player.close()
-
-@ASTTTSRouter.websocket("/asr")
-async def asr_websocket_handler(websocket: WebSocket):
-    """
-    专门的ASR WebSocket端点
-    """
-    await manager.connect(websocket)
-    
-    try:
-        while True:
-            # 接收音频数据
-            audio_data = await websocket.receive_bytes()
-            logger.info(f"收到ASR音频: {len(audio_data)} bytes")
-            
-            # 保存临时文件
-            temp_path = f"/tmp/asr_{int(time.time())}.wav"
-            with open(temp_path, "wb") as f:
-                f.write(audio_data)
-            
-            # 执行ASR处理
-            text = await AsrService.asr_service(temp_path)
-            
-            # 返回识别结果
-            await websocket.send_text(text)
-            
-            # 清理临时文件
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-                
-    except WebSocketDisconnect:
-        logger.info("ASR WebSocket连接断开")
-    except Exception as e:
-        logger.error(f"ASR WebSocket错误: {e}")
-        await websocket.close(code=1011, reason=f"ASR处理错误: {str(e)}")
-    finally:
-        manager.disconnect(websocket)
-
-# ==================== 辅助函数 ====================
-
-async def perform_tts_stream(websocket: WebSocket, text: str, audio_player: AudioPlayer):
-    """
-    执行TTS流式处理
-    """
-    try:
-        # 启动TTS服务
-        await AsrService.tts_service(text)
-        
-        # 发送完成信号
-        await websocket.send_text("TTS_COMPLETE")
-        
-    except Exception as e:
-        logger.error(f"TTS流式处理失败: {e}")
-        await websocket.send_text(f"TTS_ERROR: {str(e)}")
-
-async def perform_asr_stream(websocket: WebSocket, audio_path: str):
-    """
-    执行ASR流式处理
-    """
-    try:
-        # 执行ASR转换
-        text = await AsrService.asr_service(audio_path)
-        
-        # 发送识别结果
-        await websocket.send_text(text)
-        
-    except Exception as e:
-        logger.error(f"ASR流式处理失败: {e}")
-        await websocket.send_text(f"ASR_ERROR: {str(e)}")
-    finally:
-        # 清理临时文件
-        try:
-            os.remove(audio_path)
-        except:
-            pass
-
-# ==================== 服务启动函数 ====================
-
-async def start_ast_tts_services():
-    """
-    启动AST-TTS相关服务
-    """
-    logger.info("启动AST-TTS服务...")
-    
-    # 这里可以添加启动TTS WebSocket服务器的逻辑
-    # 如果需要单独的WebSocket服务器，可以在这里启动
-    
-    logger.info("AST-TTS服务启动完成")
-
-# 导出路由和状态
-__all__ = ["ASTTTSRouter", "service_state", "start_ast_tts_services"]
+# # 导出路由和状态
+# __all__ = ["ASTTTSRouter", "service_state", "start_ast_tts_services"]
