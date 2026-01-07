@@ -49,6 +49,16 @@ try:
 except ImportError as e:
     logger.error(f"导入TTS模块失败: {e}")
     logger.warning("请确保所有依赖已正确安装")
+
+
+# 注册ASR路由
+try:
+    from backend.app.modules.asr.controller import ASRRouter
+    app.include_router(ASRRouter, prefix="/api")
+    logger.info("ASR路由已成功注册")
+except ImportError as e:
+    logger.error(f"导入ASR模块失败: {e}")
+    logger.warning("请确保所有依赖已正确安装")
 #
 # # 注册AST-TTS路由
 # try:
@@ -59,14 +69,14 @@ except ImportError as e:
 #     logger.error(f"导入AST-TTS模块失败: {e}")
 #     logger.warning("请确保所有依赖已正确安装")
 
-# # 注册AI路由
-# try:
-#     from backend.app.modules.ai.controller import AIRouter
-#     app.include_router(AIRouter, prefix="/api")
-#     logger.info("AI路由已成功注册")
-# except ImportError as e:
-#     logger.error(f"导入AI模块失败: {e}")
-#     logger.warning("请确保所有依赖已正确安装")
+# 注册AI路由
+try:
+    from backend.app.modules.ai.controller import AIRouter
+    app.include_router(AIRouter, prefix="/api")
+    logger.info("AI路由已成功注册")
+except ImportError as e:
+    logger.error(f"导入AI模块失败: {e}")
+    logger.warning("请确保所有依赖已正确安装")
 
 if __name__ == "__main__":
     import uvicorn
@@ -77,6 +87,7 @@ if __name__ == "__main__":
     debug = os.getenv("DEBUG", "false").lower() == "true"
     
     logger.info(f"🌐 启动服务器: http://{host}:{port}")
+    logger.info(f"🌐 访问页面: http://localhost:{port}")
     logger.info(f"📚 API文档: http://{host}:{port}/docs")
     
     # 启动服务器

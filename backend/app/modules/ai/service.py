@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+from backend.app.common.core import llm
 
 import dashscope
 
@@ -32,26 +33,14 @@ class AIService:
             api_key = os.getenv("DASHSCOPE_API_KEY")
             if not api_key:
                 raise ValueError("DASHSCOPE_API_KEY 环境变量未配置")
-                
-            # 使用阿里云百炼API进行聊天
-            messages = [
-                {"role": "system", "content": [{"text": "你是一个智能助手，帮助用户解决问题。"}]},
-                {"role": "user", "content": [{"text": text}]}
-            ]
-            
-            response = dashscope.MultiModalConversation.call(
-                api_key=api_key,
-                model="qwen3-flash",
-                messages=messages,
-                result_format="message"
-            )
-            
-            ai_response = response.output["choices"][0]["message"]["content"][0]["text"]
-            logger.info(f"AI聊天完成，用户输入: {text[:50]}..., 回复: {ai_response[:50]}..., 会话ID: {session_id}")
-            
+
+            #llm输出得到response
+            #TODO llm提升为RAG应用
+            response = llm.invoke(text)
+
             return {
                 "success": True,
-                "text": ai_response,
+                "text": response.text,
                 "session_id": session_id
             }
         except Exception as e:

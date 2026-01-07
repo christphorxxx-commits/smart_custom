@@ -55,7 +55,10 @@ async def tts_ai_websocket(websocket: WebSocket):
             #接受客户端文本（控制器负责IO操作）
             data = await websocket.receive_text()
 
+            #使用llm传入客户端文本得到回复
             response = llm.invoke(data)
+
+            #打印出llm的回复
             print(response)
 
             try:

@@ -22,5 +22,8 @@ async def chat(request: ChatRequest):
         success=result["success"],
         text=result["text"],
         session_id=result["session_id"],
-        message=result.get("message")
+        message=result.get("message"),
+        context=result.get("context")
     )
+
+

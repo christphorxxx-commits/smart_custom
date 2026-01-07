@@ -189,3 +189,27 @@ class AudioPlayer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """支持with语句的清理"""
         self.close()
+
+    # 在 audio_player.py 中添加以下方法
+
+    def stop(self):
+        """立即停止播放"""
+        self.logger.info("收到停止播放指令")
+        self.is_running = False
+
+        # 清空队列中的待播放数据
+        try:
+            while not self.audio_queue.empty():
+                try:
+                    self.audio_queue.get_nowait()
+                except queue.Empty:
+                    break
+        except Exception as e:
+            self.logger.error(f"清空音频队列时出错: {e}")
+
+        # 立即停止音频流
+        try:
+            if self.stream and self.stream.is_active():
+                self.stream.stop_stream()
+        except Exception as e:
+            self.logger.error(f"停止音频流时出错: {e}")
