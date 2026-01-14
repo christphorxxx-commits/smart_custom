@@ -1,6 +1,8 @@
 import asyncio
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
+from dashscope.common.constants import DASHSCOPE_API_KEY_ENV
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -96,23 +98,50 @@ tools = asyncio.run(mcp_client.get_tools())
 
 #llm
 from langchain_ollama import ChatOllama
+from langchain_community.chat_models import ChatTongyi
+from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 
-llm = ChatOllama(
-    model="qwen3:0.6b"
+
+llm = ChatOpenAI(
+    model="Qwen/Qwen3-Next-80B-A3B-Thinking",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    base_url=os.getenv("OPENAI_API_URL"),
+    temperature=0.7,
+    streaming=True,
 )
+
+tongyillm = ChatTongyi(
+    model="qwen3-max",
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+)
+
+# llm = ChatOllama(
+#     model="qwen3:0.6b"
+# )
 
 agent = create_agent(
-    model=llm,
+    model=tongyillm,
     tools=tools
 )
+user_input = HumanMessage(
+    content="帮我算一下我的八字，我是2000年农历9月23日出生的男生，时间大概是下午8点到9点"
+)
+
+#openai 格式下的方法，{"messages":[user_input]}
+# async def userquery():
+#     result = await agent.ainvoke(
+#         {"messages":[user_input]}
+#     )
+#     # Extract structured content from tool messages
+#     for message in result["messages"]:
+#         print(message.content)
 
 async def userquery():
-    result = await agent.ainvoke(
-        {"messages": [HumanMessage(content="帮我算一下我的八字，我是2000年农历9月23日出生的男生，时间大概是下午8点到9点")]}
-    )
+    result = await agent.ainvoke(input=user_input)
     # Extract structured content from tool messages
     for message in result["messages"]:
         print(message.content)
+
 if __name__ == "__main__":
     asyncio.run(userquery())

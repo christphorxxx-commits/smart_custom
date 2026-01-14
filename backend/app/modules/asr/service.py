@@ -1,5 +1,9 @@
+import asyncio
 import os
 
+import whisper
+from dotenv import load_dotenv
+load_dotenv()
 import dashscope
 
 from backend.app.common.core import logger
@@ -7,6 +11,54 @@ from backend.app.common.core import logger
 
 
 class ASRService:
+    # 类变量存储模型实例，避免重复加载
+    _whisper_model = None
+    _model_config = {
+        "model_name": "small",
+        "device": "cpu"
+    }
+
+    @classmethod
+    def _init_whisper_model(cls):
+        """初始化Whisper模型（仅在首次使用时加载）"""
+        if cls._whisper_model is None:
+            logger.info(f"加载Whisper模型: {cls._model_config['model_name']}，设备: {cls._model_config['device']}")
+            cls._whisper_model = whisper.load_model(
+                cls._model_config['model_name'],
+                device=cls._model_config['device']
+            )
+
+    @classmethod
+    async def asr_whisper_service(cls, file_path: str) -> str:
+        """
+        使用本地Whisper模型将音频文件转换为文字
+        :param file_path: 音频文件路径
+        :return: 转换后的文本
+        """
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"音频文件不存在: {file_path}")
+
+            # 初始化模型（仅首次加载）
+            cls._init_whisper_model()
+
+            # 使用线程池执行同步的transcribe操作，避免阻塞事件循环
+            loop = asyncio.get_event_loop()
+
+            # 使用lambda函数包装transcribe调用，正确传递关键字参数
+            result = await loop.run_in_executor(
+                None,
+                lambda: cls._whisper_model.transcribe(audio=file_path, language="zh")
+            )
+
+            logger.info(f"Whisper识别成功，结果: {result['text'][:50]}...")
+            return result['text']
+        except FileNotFoundError as e:
+            logger.error(f"Whisper识别失败: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Whisper识别发生意外错误: {e}", exc_info=True)
+            raise
 
     @classmethod
     async def asr_service(cls, file_path: str) -> str:
