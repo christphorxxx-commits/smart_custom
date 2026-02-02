@@ -1,12 +1,14 @@
 # 文件位置: d:\pycharmWorkspace\smart_custom\backend\app\common\audio_recorder.py
 
 import os
-import wave
 import threading
-import logging
-import webrtcvad
+import wave
 from typing import Optional, Callable
+
+import webrtcvad
 from pyaudio import PyAudio
+
+from backend.app.common.core.core import logger
 from backend.app.constant import AUDIO_FORMAT, AUDIO_CHANNELS, AUDIO_RATE, CHUNK_SIZE
 
 
@@ -19,12 +21,13 @@ class AudioRecorder:
             aggressiveness: VAD灵敏度 (0-3)，越高越激进
         """
         self.is_running = False
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.p: Optional[PyAudio] = None
         self.stream = None
         self.audio_frames = []
         self.is_recording = False
         self.recording_thread = None
+        #webrtcvad 是基于 Google WebRTC 项目的开源 VAD 算法
         self.vad = webrtcvad.Vad(aggressiveness)
         self._vad_callback: Optional[Callable[[bool], None]] = None
         self._init_audio()

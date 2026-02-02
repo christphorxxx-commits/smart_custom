@@ -1,10 +1,12 @@
 from backend.app.modules.record.schema import RecordResponse, RecordRequest
-from backend.app.common.core import logger
+from backend.app.common.core.core import logger
 import os
 import sounddevice as sd
 import soundfile as sf
 
 class RecordService:
+
+
     @classmethod
     async def record(cls, request : RecordRequest) -> RecordResponse:
 
@@ -48,3 +50,4 @@ class RecordService:
                 success=False,
                 message=f"录音失败: {str(e)}"
             )
+

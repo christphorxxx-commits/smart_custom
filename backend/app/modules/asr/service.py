@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import dashscope
 
-from backend.app.common.core import logger
+from backend.app.common.core.core import logger
 
 
 
@@ -18,7 +18,7 @@ class ASRService:
         "device": "cpu"
     }
 
-    @classmethod
+
     def _init_whisper_model(cls):
         """初始化Whisper模型（仅在首次使用时加载）"""
         if cls._whisper_model is None:

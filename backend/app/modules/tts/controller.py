@@ -1,6 +1,6 @@
 from fastapi import WebSocket,WebSocketDisconnect
 from backend.app.modules.tts.service import AudioService
-from backend.app.common.core import logger,voice,manager,llm
+from backend.app.common.core.core import logger,voice,manager,llm
 from fastapi import APIRouter
 
 

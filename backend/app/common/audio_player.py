@@ -6,29 +6,29 @@
 
 import queue
 import threading
-import logging
 import pyaudio
 from backend.app.constant import AUDIO_FORMAT, AUDIO_CHANNELS, AUDIO_RATE,CHUNK_SIZE,AUDIO_QUEUE_SIZE
+from backend.app.common.core.core import logger
 
 
-def setup_global_logging():
-    """配置全局日志，确保能看到所有级别日志"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler()  # 输出到控制台
-        ]
-    )
-
-# 初始化全局日志
-setup_global_logging()
+# def setup_global_logging():
+#     """配置全局日志，确保能看到所有级别日志"""
+#     logging.basicConfig(
+#         level=logging.INFO,
+#         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#         handlers=[
+#             logging.StreamHandler()  # 输出到控制台
+#         ]
+#     )
+#
+# # 初始化全局日志
+# setup_global_logging()
 
 class AudioPlayer:
     """音频播放器类"""
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)  # 使用全局配置的logger
+        self.logger = logger  # 使用全局配置的logger
         self.p = None
         self.stream = None
         self.audio_queue = queue.Queue(maxsize=AUDIO_QUEUE_SIZE)

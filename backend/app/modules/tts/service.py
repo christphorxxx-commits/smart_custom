@@ -1,5 +1,5 @@
 from backend.app.common.audio_player import AudioPlayer
-from backend.app.common.core import logger
+from backend.app.common.core.core import logger
 
 
 class AudioService:

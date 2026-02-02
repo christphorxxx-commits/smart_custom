@@ -1,9 +1,7 @@
 import logging
 import os
 import uuid
-from backend.app.common.core import llm
-
-import dashscope
+from backend.app.common.core.core import llm
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

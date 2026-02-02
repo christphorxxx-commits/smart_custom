@@ -1,11 +1,6 @@
-import os
-
 from fastapi import APIRouter
-import sounddevice as sd
-import soundfile as sf
 
 from backend.app.modules.record.schema import RecordRequest, RecordResponse
-from backend.app.common.core import logger
 from service import RecordService
 
 RECORDRouter = APIRouter(prefix="/record",tags=["Record"])

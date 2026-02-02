@@ -1,128 +1,115 @@
-import logging
-import os
-import queue
-
-import dashscope
-import websockets
-
-from backend.app.constant import WS_SERVER_URL
+from enum import Enum
 from backend.app.common.audio_player import AudioPlayer
+from backend.app.common.audio_recorder import AudioRecorder
+from backend.app.common.core.core import logger
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+import whisper
+from dotenv import load_dotenv
+load_dotenv()
+
+class ASRTTSState(Enum):
+    IDLE = "idle"
+    PLAYING = "playing"
+    RECORDING = "recording"
 
 
-class AsrService:
-    # 初始化音频播放器
-    p = AudioPlayer()
 
-    audio_queue = queue.Queue()
-    """语音转文字，文字转语音服务层"""
+class ASRTTSService:
 
-    @classmethod
-    async def asr_service(cls, file_path: str) -> str:
-        """
-        将路径中的录音转换为文字
-        :param file_path: 录音保存路径
-        :return: 转换后的文本
-        """
+    def __init__(self):
+        self.state = ASRTTSState.IDLE
+        self.audio_player = None
+        self.audio_recorder = None
+        self._setup_devices()
+
+
+
+    def _setup_devices(self):
+        """初始化音频设备"""
         try:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"音频文件不存在: {file_path}")
+            self.audio_player = AudioPlayer()
+            self.audio_recorder = AudioRecorder()
+            self.audio_recorder.set_vad_callback(self._on_speech_detected)
+            logger.info("音频设备初始化成功")
+        except Exception as e:
+            logger.error(f"音频设备初始化失败: {e}")
+            raise
 
-            messages = [
-                {"role": "system", "content": [{"text": ""}]},  # 配置定制化识别的 Context
-                {"role": "user", "content": [{"audio": file_path}]}
-            ]
+    def _on_speech_detected(self, is_speech: bool):
+        """
+        VAD回调函数 - 检测到用户说话时调用
 
-            api_key = os.getenv("DASHSCOPE_API_KEY")
-            if not api_key:
-                raise ValueError("DASHSCOPE_API_KEY 环境变量未配置")
+        Args:
+            is_speech: True=检测到语音, False=语音结束
+        """
+        if is_speech and self.state == ASRTTSState.PLAYING:
+            logger.info("检测到用户打断，停止当前播放")
+            self._interrupt_playback()
 
-            response = dashscope.MultiModalConversation.call(
-                api_key=api_key,
-                model="qwen3-asr-flash",
-                messages=messages,
-                result_format="message",
-                asr_options={
-                    "enable_itn": False
-                }
+    def _interrupt_playback(self):
+        """打断当前播放"""
+        if self.audio_player:
+            self.audio_player.stop()
+        self.state = ASRTTSState.IDLE
+
+
+    def _init_whisper_model(self):
+        """初始化Whisper模型（仅在首次使用时加载）"""
+
+        if self._whisper_model is None:
+            logger.info(f"加载Whisper模型: {self._model_config['model_name']}，设备: {self._model_config['device']}")
+            self._whisper_model = whisper.load_model(
+                self._model_config['model_name'],
+                device=self._model_config['device']
             )
 
-            text = response.output["choices"][0]["message"]["content"][0]["text"]
-            logger.info(f"ASR转换成功，识别结果: {text[:50]}...")
-            return text
-        except Exception as e:
-            logger.error(f"ASR转换失败: {e}", exc_info=True)
-            raise
-
-    @classmethod
-    async def getvoice_service(cls, text: str) -> str:
+    async def start_recording(self):
         """
-        将文本转换成录音
-        :param text: 需要转换的文本
-        :return: 录音保存地址
+        开始录音，自动打断当前播放
+        :return:
         """
-        try:
-            if not text:
-                raise ValueError("转换文本不能为空")
 
-            api_key = os.getenv("DASHSCOPE_API_KEY")
-            if not api_key:
-                raise ValueError("DASHSCOPE_API_KEY 环境变量未配置")
+        if self.state == ASRTTSState.PLAYING:
+            self._interrupt_playback()
 
-            response = dashscope.MultiModalConversation.call(
-                model="qwen3-tts-flash",
-                api_key=api_key,
-                text=text,
-                voice="Cherry",
-                language_type="Chinese",
-                stream=False
-            )
+        #设置当前状态为录音中
+        self.state = ASRTTSState.RECORDING
 
-            audio_url = response.output["audio"]["url"]
-            logger.info(f"TTS转换成功，音频URL: {audio_url}")
-            return audio_url
-        except Exception as e:
-            logger.error(f"TTS转换失败: {e}", exc_info=True)
-            raise
+        #启动audio_recorder开始录音
+        self.audio_recorder.start_recording()
 
-    @classmethod
-    async def tts_service(cls, text: str) -> bool:
+        logger.info("开始录音")
+
+    async def stop_recording(self) -> bytes:
         """
-        连接推流服务端，接收音频并实时播放
-        :param text: 待转换的文本
-        :return: 转换是否成功
+        停止录音返回数据以供识别
+        :return: audio_data
         """
-        try:
-            if not text:
-                raise ValueError("转换文本不能为空")
+        #1.判断当前麦克风有没有在录音
+        if self.state != ASRTTSState.RECORDING:
+            logger.info("当前没有录音")
 
-            logger.info(f"开始TTS转换，文本长度: {len(text)}字")
+        #设置当前服务状态为空
+        self.state = ASRTTSState.IDLE
 
-            async with websockets.connect(WS_SERVER_URL) as websocket:
-                # 发送待转换的文字
-                await websocket.send(text)
-                logger.info(f"已发送文本到WebSocket服务器: {text[:50]}...")
+        #停止录音并保存录音到一个位置
+        self.audio_recorder.stop_recording()
 
-                # 持续接收音频片段并播放
-                async for audio_data in websocket:
-                    logger.debug(f"接收音频片段，长度: {len(audio_data)} 字节")
-                    # 实时播放（异步执行，避免阻塞接收）
-                    AsrService.p.add_audio(audio_data)
+        audio_data = self.audio_recorder.get_audio_data()
 
-            logger.info("TTS转换完成")
-            return True
-        except websockets.WebSocketException as e:
-            logger.error(f"WebSocket连接错误: {e}", exc_info=True)
-            raise
-        except Exception as e:
-            logger.error(f"TTS转换失败: {e}", exc_info=True)
-            raise
-    #
-    # @classmethod
-    # async def pcm_asr_llm_tts(cls):
+        return audio_data
+
+
+    # async def ASR
+    async def play_audio(self,audio_data:bytes):
+
+        if self.state == ASRTTSState.RECORDING:
+            logger.warning("当前正在录音，不能播放")
+            return
+        self.state = ASRTTSState.PLAYING
+
+
+
 
 
 

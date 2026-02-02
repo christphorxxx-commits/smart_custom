@@ -2,13 +2,13 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
-class TTSVoiceEnum(str, Enum):
-    """TTS声音类型"""
-    CHERRY = "Cherry"
-    XIAOYI = "Xiaoyi"
-    XIAOYANG = "Xiaoyang"
-    CHENGUANG = "Chenguang"
-    YUEYANG = "Yueyang"
+# class TTSVoiceEnum(str, Enum):
+#     """TTS声音类型"""
+#     CHERRY = "Cherry"
+#     XIAOYI = "Xiaoyi"
+#     XIAOYANG = "Xiaoyang"
+#     CHENGUANG = "Chenguang"
+#     YUEYANG = "Yueyang"
 
 class AudioFormatEnum(str, Enum):
     """音频格式"""
@@ -19,10 +19,6 @@ class AudioFormatEnum(str, Enum):
 class TTSRequest(BaseModel):
     """文字转语音请求模型"""
     text: str = Field(..., min_length=1, max_length=2000, description="要转换的文本")
-    voice: TTSVoiceEnum = Field(default=TTSVoiceEnum.CHERRY, description="TTS声音类型")
-    format: AudioFormatEnum = Field(default=AudioFormatEnum.MP3, description="音频格式")
-    speed: float = Field(default=1.0, ge=0.5, le=2.0, description="语速倍率")
-    volume: float = Field(default=1.0, ge=0.0, le=2.0, description="音量倍率")
     save_path: Optional[str] = Field(None, description="保存路径，如果为None则返回音频URL")
 
 class ASRRequest(BaseModel):

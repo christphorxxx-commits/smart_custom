@@ -75,7 +75,7 @@ class InteractionController:
         if self.state != InteractionState.RECORDING:
             raise RuntimeError("当前没有在录音")
 
-        file_path = self.audio_recorder.stop_recording()
+        self.audio_recorder.stop_recording()
         self.state = InteractionState.IDLE
 
         # 返回音频数据用于识别
