@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import WebSocket
 from piper.voice import PiperVoice
@@ -58,4 +59,11 @@ from langchain_ollama import ChatOllama
 
 llm = ChatOllama(
     model="qwen3:0.6b"
+)
+
+from langchain_community.chat_models import ChatTongyi
+
+tongyillm = ChatTongyi(
+    model="qwen3-max",
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
 )
