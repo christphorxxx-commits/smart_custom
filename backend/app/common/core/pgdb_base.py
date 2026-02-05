@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+import logging
 
 # db_pg.py
 import psycopg2
 import numpy as np
 import os
+
 from dotenv import load_dotenv
+from psycopg2 import pool
+from sqlalchemy import Engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine,create_async_engine
+from backend.app.common.core.logger import log
 load_dotenv()
-import sys
 
 # 设置Python默认编码（可选，用于兼容）
 # reload(sys) if 'reload' in dir(sys) else None
@@ -15,8 +20,65 @@ import sys
 # =========================
 # PostgreSQL config
 # =========================
+from backend.app.config.setting import settings
 
 
+def create_async_engine_and_session(
+        db_url: str = settings.async_db_url
+) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
+    """
+    创建异步数据库引擎和会话工厂。
+
+    Returns:
+        tuple[AsyncEngine, async_sessionmaker[AsyncSession]]
+    """
+    if not settings.SQL_DB_ENABLE:
+        raise ValueError("请先开启数据库连接（设置 SQL_DB_ENABLE=True）")
+
+    try:
+        async_engine: AsyncEngine = create_async_engine(
+            url=db_url,
+            echo=settings.DATABASE_ECHO,
+            echo_pool=settings.ECHO_POOL,
+            pool_pre_ping=settings.POOL_PRE_PING,
+            future=settings.FUTURE,
+            pool_recycle=settings.POOL_RECYCLE,
+            pool_size=settings.POOL_SIZE,
+            max_overflow=settings.MAX_OVERFLOW,
+            pool_timeout=settings.POOL_TIMEOUT,
+            pool_use_lifo=settings.POOL_USE_LIFO,
+        )
+    except Exception as e:
+        logging.error(f'❌ 异步数据库连接失败: {e}')
+        raise
+    else:
+        async_session_factory = async_sessionmaker(
+            bind=async_engine,
+            autocommit=settings.AUTOCOMMIT,
+            autoflush=settings.AUTOFLUSH,  # ← 确认这里是 AUTOFLUSH
+            expire_on_commit=settings.EXPIRE_ON_COMMIT,
+            class_=AsyncSession
+        )
+        return async_engine, async_session_factory
+
+pg_engine, pg_session = create_async_engine(settings.async_db_url)
+
+class PGManager:
+    def __init__(self):
+        self.connection_pool = psycopg2.pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            host=os.getenv("PG_HOST"),
+            database=os.getenv("PG_DB"),
+            user=os.getenv("PG_USER"),
+            password=os.getenv("PG_PASSWORD"),
+            port=os.getenv("PG_PORT"),
+            options='-c client_encoding=utf8'
+        )
+    def _get_connection(self):
+        conn = self.connection_pool.getconn()
+        conn.autocommit = False
+        return conn
 
 def get_db_conn():
     """get a database connection"""
