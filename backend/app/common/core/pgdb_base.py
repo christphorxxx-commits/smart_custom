@@ -63,6 +63,7 @@ def create_async_engine_and_session(
 
 pg_engine, pg_session = create_async_engine(settings.async_db_url)
 
+
 class PGManager:
     def __init__(self):
         self.connection_pool = psycopg2.pool.SimpleConnectionPool(
