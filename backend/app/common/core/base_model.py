@@ -5,8 +5,13 @@ import uuid_utils
 from sqlalchemy import DateTime,String, Integer,Text, ForeignKey
 from sqlalchemy.orm import Mapped,mapped_column,DeclarativeBase, declared_attr, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from backend.app.modules.module_system.user.model import UserModel
+
+from backend.app.common.utils.common_util import uuid4_str
+
 from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from backend.app.modules.module_system.user.model import UserModel
 
 
 class MappedBase(AsyncAttrs, DeclarativeBase):
@@ -56,7 +61,7 @@ class ModelMixin(MappedBase):
 
     # 基础字段
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment='主键ID')
-    uuid: Mapped[str] = mapped_column(String(64), default=uuid_utils.uuid4, nullable=False, unique=True,
+    uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
                                       comment='UUID全局唯一标识')
     status: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="是否启用(0:启用 1:禁用)")
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注/描述")
@@ -92,26 +97,25 @@ class UserMixin(MappedBase):
     )
 
     @declared_attr
-    def created_by(self) -> Mapped[Optional["UserModel"]]:
+    def created_by(cls) -> Mapped[Optional["UserModel"]]:
         """
         创建人关联关系（延迟加载，避免循环依赖）
         """
         return relationship(
             "UserModel",
             lazy="selectin",
-            foreign_keys=lambda: self.created_id,
+            foreign_keys=lambda: cls.created_id,
             uselist=False
         )
 
-    # 自动提供关系（使用 @declared_attr 避免循环引用）
     @declared_attr
-    def updated_by(self) -> Mapped[Optional["UserModel"]]:
+    def updated_by(cls) -> Mapped[Optional["UserModel"]]:
         """
         更新人关联关系（延迟加载，避免循环依赖）
         """
         return relationship(
             "UserModel",
             lazy="selectin",
-            foreign_keys=lambda: self.updated_id,
+            foreign_keys=lambda: cls.updated_id,
             uselist=False
         )

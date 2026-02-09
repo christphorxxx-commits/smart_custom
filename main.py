@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.common.core import logger
+from backend.app.modules.module_system.user.controller import UserRouter
 
 # 加载环境变量
 load_dotenv()
@@ -59,6 +60,8 @@ try:
 except ImportError as e:
     logger.error(f"导入ASR模块失败: {e}")
     logger.warning("请确保所有依赖已正确安装")
+
+app.include_router(UserRouter, prefix="/api")
 #
 # # 注册AST-TTS路由
 # try:

@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse,StreamingResponse
 from typing import Any
 from pydantic import BaseModel,Field
 from fastapi import status
-from constant import RET
+from .constant import RET
 
 class ResponseSchema(BaseModel):
 

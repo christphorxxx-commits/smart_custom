@@ -56,6 +56,21 @@ class RET(Enum):
     UNPROCESSABLE_ENTITY = (422, "无法处理的实体")
     TOO_MANY_REQUESTS = (429, "请求过于频繁")
 
+    # 自定义业务错误码
+    EXCEPTION = (-1, "系统异常")
+    DATAEXIST = (4003, "数据已存在")
+    DATAERR = (4004, "数据错误")
+    PARAMERR = (4103, "参数错误")
+    IOERR = (4302, "IO错误")
+    SERVERERR = (4500, "服务错误")
+    UNKOWNERR = (4501, "未知错误")
+    TIMEOUT = (4502, "请求超时")
+    RATE_LIMIT_EXCEEDED = (4503, "访问频率超限")
+
+    # Token相关错误码
+    INVALID_TOKEN = (4504, "无效令牌")
+    EXPIRED_TOKEN = (4505, "令牌过期")
+
     def __init__(self, code: int, msg: str):
         """
         初始化返回码。

@@ -61,7 +61,7 @@ def create_async_engine_and_session(
         )
         return async_engine, async_session_factory
 
-pg_engine, pg_session = create_async_engine(settings.async_db_url)
+async_engine, async_db_session = create_async_engine_and_session(settings.async_db_url)
 
 
 class PGManager:
