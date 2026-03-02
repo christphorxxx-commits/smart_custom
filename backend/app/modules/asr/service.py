@@ -19,13 +19,14 @@ class ASRService:
     }
 
 
-    def _init_whisper_model(cls):
+
+    def _init_whisper_model(self):
         """初始化Whisper模型（仅在首次使用时加载）"""
-        if cls._whisper_model is None:
-            logger.info(f"加载Whisper模型: {cls._model_config['model_name']}，设备: {cls._model_config['device']}")
-            cls._whisper_model = whisper.load_model(
-                cls._model_config['model_name'],
-                device=cls._model_config['device']
+        if self._whisper_model is None:
+            logger.info(f"加载Whisper模型: {self._model_config['model_name']}，设备: {self._model_config['device']}")
+            self._whisper_model = whisper.load_model(
+                self._model_config['model_name'],
+                device=self._model_config['device']
             )
 
     @classmethod

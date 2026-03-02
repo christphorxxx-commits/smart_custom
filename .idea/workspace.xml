@@ -441,7 +441,9 @@
       <workItem from="1770255905345" duration="9997000" />
       <workItem from="1770287673660" duration="45000" />
       <workItem from="1770346617482" duration="15005000" />
-      <workItem from="1770600939423" duration="21471000" />
+      <workItem from="1770600939423" duration="21556000" />
+      <workItem from="1770633933645" duration="189000" />
+      <workItem from="1772419394836" duration="8249000" />
     </task>
     <task id="LOCAL-00001" summary="第二次提交">
       <option name="closed" value="true" />
@@ -531,7 +533,23 @@
       <option name="project" value="LOCAL" />
       <updated>1770373639344</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="2026.29">
+      <option name="closed" value="true" />
+      <created>1770633459030</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1770633459030</updated>
+    </task>
+    <task id="LOCAL-00013" summary="2026.29">
+      <option name="closed" value="true" />
+      <created>1770634091391</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1770634091391</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -551,12 +569,13 @@
     <MESSAGE value="2026.2.4" />
     <MESSAGE value="2026.2.5" />
     <MESSAGE value="2026.2.6" />
-    <option name="LAST_COMMIT_MESSAGE" value="2026.2.6" />
+    <MESSAGE value="2026.29" />
+    <option name="LAST_COMMIT_MESSAGE" value="2026.29" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/smart_custom$Demo.coverage" NAME="Demo 覆盖结果" MODIFIED="1769760337920" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$core.coverage" NAME="core 覆盖结果" MODIFIED="1767511149413" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common" />
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1770633375409" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1770633435424" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$fastapi_websocket.coverage" NAME="fastapi_websocket 覆盖结果" MODIFIED="1768290546489" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$ai_core.coverage" NAME="ai_core 覆盖结果" MODIFIED="1767867668817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common" />
     <SUITE FILE_PATH="coverage/smart_custom$test_websocket.coverage" NAME="test_websocket 覆盖结果" MODIFIED="1767146749793" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
