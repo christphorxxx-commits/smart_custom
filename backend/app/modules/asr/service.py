@@ -9,91 +9,93 @@ import dashscope
 from backend.app.common.core.core import logger
 
 
+# app/asr/service.py
+import asyncio
+import queue
+import threading
+from typing import AsyncGenerator, Optional
+from dashscope.audio.asr import Recognition, RecognitionCallback, RecognitionResult
+import dashscope
+
+from .schema import ASRResult, ASRError
+
 
 class ASRService:
-    # 类变量存储模型实例，避免重复加载
-    _whisper_model = None
-    _model_config = {
-        "model_name": "small",
-        "device": "cpu"
-    }
+    def __init__(self):
+        self.active_sessions = {}  # session_id -> Recognition 实例
 
-
-
-    def _init_whisper_model(self):
-        """初始化Whisper模型（仅在首次使用时加载）"""
-        if self._whisper_model is None:
-            logger.info(f"加载Whisper模型: {self._model_config['model_name']}，设备: {self._model_config['device']}")
-            self._whisper_model = whisper.load_model(
-                self._model_config['model_name'],
-                device=self._model_config['device']
-            )
-
-    @classmethod
-    async def asr_whisper_service(cls, file_path: str) -> str:
+    async def start_streaming_asr(
+        self,
+        session_id: str,
+        model: str = "fun-asr-realtime",
+        sample_rate: int = 16000,
+        audio_format: str = "pcm"
+    ) -> AsyncGenerator[ASRResult | ASRError, None]:
         """
-        使用本地Whisper模型将音频文件转换为文字
-        :param file_path: 音频文件路径
-        :return: 转换后的文本
+        启动一个流式 ASR 会话，返回异步生成器用于推送结果
         """
+        result_queue = queue.Queue()
+        error_event = threading.Event()
+        error_msg = [None]
+
+        class InternalCallback(RecognitionCallback):
+            def on_event(self, result: RecognitionResult):
+                sentence = result.get_sentence()
+                if 'text' in sentence:
+                    text = sentence['text']
+                    is_final = RecognitionResult.is_sentence_end(sentence)
+                    res = ASRResult(
+                        text=text,
+                        is_final=is_final,
+                        request_id=result.get_request_id(),
+                        timestamp=asyncio.get_event_loop().time()
+                    )
+                    result_queue.put(res)
+
+            def on_error(self, message):
+                error_msg[0] = ASRError(error=message.message)
+                error_event.set()
+
+            def on_close(self):
+                result_queue.put(None)  # 结束信号
+
+        callback = InternalCallback()
+        recognition = Recognition(
+            model=model,
+            format=audio_format,
+            sample_rate=sample_rate,
+            callback=callback
+        )
+
+        recognition.start()
+        self.active_sessions[session_id] = recognition
+
         try:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"音频文件不存在: {file_path}")
+            while True:
+                if error_event.is_set():
+                    yield error_msg[0]
+                    break
 
-            # 初始化模型（仅首次加载）
-            cls._init_whisper_model()
+                try:
+                    # 非阻塞获取结果（超时 0.1s）
+                    item = result_queue.get(timeout=0.1)
+                    if item is None:
+                        break
+                    yield item
+                except queue.Empty:
+                    continue
+        finally:
+            recognition.stop()
+            self.active_sessions.pop(session_id, None)
 
-            # 使用线程池执行同步的transcribe操作，避免阻塞事件循环
-            loop = asyncio.get_event_loop()
+    def send_audio_frame(self, session_id: str, audio_data: bytes):
+        """向指定会话发送音频帧"""
+        recognition = self.active_sessions.get(session_id)
+        if recognition:
+            recognition.send_audio_frame(audio_data)
 
-            # 使用lambda函数包装transcribe调用，正确传递关键字参数
-            result = await loop.run_in_executor(
-                None,
-                lambda: cls._whisper_model.transcribe(audio=file_path, language="zh")
-            )
-
-            logger.info(f"Whisper识别成功，结果: {result['text'][:50]}...")
-            return result['text']
-        except FileNotFoundError as e:
-            logger.error(f"Whisper识别失败: {e}")
-            raise
-        except Exception as e:
-            logger.error(f"Whisper识别发生意外错误: {e}", exc_info=True)
-            raise
-
-    @classmethod
-    async def asr_service(cls, file_path: str) -> str:
-        """
-        将路径中的录音转换为文字
-        :param file_path: 录音保存路径
-        :return: 转换后的文本
-        """
-        try:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"音频文件不存在: {file_path}")
-
-            messages = [
-                {"role": "system", "content": [{"text": ""}]},  # 配置定制化识别的 Context
-                {"role": "user", "content": [{"audio": file_path}]}
-            ]
-
-            api_key = os.getenv("DASHSCOPE_API_KEY")
-            if not api_key:
-                raise ValueError("DASHSCOPE_API_KEY 环境变量未配置")
-
-            response = dashscope.MultiModalConversation.call(
-                api_key=api_key,
-                model="qwen3-asr-flash",
-                messages=messages,
-                result_format="message",
-                asr_options={
-                    "enable_itn": False
-                }
-            )
-
-            text = response.output["choices"][0]["message"]["content"][0]["text"]
-            logger.info(f"ASR转换成功，识别结果: {text[:50]}...")
-            return text
-        except Exception as e:
-            logger.error(f"ASR转换失败: {e}", exc_info=True)
-            raise
+    def stop_session(self, session_id: str):
+        """停止会话"""
+        recognition = self.active_sessions.pop(session_id, None)
+        if recognition:
+            recognition.stop()

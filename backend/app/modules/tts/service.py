@@ -1,41 +1,84 @@
-from backend.app.common.audio_player import AudioPlayer
-from backend.app.common.core.core import logger
+# app/tts/service.py
+import asyncio
+import queue
+import threading
+from typing import AsyncGenerator, Optional
+from dashscope.audio.tts_v2 import SpeechSynthesizer, ResultCallback, AudioFormat
+import dashscope
+
+from .schema import TTSError
 
 
-class AudioService:
+class TTSService:
     def __init__(self):
-        # 初始化音频播放器（每个服务实例一个播放器，可根据需求调整为单例）
-        self.player = AudioPlayer()
+        self.active_sessions = {}  # session_id -> synthesizer
 
-    @classmethod
-    def synthesize_and_play_audio(self, text: str, voice_module) -> None:
+    async def synthesize_stream(
+            self,
+            session_id: str,
+            text: str,
+            model: str = "cosyvoice-v3-flash",
+            voice: str = "longanyang"
+    ) -> AsyncGenerator[bytes | TTSError, None]:
         """
-        核心业务：合成语音并播放
-        :param text: 用户输入的文本
-        :param voice_module: 语音合成模块（如你的 voice 对象）
-        :raise ValueError: 文本为空/合成失败时抛出异常
+        流式合成语音，返回音频字节流或错误
         """
-        # 1. 基础业务校验（服务层负责）
-        if not text or len(text.strip()) == 0:
-            raise ValueError("合成文本不能为空")
+        audio_queue = queue.Queue()
+        error_event = threading.Event()
+        error_msg = [None]
 
-        logger.info(f"开始处理文字：{text[:20]}...（总长度：{len(text)}字）")
+        class InternalCallback(ResultCallback):
+            def on_data(self, data: bytes):
+                audio_queue.put(data)
 
-        # 2. 实时合成音频并添加到播放器
-        # audio_chunks = voice_module.synthesize(text)
-        for chunk in voice_module.synthesize(text):
-            if hasattr(chunk, "audio_int16_bytes") and chunk.audio_int16_bytes:
-                self.player.add_audio(chunk.audio_int16_bytes)
-                logger.info(f"添加音频片段，长度：{len(chunk.audio_int16_bytes)} 字节")
+            def on_error(self, message: str):
+                error_msg[0] = TTSError(error=message)
+                error_event.set()
 
-        # total_audio_length = 0
-        # for chunk in audio_chunks:
-        #     if hasattr(chunk, "audio_int16_bytes") and chunk.audio_int16_bytes:
-        #         chunk_length = len(chunk.audio_int16_bytes)
-        #         total_audio_length += chunk_length
-        #         self.player.add_audio(chunk.audio_int16_bytes)
-        #         logger.info(f"添加音频片段，长度：{chunk_length} 字节")
+            def on_complete(self):
+                audio_queue.put(None)  # 结束标志
 
-        # # 3. 播放所有合成的音频
-        # self.player.play_all()
-        # logger.info(f"文字处理完成，累计合成音频长度：{total_audio_length} 字节")
+            def on_close(self):
+                if not error_event.is_set():
+                    audio_queue.put(None)
+
+        callback = InternalCallback()
+
+        # 映射 format
+        audio_format = AudioFormat.PCM_22050HZ_MONO_16BIT  # CosyVoice 固定 22050Hz
+
+        synthesizer = SpeechSynthesizer(
+            model=model,
+            voice=voice,
+            format=audio_format,
+            callback=callback
+        )
+
+        self.active_sessions[session_id] = synthesizer
+
+        try:
+            # 启动流式合成
+            synthesizer.streaming_call(text)
+            synthesizer.streaming_complete()
+
+            while True:
+                if error_event.is_set():
+                    yield error_msg[0]
+                    break
+
+                try:
+                    item = audio_queue.get(timeout=0.1)
+                    if item is None:
+                        break
+                    yield item
+                except queue.Empty:
+                    continue
+        finally:
+            synthesizer.close()
+            self.active_sessions.pop(session_id, None)
+
+    def stop_session(self, session_id: str):
+        """停止 TTS 会话"""
+        synthesizer = self.active_sessions.pop(session_id, None)
+        if synthesizer:
+            synthesizer.close()
