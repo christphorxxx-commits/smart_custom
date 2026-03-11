@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/.idea/queries/Query_1.sql" value="b54fbc49-5fed-43db-a3ea-2ea6aa83ab61" />
+    <file url="file://$PROJECT_DIR$/backend/sql/postgres/smart.sql" value="b54fbc49-5fed-43db-a3ea-2ea6aa83ab61" />
+  </component>
+</project>

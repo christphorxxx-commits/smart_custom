@@ -23,3 +23,51 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         self.auth = auth
         super().__init__(model=UserModel, auth=auth)
 
+    async def get_by_mobile_crud(self, mobile: str) -> UserModel | None:
+        """
+        根据手机号查询用户
+
+        参数:
+        - mobile (str): 手机号
+
+        返回:
+        - UserModel | None: 用户对象或None
+        """
+        from sqlalchemy import select
+        stmt = select(self.model).where(self.model.mobile == mobile)
+        result = await self.auth.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_email_crud(self, email: str) -> UserModel | None:
+        """
+        根据邮箱查询用户
+
+        参数:
+        - email (str): 邮箱
+
+        返回:
+        - UserModel | None: 用户对象或None
+        """
+        from sqlalchemy import select
+        stmt = select(self.model).where(self.model.email == email)
+        result = await self.auth.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_last_login_crud(self, user_id: int) -> bool:
+        """
+        更新用户最后登录时间
+
+        参数:
+        - user_id (int): 用户ID
+
+        返回:
+        - bool: 更新是否成功
+        """
+        from sqlalchemy import update
+        from datetime import datetime
+        
+        stmt = update(self.model).where(self.model.id == user_id).values(last_login=datetime.utcnow())
+        result = await self.auth.db.execute(stmt)
+        await self.auth.db.commit()
+        return result.rowcount > 0
+

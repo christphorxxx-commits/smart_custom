@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from .service import TTSService
 from .schema import TTSStartRequest
 
-TTSRouter = APIRouter(prefix="ws",tags=["TTS"])
+TTSRouter = APIRouter(prefix="/ws",tags=["TTS"])
 tts_service = TTSService()
 
 

@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,8 +9,12 @@ from fastapi.staticfiles import StaticFiles
 from backend.app.common.core.logger import log
 from backend.app.modules.module_system.user.controller import UserRouter
 
-# 加载环境变量
-load_dotenv()
+# 加载环境变量（如果存在.env文件）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -61,16 +64,23 @@ except ImportError as e:
     log.error(f"导入ASR模块失败: {e}")
     log.warning("请确保所有依赖已正确安装")
 
-app.include_router(UserRouter, prefix="/api")
-#
-# # 注册AST-TTS路由
-# try:
-#     from backend.app.modules.ast_tts.controller import AsrTtsRouter
-#     app.include_router(AsrTtsRouter, prefix="/api")
-#     logger.info("AST-TTS路由已成功注册")
-# except ImportError as e:
-#     logger.error(f"导入AST-TTS模块失败: {e}")
-#     logger.warning("请确保所有依赖已正确安装")
+#注册User路由
+try:
+    from backend.app.modules.module_system.user.controller import UserRouter
+    app.include_router(UserRouter, prefix="/api")
+    log.info("User路由已成功注册")
+except ImportError as e:
+    log.error(f"导入User模块失败{e}")
+    log.warning("请确保所有依赖已经正确安装")
+
+# 注册Auth路由
+try:
+    from backend.app.modules.module_system.auth.controller import AuthRouter
+    app.include_router(AuthRouter, prefix="/api")
+    log.info("Auth路由已成功注册")
+except ImportError as e:
+    log.error(f"导入Auth模块失败: {e}")
+    log.warning("请确保所有依赖已正确安装")
 
 # 注册AI路由
 try:
