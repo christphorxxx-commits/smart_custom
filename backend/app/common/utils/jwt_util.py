@@ -2,61 +2,69 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
-from backend.app.common.core.config import settings
-
+from backend.app.common.core.exceptions import CustomException
+from backend.app.config.setting import settings
+from backend.app.modules.module_system.auth.schema import JWTPlayloadSchema
 
 class JwtUtil:
     """JWT工具类"""
 
     @staticmethod
-    def create_access_token(user_id: int, username: str, expires_delta: Optional[timedelta] = None) -> str:
+    def create_access_token(playload: JWTPlayloadSchema) -> str:
         """
-        创建访问令牌
+        生成JWT访问令牌
 
         参数:
-        - user_id (int): 用户ID
-        - username (str): 用户名
-        - expires_delta (Optional[timedelta]): 过期时间
+        - payload (JWTPayloadSchema): JWT有效载荷,包含用户信息等。
 
         返回:
-        - str: JWT令牌
+        - str: 生成的JWT访问令牌。
         """
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        playload_dict = playload.model_dump()
 
-        to_encode = {
-            "sub": str(user_id),
-            "username": username,
-            "exp": expire
-        }
 
-        encoded_jwt = jwt.encode(
-            to_encode,
-            settings.SECRET_KEY,
+        return jwt.encode(
+            playload_dict,
+            settings.JWT_SECRET_KEY,
             algorithm=settings.ALGORITHM
         )
 
-        return encoded_jwt
 
     @staticmethod
-    def decode_token(token: str) -> Dict[str, Any]:
+    def decode_token(token: str) -> JWTPlayloadSchema:
         """
-        解码令牌
+        解析JWT访问令牌
 
         参数:
-        - token (str): JWT令牌
+        - token (str): JWT访问令牌字符串。
 
         返回:
-        - Dict[str, Any]: 解码后的载荷
+        - JWTPayloadSchema: 解析后的JWT有效载荷,包含用户信息等。
+
+        异常:
+        - CustomException: 解析失败时抛出,状态码为401。
         """
+        if not token:
+            raise CustomException(msg="认证不存在,请重新登录", code=10401, status_code=401)
+
         try:
             payload = jwt.decode(
-                token,
-                settings.SECRET_KEY,
+                jwt=token,
+                key=settings.JWT_SECRET_KEY,
                 algorithms=[settings.ALGORITHM]
             )
-            return payload
-        except jwt.PyJWTError:
-            return {}
+
+            online_user_info = payload.get("sub")
+            if not online_user_info:
+                raise CustomException(msg="无效认证,请重新登录", code=10401, status_code=401)
+
+            return JWTPlayloadSchema(**payload)
+
+        except (jwt.InvalidSignatureError, jwt.DecodeError):
+            raise CustomException(msg="无效认证,请重新登录", code=10401, status_code=401)
+
+        except jwt.ExpiredSignatureError:
+            raise CustomException(msg="认证已过期,请重新登录", code=10401, status_code=401)
+
+        except jwt.InvalidTokenError:
+            raise CustomException(msg="token已失效,请重新登录", code=10401, status_code=401)

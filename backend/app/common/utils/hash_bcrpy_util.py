@@ -1,13 +1,15 @@
 from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 
-PwdContext = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-)
-
+# PwdContext = CryptContext(
+#     schemes=["bcrypt"],
+#     deprecated="auto",
+# )
+password_hash = PasswordHash.recommended()
 
 class PwdUtil:
+    password_hash = PasswordHash.recommended()
     """
     密码工具类
     """
@@ -21,7 +23,7 @@ class PwdUtil:
         :return:
         """
 
-        return PwdContext.verify(plain_password, hashed_password)
+        return password_hash.verify(plain_password, hashed_password)
 
     @classmethod
     def set_password_hash(cls,password :str) -> str:
@@ -34,7 +36,8 @@ class PwdUtil:
                 返回:
                 - str: 加密后的密码哈希值。
                 """
-        return PwdContext.hash(password)
+
+        return password_hash.hash(password)
 
     @classmethod
     def check_password(cls,password : str) -> str | None:

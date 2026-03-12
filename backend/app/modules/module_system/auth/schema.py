@@ -1,5 +1,8 @@
-from pydantic import ConfigDict, Field,BaseModel
+from typing import Optional, Any, Self
+
+from pydantic import ConfigDict, Field, BaseModel, EmailStr, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from backend.app.modules.module_system.user.model import UserModel
 
@@ -11,6 +14,26 @@ class AuthSchema(BaseModel):
     user: UserModel | None = Field(default=None,description="用户信息")
     check_data_scope: bool = Field(default=True, description="是否检查数据权限")
     db: AsyncSession = Field(description="数据库会话")
+
+class LoginSchema(BaseModel):
+    """登录请求模型"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    phone: Optional[str] = Field(default=None, description="手机号")
+    email: Optional[EmailStr] = Field(default=None, description="邮箱")
+    password: str = Field(...,max_length=128,description="密码")
+
+class JWTPlayloadSchema(BaseModel):
+    """JWT载荷模型"""
+    sub: str = Field(..., description='用户登录信息，暂时使用user_id')
+    is_refresh: bool = Field(default=False, description="是否刷新token")
+    exp: datetime | int = Field(...,description='过期时间')
+
+    @model_validator(mode='after')
+    def validate(self):
+        if not self.sub or len(self.sub) == 0:
+            raise ValueError("用户id不能为空")
+        return self
+
 
 class JWTOutSchema(BaseModel):
     """JWT响应模型"""

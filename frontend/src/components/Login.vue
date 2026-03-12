@@ -3,8 +3,14 @@
     <!-- 左侧品牌区域 -->
     <div class="login-brand-section">
       <div class="brand-content">
+        <div class="brand-logo">
+          <div class="logo-icon">🤖</div>
+        </div>
         <h1 class="brand-title">智能AI助手</h1>
         <p class="brand-description">智能语音交互平台</p>
+        <div class="brand-slogan">
+          让语音成为智能交互的新方式
+        </div>
       </div>
     </div>
     
@@ -12,8 +18,8 @@
     <div class="login-form-section">
       <div class="login-card">
         <div class="login-header">
-          <h2>欢迎回来</h2>
-          <p>请登录您的账号</p>
+          <h2>欢迎登录</h2>
+          <p>请输入您的账号信息</p>
         </div>
         
         <div class="login-tabs">
@@ -115,21 +121,18 @@ const handleLogin = async () => {
       ? { phone: form.phone, password: form.password } 
       : { email: form.email, password: form.password }
     
-    // 模拟登录请求
+    // 发送登录请求
     const response = await axios.post('/api/auth/login', loginData)
     
-    if (response.data.success) {
-      // 登录成功，保存token并跳转
-      localStorage.setItem('token', response.data.token)
-      localStorage.setItem('user', JSON.stringify(response.data.user))
-      
-      // 跳转到主页
-      window.location.href = '/'
-    } else {
-      error.value = response.data.message || '登录失败'
-    }
+    // 保存token
+    localStorage.setItem('access_token', response.data.access_token)
+    localStorage.setItem('refresh_token', response.data.refresh_token)
+    localStorage.setItem('token_type', response.data.token_type)
+    
+    // 跳转到主页
+    window.location.href = '/'
   } catch (err) {
-    error.value = err.response?.data?.message || '网络错误，请稍后重试'
+    error.value = err.response?.data?.msg || '网络错误，请稍后重试'
     console.error('登录失败:', err)
   } finally {
     isLoading.value = false
@@ -168,21 +171,22 @@ body {
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: var(--qianwen-white);
+  background: var(--qianwen-purple-bg);
   overflow: hidden;
 }
 
 /* 左侧品牌区域 */
 .login-brand-section {
   flex: 1;
-  background: var(--qianwen-purple-bg);
+  background: rgba(180, 79, 175, 0.05);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   flex-direction: column;
   padding: 80px 60px;
-  min-width: 400px;
+  min-width: 450px;
   position: relative;
+  backdrop-filter: blur(10px);
 }
 
 .login-brand-section::before {
@@ -192,31 +196,83 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 50%, rgba(180, 79, 175, 0.1) 0%, transparent 50%);
   pointer-events: none;
 }
 
 .brand-content {
-  max-width: 420px;
+  max-width: 450px;
   color: var(--qianwen-white);
   position: relative;
   z-index: 1;
 }
 
+.brand-logo {
+  margin-bottom: 32px;
+}
+
+.logo-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(180, 79, 175, 0.2);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(180, 79, 175, 0.3);
+}
+
 .brand-title {
-  font-size: 48px;
+  font-size: 56px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
 
 .brand-description {
-  font-size: 16px;
-  font-weight: 400;
-  opacity: 0.85;
-  line-height: 1.5;
-}
+    font-size: 18px;
+    font-weight: 400;
+    opacity: 0.85;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .brand-slogan {
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 0.75;
+    line-height: 1.4;
+    margin-bottom: 48px;
+    max-width: 400px;
+  }
+
+  /* 装饰元素 */
+  .login-brand-section::after {
+    content: '';
+    position: absolute;
+    bottom: 40px;
+    right: 60px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .login-brand-section::before {
+    content: '';
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
 
 /* 右侧登录表单区域 */
 .login-form-section {
@@ -224,21 +280,39 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 40px;
-  background: var(--qianwen-white);
-  min-width: 450px;
+  padding: 80px 60px;
+  background: transparent;
+  min-width: 500px;
+  position: relative;
+}
+
+.login-form-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .login-card {
-  background: var(--qianwen-white);
-  border-radius: 0;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+  padding: 64px;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(20px);
 }
 
 .login-header {
   margin-bottom: 48px;
+  text-align: center;
 }
 
 .login-header h2 {
@@ -246,20 +320,22 @@ body {
   font-size: 36px;
   font-weight: 700;
   margin-bottom: 12px;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .login-header p {
   color: var(--qianwen-gray);
   font-size: 15px;
   font-weight: 400;
+  line-height: 1.5;
 }
 
 .login-tabs {
   display: flex;
   margin-bottom: 40px;
   gap: 32px;
-  border-bottom: none;
+  border-bottom: 1px solid var(--qianwen-gray-light);
+  padding-bottom: 16px;
 }
 
 .tab-btn {
@@ -272,18 +348,21 @@ body {
   position: relative;
   transition: all 0.3s ease;
   font-weight: 500;
+  flex: 1;
+  text-align: center;
 }
 
 .tab-btn::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
+  bottom: -17px;
+  left: 20%;
+  right: 20%;
+  height: 3px;
   background: var(--qianwen-purple-primary);
   transform: scaleX(0);
   transition: transform 0.3s ease;
+  border-radius: 2px;
 }
 
 .tab-btn:hover {
@@ -312,32 +391,32 @@ body {
 }
 
 .form-group label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--qianwen-gray-dark);
   font-weight: 600;
   letter-spacing: 0.3px;
-  text-transform: uppercase;
 }
 
 .form-input {
-  padding: 14px 18px;
+  padding: 16px 20px;
   border: 1px solid var(--qianwen-gray-light);
-  border-radius: 8px;
-  font-size: 15px;
+  border-radius: 12px;
+  font-size: 16px;
   transition: all 0.3s ease;
   background: var(--qianwen-white);
   color: var(--qianwen-gray-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--qianwen-purple-primary);
-  box-shadow: 0 0 0 4px rgba(107, 78, 237, 0.08);
+  box-shadow: 0 0 0 3px rgba(107, 78, 237, 0.1);
   background: var(--qianwen-white);
 }
 
 .form-actions {
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .login-btn {
@@ -346,19 +425,20 @@ body {
   background: var(--qianwen-purple-primary);
   color: var(--qianwen-white);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .login-btn:hover:not(:disabled) {
   background: var(--qianwen-purple-dark);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px var(--qianwen-purple-shadow);
+  box-shadow: 0 8px 24px var(--qianwen-purple-shadow);
 }
 
 .login-btn:disabled {
@@ -373,7 +453,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .loading::before {
@@ -393,7 +473,6 @@ body {
 .form-links {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
   font-size: 14px;
 }
 
@@ -402,6 +481,7 @@ body {
   text-decoration: none;
   transition: all 0.3s ease;
   font-weight: 500;
+  padding: 8px 0;
 }
 
 .form-links a:hover {
@@ -413,28 +493,66 @@ body {
   background: #FEF2F2;
   color: #DC2626;
   padding: 14px 18px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   text-align: center;
-  margin-top: 12px;
   border: 1px solid #FECACA;
+  margin-top: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 响应式设计 */
-@media (max-width: 992px) {
+@media (max-width: 1200px) {
   .login-container {
     flex-direction: column;
   }
   
   .login-brand-section {
-    min-height: 35vh;
+    min-height: 40vh;
     min-width: 100%;
     padding: 60px 40px;
   }
   
   .login-form-section {
     min-width: 100%;
-    padding: 60px 30px;
+    padding: 60px 40px;
+  }
+  
+  .brand-title {
+    font-size: 48px;
+  }
+  
+  .brand-description {
+    font-size: 16px;
+  }
+  
+  .login-header h2 {
+    font-size: 36px;
+  }
+  
+  .login-card {
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-brand-section {
+    padding: 50px 30px;
+  }
+  
+  .login-form-section {
+    padding: 50px 30px;
   }
   
   .brand-title {
@@ -448,23 +566,36 @@ body {
   .login-header h2 {
     font-size: 32px;
   }
+  
+  .login-card {
+    padding: 48px;
+    max-width: 100%;
+  }
+  
+  .logo-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 36px;
+  }
+  
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .feature-item {
+    font-size: 15px;
+  }
 }
 
 @media (max-width: 480px) {
   .login-brand-section {
-    padding: 50px 30px;
+    padding: 40px 24px;
   }
   
   .login-form-section {
-    padding: 50px 24px;
-  }
-  
-  .login-card {
-    max-width: 100%;
-  }
-  
-  .login-header h2 {
-    font-size: 28px;
+    padding: 40px 24px;
   }
   
   .brand-title {
@@ -475,18 +606,54 @@ body {
     font-size: 14px;
   }
   
-  .form-input {
-    padding: 13px 16px;
-    font-size: 14px;
+  .login-header h2 {
+    font-size: 28px;
   }
   
-  .login-btn {
-    padding: 15px;
-    font-size: 15px;
+  .login-card {
+    padding: 36px;
   }
   
   .login-tabs {
     gap: 24px;
+  }
+  
+  .form-input {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  
+  .login-btn {
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  .logo-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+  }
+  
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .feature-item {
+    font-size: 14px;
+  }
+  
+  .brand-features {
+    gap: 16px;
+  }
+  
+  .brand-description {
+    margin-bottom: 32px;
+  }
+  
+  .brand-logo {
+    margin-bottom: 24px;
   }
 }
 </style>

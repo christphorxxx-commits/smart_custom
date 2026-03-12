@@ -1,9 +1,9 @@
 <script setup>
-import Login from './components/Login.vue'
+// App.vue 主组件
 </script>
 
 <template>
-  <Login />
+  <router-view />
 </template>
 
 <style>

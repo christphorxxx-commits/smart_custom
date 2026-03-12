@@ -6,6 +6,9 @@ from piper.voice import PiperVoice
 
 from backend.app.common.constant import MODEL_PATH
 
+from dotenv import load_dotenv
+load_dotenv()
+
 #Piper模型初始化
 voice = PiperVoice.load(MODEL_PATH)
 print(f"成功加载Piper模型: {MODEL_PATH}")
@@ -62,8 +65,8 @@ llm = ChatOllama(
 )
 
 from langchain_community.chat_models import ChatTongyi
-
+from backend.app.config.setting import settings
 tongyillm = ChatTongyi(
     model="qwen3-max",
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    api_key=settings.DASHSCOPE_API_KEY,
 )

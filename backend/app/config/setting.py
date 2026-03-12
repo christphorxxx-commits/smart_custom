@@ -3,12 +3,14 @@ from backend.app.config.path_conf import ENV_DIR
 from typing import Literal
 from urllib.parse import quote_plus
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
-        env_file=ENV_DIR / f".env.{os.getenv('ENVIRONMENT')}",
+        env_file=ENV_DIR / f".env",
         env_file_encoding="utf-8",
         extra='ignore',
         case_sensitive=True,  # 区分大小写
@@ -41,11 +43,21 @@ class Settings(BaseSettings):
     DATABASE_TYPE: Literal['mysql', 'postgres'] = 'postgres'
 
     # MySQL/PostgreSQL数据库连接
-    DATABASE_HOST: str = 'localhost'
-    DATABASE_PORT: int = 5433
-    DATABASE_USER: str = 'root'
-    DATABASE_PASSWORD: str = '123456'
-    DATABASE_NAME: str = 'pg_default_db'
+    DATABASE_HOST: str = os.getenv('DATABASE_HOST')
+    DATABASE_PORT: int = os.getenv('DATABASE_PORT')
+    DATABASE_USER: str = os.getenv('DATABASE_USER')
+    DATABASE_PASSWORD: str = os.getenv('DATABASE_PASSWORD')
+    DATABASE_NAME: str = os.getenv('DATABASE_NAME')
+
+    #JWT过期时间
+    ACCESS_TOKEN_EXPIRE_TIME : int = 60 * 60 * 24 * 1                     # access_token过期时间(秒)1 天
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 24 * 7
+    JWT_SECRET_KEY: str = os.getenv('JWT_SECRET_KEY')
+    ALGORITHM: str = "HS256"
+    TOKEN_TYPE: str = "bearer"
+
+    #AI配置
+    DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY')
 
     @property
     def async_db_url(self) -> str:

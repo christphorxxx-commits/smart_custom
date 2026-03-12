@@ -3,6 +3,8 @@
 from typing import Sequence, Any
 from datetime import datetime
 
+from pydantic import EmailStr
+
 from backend.app.common.core.base_crud import CRUDBase
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from .model import UserModel
@@ -38,7 +40,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_email_crud(self, email: str) -> UserModel | None:
+    async def get_by_email_crud(self, email: EmailStr) -> UserModel | None:
         """
         根据邮箱查询用户
 
