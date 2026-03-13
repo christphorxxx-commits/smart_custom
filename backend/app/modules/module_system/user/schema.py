@@ -39,6 +39,7 @@ class CurrentUserSchema(BaseModel):
 class UserRegisterSchema(BaseModel):
     name: Optional[str] = Field(default=None,max_length=32,description="名称")
     mobile: Optional[str] = Field(default=None,description="手机号")
+    email: Optional[EmailStr] = Field(default=None, description="邮箱")
     username: str = Field(...,max_length=32,description="账号")
     password: str = Field(...,max_length=128,description="密码")
     created_id: Optional[int] = Field(default=1,description="创建人id")

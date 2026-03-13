@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 导入组件
 import Login from '../components/Login.vue'
+import Register from '../components/Register.vue'
 import Home from '../components/Home.vue'
 
 // 路由配置
@@ -16,6 +17,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: Register
   },
   // 重定向到登录页
   {

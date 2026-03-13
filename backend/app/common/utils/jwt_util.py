@@ -10,7 +10,7 @@ class JwtUtil:
     """JWT工具类"""
 
     @staticmethod
-    def create_access_token(playload: JWTPlayloadSchema) -> str:
+    def create_access_token(payload: JWTPlayloadSchema) -> str:
         """
         生成JWT访问令牌
 
@@ -20,11 +20,11 @@ class JwtUtil:
         返回:
         - str: 生成的JWT访问令牌。
         """
-        playload_dict = playload.model_dump()
+        payload_dict = payload.model_dump()
 
 
         return jwt.encode(
-            playload_dict,
+            payload_dict,
             settings.JWT_SECRET_KEY,
             algorithm=settings.ALGORITHM
         )

@@ -29,3 +29,4 @@ async def register_user_controller(
     user_register_result = await UserService.register_user_service(data=data,auth=auth)
     log.info(f"{data.username} 注册用户成功: {user_register_result}")
     return SuccessResponse(data=user_register_result, msg='注册用户成功')
+

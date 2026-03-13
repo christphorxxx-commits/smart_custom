@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 
-class ChatRequest(BaseModel):
+class ChatQuerySchema(BaseModel):
     """聊天请求模型"""
-    text: str = Field(..., min_length=1, max_length=2000, description="用户输入的文本")
+    message: str = Field(..., min_length=1, max_length=4000, description="聊天消息")
     session_id: Optional[str] = Field(None, description="会话ID，用于保持上下文")
     context: Optional[Dict[str, Any]] = Field(None, description="额外上下文信息")
 

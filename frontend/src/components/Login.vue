@@ -24,8 +24,8 @@
         
         <div class="login-tabs">
           <button 
-            :class="['tab-btn', { active: loginType === 'phone' }]"
-            @click="loginType = 'phone'"
+            :class="['tab-btn', { active: loginType === 'mobile' }]"
+            @click="loginType = 'mobile'"
           >
             手机号登录
           </button>
@@ -38,12 +38,12 @@
         </div>
         
         <form @submit.prevent="handleLogin" class="login-form">
-          <div v-if="loginType === 'phone'" class="form-group">
-            <label for="phone">手机号</label>
+          <div v-if="loginType === 'mobile'" class="form-group">
+            <label for="mobile">手机号</label>
             <input
               type="tel"
-              id="phone"
-              v-model="form.phone"
+              id="mobile"
+              v-model="form.mobile"
               placeholder="请输入手机号"
               class="form-input"
               required
@@ -85,7 +85,7 @@
             </button>
             <div class="form-links">
               <a href="#" class="forgot-password">忘记密码？</a>
-              <a href="#" class="register">注册账号</a>
+              <a href="/register" class="register">注册账号</a>
             </div>
           </div>
           
@@ -102,12 +102,12 @@
 import { ref, reactive } from 'vue'
 import axios from 'axios'
 
-const loginType = ref('phone') // 'phone' 或 'email'
+const loginType = ref('mobile') // 'mobile' 或 'email'
 const isLoading = ref(false)
 const error = ref('')
 
 const form = reactive({
-  phone: '',
+  mobile: '',
   email: '',
   password: ''
 })
@@ -117,17 +117,17 @@ const handleLogin = async () => {
   isLoading.value = true
   
   try {
-    const loginData = loginType.value === 'phone' 
-      ? { phone: form.phone, password: form.password } 
+    const loginData = loginType.value === 'mobile'
+      ? { mobile: form.mobile, password: form.password }
       : { email: form.email, password: form.password }
     
     // 发送登录请求
     const response = await axios.post('/api/auth/login', loginData)
     
     // 保存token
-    localStorage.setItem('access_token', response.data.access_token)
-    localStorage.setItem('refresh_token', response.data.refresh_token)
-    localStorage.setItem('token_type', response.data.token_type)
+    localStorage.setItem('access_token', response.data.data.access_token)
+    localStorage.setItem('refresh_token', response.data.data.refresh_token)
+    localStorage.setItem('token_type', response.data.data.token_type)
     
     // 跳转到主页
     window.location.href = '/'
@@ -149,7 +149,7 @@ const handleLogin = async () => {
   --qianwen-purple-bg: linear-gradient(135deg, #6B4EED 0%, #8B6EF0 100%);
   --qianwen-purple-border: #D4C5F9;
   --qianwen-purple-shadow: rgba(107, 78, 237, 0.25);
-  --qianwen-white: #ffffff;
+  --qianwen-white: #ff02fc;
   --qianwen-gray-light: #f0f0f5;
   --qianwen-gray: #888899;
   --qianwen-gray-dark: #333344;

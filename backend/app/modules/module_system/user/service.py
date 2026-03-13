@@ -1,3 +1,4 @@
+from backend.app.common.core.exceptions import CustomException
 from backend.app.common.utils.hash_bcrpy_util import PwdUtil
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.crud import UserCRUD
@@ -29,9 +30,19 @@ class UserService:
         """
         # 检查用户名是否存在
         #TODO 提取数据库中，若是存在，则用户已经注册
-        #username_ok = await UserCRUD(auth).get_by_username_crud(username=data.username)
-        #if username_ok:
-            #raise CustomException(msg='账号已存在')
+        if not data.mobile and not data.email:
+            raise CustomException(msg="手机号和邮箱不能同时为空")
+
+
+        user_ok = None
+
+        if data.mobile:
+            user_ok = await UserCRUD(auth).get_by_mobile_crud(mobile=data.mobile)
+        elif data.email:
+            user_ok = await UserCRUD(auth).get_by_email_crud(email=data.email)
+
+        if user_ok:
+            raise CustomException(msg='账号已存在')
 
         #data.password是 传入的明文密码，随后hash加密再赋值给data，设置data
         data.password = PwdUtil.set_password_hash(data.password)
@@ -39,11 +50,12 @@ class UserService:
         data.name = data.username
         #model_dump是pydanticv2将pydantic模型转换为Python字典的方法
         #exclude_unset=True标识只包含用户实际提交的字段
+
         #exclude是主动剔除指定字段
         create_dict = data.model_dump(exclude_unset=True,exclude={"role_ids","dept_ids"})
 
         #设置默认用户类型为普通用户
-        create_dict.setdefault("user_type","0")
+        # create_dict.setdefault("user_type","0")
 
         #设置创建人ID
         if auth.user and auth.user.id:

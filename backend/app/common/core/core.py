@@ -6,16 +6,13 @@ from piper.voice import PiperVoice
 
 from backend.app.common.constant import MODEL_PATH
 
-from dotenv import load_dotenv
-load_dotenv()
-
-#Piper模型初始化
-voice = PiperVoice.load(MODEL_PATH)
-print(f"成功加载Piper模型: {MODEL_PATH}")
-
-# 配置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# #Piper模型初始化
+# voice = PiperVoice.load(MODEL_PATH)
+# print(f"成功加载Piper模型: {MODEL_PATH}")
+#
+# # 配置日志
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 
 # --------------------------
@@ -66,7 +63,27 @@ llm = ChatOllama(
 
 from langchain_community.chat_models import ChatTongyi
 from backend.app.config.setting import settings
+
 tongyillm = ChatTongyi(
     model="qwen3-max",
     api_key=settings.DASHSCOPE_API_KEY,
 )
+
+if __name__ == "__main__":
+    try:
+        print("正在调用通义千问...")
+        for chunk in tongyillm.invoke("你是谁"):
+            print(chunk, end="", flush=True)
+        print("\n调用成功！")
+
+    except Exception as e:
+        print(f"\n发生错误: {type(e).__name__}")
+        print(f"错误详情: {str(e)}")
+
+        # 如果是 HTTPError，尝试打印 response 内容
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                print(f"HTTP 状态码: {e.response.status_code}")
+                print(f"响应内容: {e.response.text}")
+            except:
+                pass

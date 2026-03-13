@@ -15,12 +15,12 @@ from backend.app.common.utils.jwt_util import JwtUtil
 class LoginService:
     """登录认证服务"""
     @classmethod
-    async def login(cls, data: LoginSchema, auth: AuthSchema) -> JWTOutSchema:
+    async def login(cls, request: Request,data: LoginSchema, auth: AuthSchema) -> JWTOutSchema:
 
         user_crud = UserCRUD(auth)
 
         #传入的用户信息
-        current_mobile = data.phone
+        current_mobile = data.mobile
         current_password = data.password
 
         if not current_password:
@@ -56,13 +56,13 @@ class LoginService:
         access_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_TIME)
         refresh_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
 
-        access_token =JwtUtil.create_access_token(playload=JWTPlayloadSchema(
+        access_token =JwtUtil.create_access_token(payload=JWTPlayloadSchema(
             sub=user_uuid,
             is_refresh=False,
             exp=now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_TIME),
         ))
 
-        refresh_token = JwtUtil.create_access_token(playload=JWTPlayloadSchema(
+        refresh_token = JwtUtil.create_access_token(payload=JWTPlayloadSchema(
             sub=user_uuid,
             is_refresh=True,
             exp=now + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)

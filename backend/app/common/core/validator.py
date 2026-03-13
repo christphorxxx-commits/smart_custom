@@ -109,5 +109,6 @@ def username_validator(value: str) -> str:
         raise ValueError("账号不能为空")
     #字母开头，允许字母数字_.-
     if not re.match(r"^[A-Za-z][A-Za-z0-9_.-]{2,31}$", v):
+
         raise ValueError("账号需字母开头，3-32位，仅包含字母、数字和_.-")
     return v

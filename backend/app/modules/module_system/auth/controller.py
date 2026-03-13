@@ -1,3 +1,5 @@
+from typing import Union, Dict
+
 from fastapi import APIRouter, Depends, HTTPException,Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,11 +17,12 @@ from .schema import AuthSchema, LoginSchema
 AuthRouter = APIRouter(prefix="/auth", tags=["认证管理"])
 
 
-@AuthRouter.post("/login", summary="用户登录", description="用户登录接口")
+@AuthRouter.post("/login", summary="用户登录", description="用户登录接口", response_model=JWTOutSchema)
 async def login_controller(
+        request: Request,
         login_data: LoginSchema,
     db: AsyncSession = Depends(db_getter)
-) -> JWTOutSchema:
+) -> Union[JSONResponse, Dict]:
     """
     用户登录
 
@@ -31,5 +34,10 @@ async def login_controller(
     - JSONResponse: 登录响应
     """
     auth = AuthSchema(db=db)
-    result = await LoginService.login(data=login_data, auth=auth)
-    return result
+    result = await LoginService.login(request=request,data=login_data, auth=auth)
+
+    log.info(f"用户{login_data.mobile}登录成功")
+
+    return SuccessResponse(data=result.model_dump(),msg="登录成功")
+
+

@@ -18,7 +18,7 @@ class AuthSchema(BaseModel):
 class LoginSchema(BaseModel):
     """登录请求模型"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    phone: Optional[str] = Field(default=None, description="手机号")
+    mobile: Optional[str] = Field(default=None, description="手机号")
     email: Optional[EmailStr] = Field(default=None, description="邮箱")
     password: str = Field(...,max_length=128,description="密码")
 

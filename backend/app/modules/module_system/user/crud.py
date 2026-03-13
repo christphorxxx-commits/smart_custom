@@ -10,10 +10,12 @@ from backend.app.modules.module_system.auth.schema import AuthSchema
 from .model import UserModel
 from .schema import UserCreateSchema, UserUpdateSchema
 
-
+from sqlalchemy import select
 
 class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
     """用户模块数据层"""
+
+
 
     def __init__(self, auth: AuthSchema) -> None:
         """
@@ -35,7 +37,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         返回:
         - UserModel | None: 用户对象或None
         """
-        from sqlalchemy import select
+
         stmt = select(self.model).where(self.model.mobile == mobile)
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -72,4 +74,29 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         result = await self.auth.db.execute(stmt)
         await self.auth.db.commit()
         return result.rowcount > 0
+
+    async def get_by_uuid_crud(self, uuid: str) -> UserModel | None:
+        """
+        根据UUID查询用户
+
+        参数:
+        - uuid (str): 用户UUID
+
+        返回:
+        - UserModel | None: 用户对象或None
+        """
+        from sqlalchemy import select
+        stmt = select(self.model).where(self.model.uuid == uuid)
+        result = await self.auth.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    # async def get_by_username_crud(self, username: str) -> UserModel | None:
+    #     """
+    #     根据用户名查询用户
+    #
+    #     :param
+    #     - username: 用户名
+    #
+    #     :return:
+    #     """
 
