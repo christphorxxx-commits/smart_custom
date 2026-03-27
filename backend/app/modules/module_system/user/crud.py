@@ -4,6 +4,7 @@ from typing import Sequence, Any
 from datetime import datetime
 
 from pydantic import EmailStr
+from sqlalchemy.orm import selectinload
 
 from backend.app.common.core.base_crud import CRUDBase
 from backend.app.modules.module_system.auth.schema import AuthSchema
@@ -38,7 +39,14 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         - UserModel | None: 用户对象或None
         """
 
-        stmt = select(self.model).where(self.model.mobile == mobile)
+        stmt = (
+            select(self.model)
+                .options(
+                selectinload(UserModel.created_by),
+                selectinload(UserModel.created_by)
+            )
+            .where(self.model.mobile == mobile)
+        )
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -53,7 +61,13 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         - UserModel | None: 用户对象或None
         """
         from sqlalchemy import select
-        stmt = select(self.model).where(self.model.email == email)
+        stmt = (select(self.model)
+                .options(
+                selectinload(UserModel.created_by),
+                selectinload(UserModel.created_by)
+            )
+            .where(self.model.email == email)
+        )
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 

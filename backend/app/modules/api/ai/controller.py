@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.common.core.core import llm
 from backend.app.common.response import StreamResponse
 from backend.app.common.core.dependencies import db_getter
-from backend.app.modules.ai.service import AIService
-from backend.app.modules.ai.schema import ChatQuerySchema, ChatResponse
+from backend.app.modules.api.ai.service import AIService
+from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.common.core.logger import log
 

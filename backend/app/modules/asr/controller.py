@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import APIRouter,HTTPException,WebSocket,Query,WebSocketDisconnect
 import uuid
-from backend.app.common.core.core import logger
+from backend.app.common.core.logger import log
 from backend.app.modules.asr.schema import ASRResult, ASRStartRequest
 from backend.app.modules.asr.service import ASRService
 

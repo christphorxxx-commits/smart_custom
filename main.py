@@ -7,7 +7,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.common.core.logger import log
-from backend.app.modules.module_system.user.controller import UserRouter
 
 # 加载环境变量（如果存在.env文件）
 try:
@@ -84,7 +83,7 @@ except ImportError as e:
 
 # 注册AI路由
 try:
-    from backend.app.modules.ai.controller import AIRouter
+    from backend.app.modules.api.ai.controller import AIRouter
     app.include_router(AIRouter, prefix="/api")
     log.info("AI路由已成功注册")
 except ImportError as e:

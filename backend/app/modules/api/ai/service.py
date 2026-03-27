@@ -1,10 +1,5 @@
-import logging
-import os
-import uuid
-from typing import AsyncGenerator, Any
-
 from backend.app.common.core.core import tongyillm
-from backend.app.modules.ai.schema import ChatQuerySchema
+from backend.app.modules.api.ai.schema import ChatQuerySchema
 
 # 配置日志
 from backend.app.common.core.logger import log

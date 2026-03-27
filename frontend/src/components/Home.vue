@@ -34,7 +34,28 @@
         <span class="new-chat-icon">+</span>
         <span v-if="!isSidebarCollapsed">新对话</span>
       </button>
-      
+
+      <!-- 快捷应用区域 -->
+      <div class="quick-apps" v-if="!isSidebarCollapsed">
+        <div class="section-header">
+          <span class="section-title">快捷应用</span>
+        </div>
+        <div class="app-grid">
+          <div
+            class="app-item"
+            v-for="app in quickApps"
+            :key="app.id"
+            @click="handleAppClick(app)"
+            :title="app.name"
+          >
+            <div class="app-icon" :style="{ background: app.color }">
+              {{ app.icon }}
+            </div>
+            <span class="app-name">{{ app.name }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 对话分组 -->
       <div class="chat-groups" v-if="!isSidebarCollapsed">
         <div class="group-header" @click="toggleGroups">
@@ -76,6 +97,14 @@
         </div>
       </div>
       
+      <!-- 应用中心按钮 -->
+      <div class="app-center-section" v-if="!isSidebarCollapsed">
+        <div class="app-center-btn" @click="handleAppCenter">
+          <span class="app-center-icon">🧩</span>
+          <span class="app-center-text">应用中心</span>
+        </div>
+      </div>
+
       <!-- 用户信息 -->
       <div class="user-section">
         <div class="user-info" @click="toggleUserMenu">
@@ -228,6 +257,16 @@ const recentChats = ref([
   { title: 'AI助手使用指南', time: '3天前' }
 ])
 
+// 快捷应用列表（后期从数据库获取）
+const quickApps = ref([
+  { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+  { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+  { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }
+])
+
 // 当前选中的对话
 const selectedChat = ref(0)
 
@@ -251,6 +290,18 @@ const toggleUserMenu = () => {
 // 对话项点击事件
 const handleChatClick = (index) => {
   selectedChat.value = index
+}
+
+// 快捷应用点击事件
+const handleAppClick = (app) => {
+  console.log('点击了快捷应用:', app.name)
+  // 后期可以根据app.id跳转到对应功能页面
+}
+
+// 应用中心点击事件
+const handleAppCenter = () => {
+  console.log('点击了应用中心')
+  // 后期可以跳转到应用中心页面
 }
 
 // 对话操作
@@ -329,12 +380,25 @@ const toggleTTS = () => {
 }
 
 // 退出登录
-const handleLogout = () => {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('refresh_token')
-  localStorage.removeItem('token_type')
-  localStorage.removeItem('user_info')
-  window.location.href = '/login'
+const handleLogout = async () => {
+  try {
+    // 调用后端退出接口
+    const token = localStorage.getItem('access_token')
+    await axios.post('/api/auth/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+  } catch (error) {
+    console.error('退出登录失败:', error)
+  } finally {
+    // 清除本地存储
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('token_type')
+    localStorage.removeItem('user_info')
+    window.location.href = '/login'
+  }
 }
 
 // Axios拦截器
@@ -520,6 +584,69 @@ axios.interceptors.response.use(
   border-color: var(--primary-color);
 }
 
+/* 快捷应用 */
+.quick-apps {
+  margin: 0 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.quick-apps .section-header {
+  margin-bottom: 12px;
+}
+
+.quick-apps .section-title {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-item:hover {
+  background: var(--hover-bg);
+  transform: translateY(-2px);
+}
+
+.app-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-name {
+  font-size: 11px;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 .new-chat-icon {
   font-size: 18px;
   font-weight: 600;
@@ -653,6 +780,43 @@ axios.interceptors.response.use(
 .chat-time {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* 应用中心 */
+.app-center-section {
+  margin: 0 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.app-center-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.app-center-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-center-icon {
+  font-size: 18px;
+}
+
+.app-center-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 /* 用户信息 */
