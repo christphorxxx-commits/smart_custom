@@ -75,6 +75,12 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     github_login: Optional[str] = Field(default=None, max_length=32, description="Github登录")
     wx_login: Optional[str] = Field(default=None, max_length=32, description="微信登录")
     qq_login: Optional[str] = Field(default=None, max_length=32, description="QQ登录")
+
+
+class ChangePasswordSchema(BaseModel):
+    """修改密码请求模型"""
+    old_password: str = Field(..., min_length=1, max_length=128, description="旧密码")
+    new_password: str = Field(..., min_length=1, max_length=128, description="新密码")
     # dept_name: str | None = Field(default=None, description='部门名称')
     # dept: CommonSchema | None = Field(default=None, description='部门')
     # positions: list[CommonSchema] | None = Field(default=[], description='岗位')

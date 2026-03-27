@@ -115,20 +115,28 @@ const form = reactive({
 const handleLogin = async () => {
   error.value = ''
   isLoading.value = true
-  
+
   try {
     const loginData = loginType.value === 'mobile'
       ? { mobile: form.mobile, password: form.password }
       : { email: form.email, password: form.password }
-    
+
     // 发送登录请求
     const response = await axios.post('/api/auth/login', loginData)
-    
+
     // 保存token
     localStorage.setItem('access_token', response.data.data.access_token)
     localStorage.setItem('refresh_token', response.data.data.refresh_token)
     localStorage.setItem('token_type', response.data.data.token_type)
-    
+
+    // 获取用户信息
+    const userInfoRes = await axios.get('/api/user/info', {
+      headers: {
+        Authorization: `${response.data.data.token_type} ${response.data.data.access_token}`
+      }
+    })
+    localStorage.setItem('user_info', JSON.stringify(userInfoRes.data.data))
+
     // 跳转到主页
     window.location.href = '/'
   } catch (err) {

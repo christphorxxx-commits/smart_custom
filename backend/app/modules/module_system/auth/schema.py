@@ -43,3 +43,8 @@ class JWTOutSchema(BaseModel):
     refresh_token: str = Field(..., min_length=1, description='刷新token')
     token_type: str = Field(default='Bearer', description='token类型')
     expires_in: int = Field(..., gt=0, description='过期时间(秒)')
+
+
+class RefreshTokenSchema(BaseModel):
+    """刷新令牌请求模型"""
+    refresh_token: str = Field(..., min_length=1, description='刷新token')

@@ -187,7 +187,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 // 侧边栏状态
@@ -205,9 +205,19 @@ const messages = ref([]) // 空对话，后续从后端获取
 
 // 用户信息
 const username = ref('用户')
-const userUUID = ref('user-uuid-123')
+const userUUID = ref('')
 const userInitial = computed(() => {
   return username.value.charAt(0).toUpperCase()
+})
+
+// 页面加载时获取用户信息
+onMounted(() => {
+  const userInfo = localStorage.getItem('user_info')
+  if (userInfo) {
+    const user = JSON.parse(userInfo)
+    username.value = user.name || user.username || '用户'
+    userUUID.value = user.uuid || ''
+  }
 })
 
 // 最近对话列表
@@ -323,6 +333,7 @@ const handleLogout = () => {
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')
   localStorage.removeItem('token_type')
+  localStorage.removeItem('user_info')
   window.location.href = '/login'
 }
 

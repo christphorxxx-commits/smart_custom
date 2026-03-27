@@ -1,8 +1,11 @@
 from backend.app.common.core.exceptions import CustomException
+from sqlalchemy import update
 from backend.app.common.utils.hash_bcrpy_util import PwdUtil
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.crud import UserCRUD
-from backend.app.modules.module_system.user.schema import UserRegisterSchema, UserOutSchema
+from backend.app.modules.module_system.user.model import UserModel
+from backend.app.modules.module_system.user.schema import UserRegisterSchema, UserOutSchema, ChangePasswordSchema
+from backend.app.common.core.logger import log
 
 
 class UserService:
@@ -66,5 +69,34 @@ class UserService:
         # if data.role_ids:
         #     await UserCRUD(auth).set_user_roles_crud(user_ids=[result.id], role_ids=data.role_ids)
         return UserOutSchema.model_validate(result).model_dump()
+
+    @classmethod
+    async def change_password_service(cls, auth: AuthSchema, user: UserModel, data: ChangePasswordSchema) -> dict:
+        """
+        修改密码
+
+        参数:
+        - auth (AuthSchema): 认证信息模型
+        - user (UserModel): 当前用户
+        - data (ChangePasswordSchema): 修改密码数据
+
+        返回:
+        - Dict: 操作结果
+        """
+        # 验证旧密码
+        if not PwdUtil.verify(data.old_password, user.password):
+            raise CustomException(msg="旧密码错误")
+
+        # 新密码加密
+        new_password_hash = PwdUtil.set_password_hash(data.new_password)
+
+        # 直接更新密码
+        stmt = update(UserModel).where(UserModel.id == user.id).values(password=new_password_hash)
+        await auth.db.execute(stmt)
+        await auth.db.commit()
+
+        log.info(f"用户 {user.username} 修改密码成功")
+
+        return {"message": "密码修改成功"}
 
 
