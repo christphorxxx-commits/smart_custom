@@ -7,6 +7,7 @@ from pwdlib import PasswordHash
 #     deprecated="auto",
 # )
 password_hash = PasswordHash.recommended()
+print(password_hash.hash("fafa23333."))
 
 class PwdUtil:
     password_hash = PasswordHash.recommended()

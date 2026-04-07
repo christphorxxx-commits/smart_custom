@@ -9,8 +9,9 @@ import os
 from dotenv import load_dotenv
 from psycopg2 import pool
 from sqlalchemy import Engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine,create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine, create_async_engine
 from backend.app.common.core.logger import log
+
 load_dotenv()
 
 # 设置Python默认编码（可选，用于兼容）
@@ -61,6 +62,7 @@ def create_async_engine_and_session(
         )
         return async_engine, async_session_factory
 
+
 async_engine, async_db_session = create_async_engine_and_session(settings.async_db_url)
 
 
@@ -76,10 +78,12 @@ class PGManager:
             port=os.getenv("PG_PORT"),
             options='-c client_encoding=utf8'
         )
+
     def _get_connection(self):
         conn = self.connection_pool.getconn()
         conn.autocommit = False
         return conn
+
 
 def get_db_conn():
     """get a database connection"""
@@ -99,7 +103,6 @@ def get_db_conn():
     except Exception as e:
         print(f"数据库连接失败: {str(e)}")
         raise  # 抛出异常让调用方处理
-
 
 
 def insert_face(name: str, embedding: np.ndarray, img_path: str = None):

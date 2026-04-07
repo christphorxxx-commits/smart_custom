@@ -100,7 +100,11 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         - UserModel | None: 用户对象或None
         """
         from sqlalchemy import select
-        stmt = select(self.model).where(self.model.uuid == uuid)
+        stmt = (select(self.model).where(self.model.uuid == uuid)
+        .options(
+            selectinload(self.model.created_by),
+            selectinload(self.model.updated_by)
+        ))
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 

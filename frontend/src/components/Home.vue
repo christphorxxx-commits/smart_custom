@@ -295,7 +295,8 @@ const handleChatClick = (index) => {
 // 快捷应用点击事件
 const handleAppClick = (app) => {
   console.log('点击了快捷应用:', app.name)
-  // 后期可以根据app.id跳转到对应功能页面
+  // 跳转到对应workflow聊天页面 /workflow/chat/{app.id}
+  window.location.href = `/workflow/chat/${app.id}`
 }
 
 // 应用中心点击事件

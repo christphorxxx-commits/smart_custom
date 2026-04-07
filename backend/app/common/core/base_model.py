@@ -97,25 +97,25 @@ class UserMixin(MappedBase):
     )
 
     @declared_attr
-    def created_by(cls) -> Mapped[Optional["UserModel"]]:
+    def created_by(self) -> Mapped[Optional["UserModel"]]:
         """
         创建人关联关系（延迟加载，避免循环依赖）
         """
         return relationship(
             "UserModel",
             lazy="selectin",
-            foreign_keys=lambda: cls.created_id,
+            foreign_keys=lambda: self.created_id,
             uselist=False
         )
 
     @declared_attr
-    def updated_by(cls) -> Mapped[Optional["UserModel"]]:
+    def updated_by(self) -> Mapped[Optional["UserModel"]]:
         """
         更新人关联关系（延迟加载，避免循环依赖）
         """
         return relationship(
             "UserModel",
             lazy="selectin",
-            foreign_keys=lambda: cls.updated_id,
+            foreign_keys=lambda: self.updated_id,
             uselist=False
         )

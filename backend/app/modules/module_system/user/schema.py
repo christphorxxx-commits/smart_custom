@@ -29,21 +29,22 @@ class CurrentUserUpdateSchema(BaseModel):
     #         return value
     #     raise ValueError("头像地址需为有效的HTTP/HTTPS URL")
 
+
 class CurrentUserSchema(BaseModel):
     name: Optional[str] = Field(default=None, max_length=32, description="名称")
     mobile: Optional[str] = Field(default=None, description="手机号")
     email: Optional[EmailStr] = Field(default=None, description="邮箱")
-    gender: Optional[str] = Field(default=None,description="性别")
+    gender: Optional[str] = Field(default=None, description="性别")
 
 
 class UserRegisterSchema(BaseModel):
-    name: Optional[str] = Field(default=None,max_length=32,description="名称")
-    mobile: Optional[str] = Field(default=None,description="手机号")
+    name: Optional[str] = Field(default=None, max_length=32, description="名称")
+    mobile: Optional[str] = Field(default=None, description="手机号")
     email: Optional[EmailStr] = Field(default=None, description="邮箱")
-    username: str = Field(...,max_length=32,description="账号")
-    password: str = Field(...,max_length=128,description="密码")
-    created_id: Optional[int] = Field(default=1,description="创建人id")
-    description: Optional[str] = Field(default=None, max_length= 255,description="备注")
+    username: str = Field(..., max_length=32, description="账号")
+    password: str = Field(..., max_length=128, description="密码")
+    created_id: Optional[int] = Field(default=1, description="创建人id")
+    description: Optional[str] = Field(default=None, max_length=255, description="备注")
 
     @field_validator("mobile")
     @classmethod
@@ -55,18 +56,21 @@ class UserRegisterSchema(BaseModel):
     def validate_username(cls, value: Optional[str] = None):
         return username_validator(value)
 
+
 class UserCreateSchema(CurrentUserUpdateSchema):
     """新增"""
-    model_config =ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
     username: Optional[str] = Field(default=None, max_length=32, description="用户名")
     password: Optional[str] = Field(default=None, max_length=128, description="密码哈希值")
+
 
 class UserUpdateSchema(UserCreateSchema):
     """更新"""
     model_config = ConfigDict(from_attributes=True)
 
     last_login: DateTimeStr | None = Field(default=None, description="最后登录时间")
+
 
 class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     """响应"""

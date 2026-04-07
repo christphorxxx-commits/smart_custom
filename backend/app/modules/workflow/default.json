@@ -1,0 +1,57 @@
+{
+  "nodes": [
+    {"id": "start", "type": "start"},
+    {
+      "id": "router",
+      "type": "router",
+      "config": {
+        "options": ["story", "joke", "poem"]
+      }
+    },
+    {
+      "id": "story_node",
+      "type": "llm",
+      "config": {
+        "prompt": "写一个故事：{input}"
+      }
+    },
+    {
+      "id": "joke_node",
+      "type": "llm",
+      "config": {
+        "prompt": "讲一个笑话：{input}"
+      }
+    },
+    {
+      "id": "poem_node",
+      "type": "llm",
+      "config": {
+        "prompt": "写一首诗：{input}"
+      }
+    }
+  ],
+  "edges": [
+    {"source": "start", "target": "router", "type": "normal"},
+    {
+      "source": "router",
+      "target": "story_node",
+      "type": "conditional",
+      "condition": "story"
+    },
+    {
+      "source": "router",
+      "target": "joke_node",
+      "type": "conditional",
+      "condition": "joke"
+    },
+    {
+      "source": "router",
+      "target": "poem_node",
+      "type": "conditional",
+      "condition": "poem"
+    },
+    {"source": "story_node", "target": "end", "type": "normal"},
+    {"source": "joke_node", "target": "end", "type": "normal"},
+    {"source": "poem_node", "target": "end", "type": "normal"}
+  ]
+}
