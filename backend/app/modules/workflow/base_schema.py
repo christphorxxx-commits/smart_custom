@@ -1,7 +1,7 @@
-from typing import Literal, Dict, Any, List, TypedDict, Annotated
 import operator
+from typing import Literal, Dict, Any, TypedDict, Annotated
+
 from pydantic import BaseModel
-from langgraph.graph import StateGraph, START, END
 
 
 class Node(BaseModel):
@@ -23,8 +23,3 @@ class State(TypedDict, total=False):
     variables: dict  # 节点输出（按节点存储）
     decision: str  # 路由决策（临时）
     output: str  # 最终输出
-
-
-class Workflow(BaseModel):
-    nodes: List[Node]
-    edges: List[Edge]
