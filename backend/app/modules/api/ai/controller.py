@@ -2,14 +2,12 @@ from typing import Union
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette import EventSourceResponse
 
 from backend.app.common.constant import RET
 from backend.app.common.core.dependencies import db_getter
 from backend.app.common.core.logger import log
-from backend.app.common.response import StreamResponse
 from backend.app.modules.api.ai.schema import ChatListResponse, ChatListResponseItem, ChatMessageListResponse, \
     ChatMessageResponseItem, BasicResponse
 from backend.app.modules.api.ai.schema import ChatQuerySchema
