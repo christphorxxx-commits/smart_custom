@@ -8,7 +8,7 @@ from typing import Optional, Callable
 import webrtcvad
 from pyaudio import PyAudio
 
-from backend.app.common.core.core import logger
+from backend.app.common.core.logger import log
 from backend.app.constant import AUDIO_FORMAT, AUDIO_CHANNELS, AUDIO_RATE, CHUNK_SIZE
 
 
@@ -21,7 +21,7 @@ class AudioRecorder:
             aggressiveness: VAD灵敏度 (0-3)，越高越激进
         """
         self.is_running = False
-        self.logger = logger
+        self.logger = log
         self.p: Optional[PyAudio] = None
         self.stream = None
         self.audio_frames = []

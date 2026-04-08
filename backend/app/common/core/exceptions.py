@@ -1,5 +1,6 @@
 from typing import Any
 
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
@@ -135,24 +136,24 @@ def handle_exception(app: FastAPI):
             f"[响应验证异常] {request.method} {request.url.path} | 错误信息: 响应数据格式错误 | 详情: {exc.errors()}")
         return ErrorResponse(msg="服务器响应格式错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data=exc.body)
 
-    # @app.exception_handler(SQLAlchemyError)
-    # async def SQLAlchemyExceptionHandler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
-    #     """
-    #     数据库异常处理器
-    #
-    #     参数:
-    #     - request (Request): 请求对象。
-    #     - exc (SQLAlchemyError): 数据库异常实例。
-    #
-    #     返回:
-    #     - JSONResponse: 包含错误信息的 JSON 响应。
-    #     """
-    #     error_msg = '数据库操作失败'
-    #     exc_type = type(exc).__name__
-    #
-    #     # 对于生产环境，返回通用错误消息
-    #     log.error(f"[数据库异常] {request.method} {request.url.path} | 错误类型: {exc_type} | 错误详情: {str(exc)}")
-    #     return ErrorResponse(msg=f'{error_msg}: {exc_type}', status_code=status.HTTP_400_BAD_REQUEST, data=str(exc))
+    @app.exception_handler(SQLAlchemyError)
+    async def SQLAlchemyExceptionHandler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
+        """
+        数据库异常处理器
+
+        参数:
+        - request (Request): 请求对象。
+        - exc (SQLAlchemyError): 数据库异常实例。
+
+        返回:
+        - JSONResponse: 包含错误信息的 JSON 响应。
+        """
+        error_msg = '数据库操作失败'
+        exc_type = type(exc).__name__
+
+        # 对于生产环境，返回通用错误消息
+        log.error(f"[数据库异常] {request.method} {request.url.path} | 错误类型: {exc_type} | 错误详情: {str(exc)}")
+        return ErrorResponse(msg=f'{error_msg}: {exc_type}', status_code=status.HTTP_400_BAD_REQUEST, data=str(exc))
 
     @app.exception_handler(ValueError)
     async def ValueExceptionHandler(request: Request, exc: ValueError) -> JSONResponse:
@@ -168,7 +169,7 @@ def handle_exception(app: FastAPI):
         """
         log.error(f"[值异常] {request.method} {request.url.path} | 错误信息: {str(exc)}")
         return ErrorResponse(msg=str(exc), status_code=status.HTTP_400_BAD_REQUEST)
-
+    #
     # @app.exception_handler(FieldValidationError)
     # async def FieldValidationExceptionHandler(request: Request, exc: FieldValidationError) -> JSONResponse:
     #     """

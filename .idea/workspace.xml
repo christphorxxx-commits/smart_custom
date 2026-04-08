@@ -419,7 +419,7 @@
       <workItem from="1774934939584" duration="14590000" />
       <workItem from="1775007729563" duration="22111000" />
       <workItem from="1775094658518" duration="39908000" />
-      <workItem from="1775612431353" duration="22614000" />
+      <workItem from="1775612431353" duration="23049000" />
     </task>
     <task id="LOCAL-00001" summary="第二次提交">
       <option name="closed" value="true" />
@@ -597,7 +597,23 @@
       <option name="project" value="LOCAL" />
       <updated>1775557434583</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="实现了对话记录存储在mongo中，前端chat接口的sse的后端实现（fastapi新版本引入，注意使用sse_starlette import EventSourceResponse）">
+      <option name="closed" value="true" />
+      <created>1775642347398</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1775642347398</updated>
+    </task>
+    <task id="LOCAL-00024" summary="实现了对话记录存储在mongo中，前端chat接口的sse的后端实现（fastapi新版本引入，注意使用sse_starlette import EventSourceResponse）">
+      <option name="closed" value="true" />
+      <created>1775642363879</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1775642363879</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -636,7 +652,8 @@
     <MESSAGE value="1" />
     <MESSAGE value="做了登录接口的请求测试" />
     <MESSAGE value="做了新的webui、实现Workflow接口访问" />
-    <option name="LAST_COMMIT_MESSAGE" value="做了新的webui、实现Workflow接口访问" />
+    <MESSAGE value="实现了对话记录存储在mongo中，前端chat接口的sse的后端实现（fastapi新版本引入，注意使用sse_starlette import EventSourceResponse）" />
+    <option name="LAST_COMMIT_MESSAGE" value="实现了对话记录存储在mongo中，前端chat接口的sse的后端实现（fastapi新版本引入，注意使用sse_starlette import EventSourceResponse）" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />

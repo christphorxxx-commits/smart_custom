@@ -20,67 +20,6 @@ from backend.app.common.core.dependencies import get_current_user
 from backend.app.modules.module_system.user.model import UserModel
 
 
-# @AIRouter.post("/chat", summary="智能对话", description="与智能助手进行对话")
-# async def chat(
-#         query: ChatQuerySchema,
-#         current_user: UserModel = Depends(get_current_user),
-#         db: AsyncSession = Depends(db_getter),
-# ) -> StreamingResponse:
-#     """
-#     智能对话接口
-#
-#     :param query: 聊天查询模型
-#     :param current_user: 当前登录用户
-#     :param db: 数据库会话
-#     :return:
-#     -StreamingResponse： 流式响应，每次返回一个聊天响应
-#     """
-#     # 创建AuthSchema实例，并设置用户信息
-#     auth = AuthSchema(db=db, user=current_user)
-#
-#     user_name = auth.user.username if auth.user else "未知用户"
-#     log.info(f"用户 {user_name} 发起智能对话: {query.message[:50]}...")
-#
-#     # 获取或创建聊天会话，并保存用户消息
-#     chat = await AIService.get_or_create_chat(
-#         chat_id=query.chat_id,
-#         user_id=str(current_user.id),
-#         first_message=query.message
-#     )
-#     # 保存用户提问
-#     await AIService.save_message(chat.id, "user", query.message)
-#     # 更新会话最后更新时间（AI响应失败时依然保持更新，保证聊天列表排序正确）
-#     await AIService.update_chat_time(chat.id)
-#
-#     # 新方式：直接调用service的异步生成器
-#     return StreamResponse(
-#         AIService.chat_stream_generator(query, chat.id),
-#         media_type="text/plain; charset=utf-8"
-#     )
-
-    # ========== 原代码保留（已注释） ==========
-    # async def generate_response():
-    #     try:
-    #         full_response = ""
-    #         # 流式生成并返回给前端，同时累积完整响应
-    #         for chunk in AIService.chat_service(query=query):
-    #             if chunk:
-    #                 full_response += chunk
-    #                 yield chunk.encode('utf-8') if isinstance(chunk, str) else chunk
-    #
-    #         # 流式输出完成后，保存AI完整回复到MongoDB
-    #         if full_response:
-    #             await AIService.save_message(chat.id, "assistant", full_response)
-    #             await AIService.update_chat_time(chat.id)
-    #
-    #     except Exception as e:
-    #         log.error(f"流式响应出错：{str(e)}", exc_info=True)
-    #         error_msg = f"抱歉，处理您的请求时出现了错误：{str(e)}"
-    #         yield error_msg.encode("utf-8")
-    #
-    # return StreamResponse(generate_response(), media_type="text/plain; charset=utf-8")
-
-
 @AIRouter.post("/chat", summary="智能对话(SSE)", description="与智能助手进行对话，服务器发送事件版本")
 async def chat_sse(
         query: ChatQuerySchema,
