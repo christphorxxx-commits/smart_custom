@@ -247,15 +247,51 @@ onMounted(() => {
     username.value = user.name || user.username || '用户'
     userUUID.value = user.uuid || ''
   }
+  // 加载最近对话列表
+  loadRecentChats()
 })
 
 // 最近对话列表
-const recentChats = ref([
-  { title: '智能语音识别测试', time: '刚刚' },
-  { title: '自然语言处理对话', time: '2小时前' },
-  { title: '实时响应测试', time: '昨天' },
-  { title: 'AI助手使用指南', time: '3天前' }
-])
+const recentChats = ref([])
+
+// 加载用户聊天列表
+const loadRecentChats = async () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await fetch('/api/ai/list?skip=0&limit=20', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        recentChats.value = data.data.map(item => ({
+          id: item.id,
+          title: item.title,
+          time: formatTime(item.updated_at)
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('加载聊天列表失败:', error)
+  }
+}
+
+// 格式化时间
+const formatTime = (dateStr) => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now - date
+  const minutes = Math.floor(diff / (1000 * 60))
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+  if (minutes < 60) return '刚刚'
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  return date.toLocaleDateString()
+}
 
 // 快捷应用列表（后期从数据库获取）
 const quickApps = ref([
@@ -313,16 +349,16 @@ const handleNewChat = () => {
 
 const handleSendMessage = async () => {
   if (!inputMessage.value.trim()) return
-  
+
   const newMessage = {
     role: 'user',
     content: inputMessage.value,
     time: new Date().toLocaleTimeString()
   }
-  
+
   messages.value.push(newMessage)
   inputMessage.value = ''
-  
+
   // 添加AI回复的占位符
   const aiResponse = {
     role: 'assistant',
@@ -331,9 +367,9 @@ const handleSendMessage = async () => {
   }
   const aiMessageIndex = messages.value.length
   messages.value.push(aiResponse)
-  
+
   try {
-    // 调用后端AI对话接口
+    // 调用后端AI对话接口(SSE)
     const response = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: {
@@ -342,30 +378,62 @@ const handleSendMessage = async () => {
       },
       body: JSON.stringify({
         message: newMessage.content,
-        session_id: selectedChat.value.toString()
+        chat_id: null
       })
     })
-    
+
     if (!response.ok) {
       throw new Error('API请求失败')
     }
-    
-    // 处理流式响应
+
+    // 处理SSE流式响应
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    
+    let buffer = ''
+    // 正则匹配 data='内容' 或 data="内容"
+    const dataRegex = /data\s*=\s*(['"])(.*?)\1/
+
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      
-      const chunk = decoder.decode(value, { stream: true })
-      // 更新AI回复内容
-      messages.value[aiMessageIndex].content += chunk
+
+      buffer += decoder.decode(value, { stream: true })
+
+      // 按行分割处理SSE
+      const lines = buffer.split('\n')
+      // 保留最后不完整的一行到下次处理
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        // 跳过空行
+        if (!line.trim()) continue
+
+        // 提取data字段
+        if (line.startsWith('data: ')) {
+          const dataLine = line.slice(6)
+          // 检查是否是结束标记
+          if (dataLine.trim() === '[DONE]') {
+            continue
+          }
+          // 匹配data='实际内容' 提取真实内容
+          const match = dataLine.match(dataRegex)
+          if (match) {
+            // 提取引号中的内容
+            messages.value[aiMessageIndex].content += match[2]
+          } else if (dataLine.trim()) {
+            // 如果没有匹配到，直接追加整行（兼容纯文本）
+            messages.value[aiMessageIndex].content += dataLine.trim()
+          }
+        }
+      }
     }
-    
+
   } catch (error) {
     console.error('AI对话失败:', error)
     messages.value[aiMessageIndex].content = `抱歉，处理您的请求时出现了错误：${error.message}`
+  } finally {
+    // 重新加载聊天列表，更新最新对话排序
+    loadRecentChats()
   }
 }
 
@@ -991,16 +1059,18 @@ axios.interceptors.response.use(
 .message {
   display: flex;
   gap: 12px;
+  margin-bottom: 20px;
   max-width: 80%;
 }
 
 .user-message {
-  align-self: flex-start;
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  margin-left: auto;
 }
 
 .assistant-message {
-  align-self: flex-end;
-  flex-direction: row-reverse;
+  align-self: flex-start;
 }
 
 .message-avatar {
@@ -1016,7 +1086,7 @@ axios.interceptors.response.use(
 }
 
 .user-message .message-avatar {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: #6B4EED;
   color: white;
 }
 
@@ -1033,20 +1103,22 @@ axios.interceptors.response.use(
 
 .message-text {
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .user-message .message-text {
-  background: white;
-  border: 1px solid var(--border-color);
+  background: #e6f4ff; /* 淡蓝色 - 用户消息 */
+  color: #1d2129;
 }
 
 .assistant-message .message-text {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  color: white;
+  background: #f5f5f5; /* 淡灰色 - AI回复 */
+  color: #1d2129;
 }
 
 .message-time {

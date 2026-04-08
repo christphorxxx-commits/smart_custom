@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from typing import Sequence, Any
-from datetime import datetime
-
 from pydantic import EmailStr
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from backend.app.common.core.base_crud import CRUDBase
@@ -11,7 +9,6 @@ from backend.app.modules.module_system.auth.schema import AuthSchema
 from .model import UserModel
 from .schema import UserCreateSchema, UserUpdateSchema
 
-from sqlalchemy import select
 
 class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
     """用户模块数据层"""

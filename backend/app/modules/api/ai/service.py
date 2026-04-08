@@ -1,8 +1,13 @@
+from collections.abc import AsyncIterable
+
 from bson import ObjectId
+from fastapi.sse import ServerSentEvent
+
 from backend.app.common.core.core import tongyillm
-from backend.app.modules.api.ai.crud import AICRUD
-from backend.app.modules.api.ai.schema import ChatQuerySchema, Chat, ChatItem
 from backend.app.common.core.logger import log
+from backend.app.modules.api.ai.crud import AICRUD
+from backend.app.modules.api.ai.schema import ChatQuerySchema
+from .model import Chat, ChatItem
 
 
 class AIService:
@@ -26,11 +31,11 @@ class AIService:
             log.error(f"AI对话出现问题: {e}", exc_info=True)
 
     @classmethod
-    async def chat_stream_generator(cls, query: ChatQuerySchema):
+    async def chat_stream_generator(cls, query: ChatQuerySchema, chat_id: ObjectId):
         """
         异步流式生成，保存AI回复到MongoDB后完成
         :param query: 聊天查询
-        :param chat_id: 会话ID
+        :param chat_id: 会话ID（已经在controller创建好）
         :yield: 每个token字节
         """
         from langchain_core.messages import HumanMessage
@@ -45,13 +50,41 @@ class AIService:
 
             # 流式完成，保存完整AI回复
             if full_response:
+                await cls.save_message(chat_id, "assistant", full_response)
+                await cls.update_chat_time(chat_id)
+
+        except Exception as e:
+            log.error(f"AI流式生成出错: {e}", exc_info=True)
+            error_msg = f"抱歉，处理您的请求时出现了错误：{str(e)}"
+            yield error_msg.encode("utf-8")
+
+    @classmethod
+    async def chat_service_sse(cls, query: ChatQuerySchema) -> AsyncIterable[ServerSentEvent]:
+        """
+        异步流式生成
+        :param query: 聊天查询
+        :param chat_id: 会话ID（已经在controller创建好）
+        """
+        from langchain_core.messages import HumanMessage
+        message = HumanMessage(content=query.message)
+        full_response = ""
+
+        try:
+            async for response in tongyillm.astream([message]):
+                if response.content:
+                    full_response += response.content
+                    yield ServerSentEvent(data=response.content,event="token")
+            # yield ServerSentEvent(raw_data="[DONE]", event="done")
+            # 流式完成，保存完整AI回复
+            if full_response:
                 await cls.save_message(ObjectId(query.chat_id), "assistant", full_response)
                 await cls.update_chat_time(ObjectId(query.chat_id))
 
         except Exception as e:
             log.error(f"AI流式生成出错: {e}", exc_info=True)
             error_msg = f"抱歉，处理您的请求时出现了错误：{str(e)}"
-            yield error_msg.encode("utf-8")
+            yield ServerSentEvent(data=error_msg, event="error")
+
 
     @classmethod
     async def get_or_create_chat(cls, chat_id: str | None, user_id: str, first_message: str) -> Chat:
@@ -82,6 +115,3 @@ class AIService:
     async def delete_chat(cls, chat_id: ObjectId, user_id: str):
         """删除会话"""
         return await AICRUD.delete_chat(chat_id, user_id)
-
-# for response in tongyillm.stream("你是谁"):
-#     print(response)

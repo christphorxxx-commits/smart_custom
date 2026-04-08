@@ -49,7 +49,7 @@ async def speech_to_text(
             data = await websocket.receive_bytes()
             asr_service.send_audio_frame(session_id, data)
     except WebSocketDisconnect:
-        print(f"Client disconnected: {session_id}")
+        log.error(f"Client disconnected: {session_id}")
     except Exception as e:
         await websocket.send_json({"error": f"Server error: {str(e)}"})
     finally:

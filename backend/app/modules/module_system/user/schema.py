@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
 
-from backend.app.common.core.base_schema import BaseSchema, UserBySchema, CommonSchema
+from backend.app.common.core.base_schema import BaseSchema, UserBySchema
 from backend.app.common.core.validator import mobile_validator, username_validator, DateTimeStr
 
 

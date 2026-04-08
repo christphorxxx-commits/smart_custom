@@ -1,19 +1,15 @@
 from typing import Union, Dict
 
-from fastapi import APIRouter, Depends, HTTPException,Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.common.core.dependencies import db_getter, get_current_user
-from backend.app.common.response import JSONResponse, SuccessResponse
 from backend.app.common.core.logger import log
-from backend.app.common.utils.hash_bcrpy_util import PwdUtil
-from backend.app.common.utils.jwt_util import JwtUtil
+from backend.app.common.response import JSONResponse, SuccessResponse
 from backend.app.modules.module_system.auth.schema import JWTOutSchema
+from .schema import AuthSchema, LoginSchema, RefreshTokenSchema
 from .service import LoginService
 from ..user.model import UserModel
-from ..user.service import UserService
-from ..user.crud import UserCRUD
-from .schema import AuthSchema, LoginSchema, RefreshTokenSchema
 
 AuthRouter = APIRouter(prefix="/auth", tags=["认证管理"])
 

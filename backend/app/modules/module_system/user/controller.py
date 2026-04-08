@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.common.core.dependencies import db_getter, get_current_user
-from backend.app.common.response import StreamingResponse,JSONResponse,SuccessResponse
 from backend.app.common.core.logger import log
+from backend.app.common.response import JSONResponse, SuccessResponse
+from .model import UserModel
 from .schema import UserRegisterSchema, UserOutSchema, ChangePasswordSchema
 from .service import UserService
-from .model import UserModel
 from ..auth.schema import AuthSchema
 
 UserRouter = APIRouter(prefix="/user",tags=["用户管理"])

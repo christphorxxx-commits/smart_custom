@@ -1,17 +1,33 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
-from .database import async_db_session
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from .database import async_db_session, mongo_db
 from fastapi import Request
 
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
-    """获取数据库会话连接
+    """获取SQL数据库会话连接
 
     返回:
-    - AsyncSession: 数据库会话连接
+    - AsyncSession: SQL数据库会话连接
     """
     async with async_db_session() as session:
         async with session.begin():
             yield session
+
+
+def mongo_getter() -> AsyncIOMotorDatabase:
+    """获取MongoDB数据库连接（依赖注入使用）
+
+    返回:
+    - AsyncIOMotorDatabase: MongoDB默认数据库连接
+    说明:
+    - 如果MongoDB未配置，会抛出 ValueError
+    - 在需要MongoDB的路由中使用: `db: AsyncIOMotorDatabase = Depends(mongo_getter)`
+    """
+    if mongo_db is None:
+        raise ValueError("MongoDB未配置或连接失败，请检查环境变量 MONGO_URI 和 MONGO_DB")
+    return mongo_db
+
 
 from fastapi import Depends, HTTPException
 from backend.app.common.utils.jwt_util import JwtUtil
@@ -27,7 +43,7 @@ async def get_current_user(
 
     参数:
     - request (Request): 请求对象
-    - db (AsyncSession): 数据库会话
+    - db (AsyncSession): SQL数据库会话
 
     返回:
     - UserModel: 当前登录用户对象

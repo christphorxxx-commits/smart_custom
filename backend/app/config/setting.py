@@ -49,6 +49,26 @@ class Settings(BaseSettings):
     DATABASE_PASSWORD: str = os.getenv('DATABASE_PASSWORD')
     DATABASE_NAME: str = os.getenv('DATABASE_NAME')
 
+    # MongoDB数据库连接（可选）
+    # 如果设置了 MONGO_URI，则直接使用该连接串
+    # 否则可以通过 MONGO_HOST/MONGO_PORT/MONGO_USER/MONGO_PASSWORD 自动构建连接串
+    MONGO_URI: str = os.getenv('MONGO_URI', '')
+    MONGO_DB: str = os.getenv('MONGO_DB', 'admin')
+    MONGO_HOST: str = os.getenv('MONGO_HOST', 'localhost')
+    MONGO_PORT: int = int(os.getenv('MONGO_PORT', '27017')) if os.getenv('MONGO_PORT') else 27017
+    MONGO_USER: str = os.getenv('MONGO_USER', '')
+    MONGO_PASSWORD: str = os.getenv('MONGO_PASSWORD', '')
+
+    @property
+    def mongo_uri(self) -> str:
+        """获取MongoDB连接URI，自动构建如果没有直接设置"""
+        if self.MONGO_URI:
+            return self.MONGO_URI
+        # 如果没有直接设置URI，从单个参数构建
+        if self.MONGO_USER and self.MONGO_PASSWORD:
+            return f"mongodb://{quote_plus(self.MONGO_USER)}:{quote_plus(self.MONGO_PASSWORD)}@{self.MONGO_HOST}:{self.MONGO_PORT}/"
+        return f"mongodb://{self.MONGO_HOST}:{self.MONGO_PORT}/"
+
     #JWT过期时间
     ACCESS_TOKEN_EXPIRE_TIME : int = 60 * 60 * 24 * 1                     # access_token过期时间(秒)1 天
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 24 * 7

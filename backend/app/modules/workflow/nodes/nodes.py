@@ -1,12 +1,10 @@
 # engine/nodes.py
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.runnables import RunnableConfig
-
-from backend.app.common.core.core import tongyillm as llm
-from backend.app.common.core.base_node import BaseNode
 from typing import Any, Dict, Iterator
 
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from backend.app.common.core.base_node import BaseNode
+from backend.app.common.core.core import tongyillm as llm
 from backend.app.modules.workflow.base_schema import Node
 
 

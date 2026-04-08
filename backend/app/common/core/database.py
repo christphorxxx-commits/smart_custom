@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 
-# db_pg.py
-import psycopg2
-import numpy as np
-import os
-
+from beanie import init_beanie
 from dotenv import load_dotenv
-from psycopg2 import pool
-from sqlalchemy import Engine
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo import MongoClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine, create_async_engine
+from backend.app.modules.api.ai.model import Chat,ChatItem
+
 from backend.app.common.core.logger import log
+
+# db_pg.py
 
 load_dotenv()
 
@@ -50,7 +51,7 @@ def create_async_engine_and_session(
             pool_use_lifo=settings.POOL_USE_LIFO,
         )
     except Exception as e:
-        logging.error(f'❌ 异步数据库连接失败: {e}')
+        log.error(f'❌ 异步数据库连接失败: {e}')
         raise
     else:
         async_session_factory = async_sessionmaker(
@@ -66,114 +67,103 @@ def create_async_engine_and_session(
 async_engine, async_db_session = create_async_engine_and_session(settings.async_db_url)
 
 
-class PGManager:
-    def __init__(self):
-        self.connection_pool = psycopg2.pool.SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,
-            host=os.getenv("PG_HOST"),
-            database=os.getenv("PG_DB"),
-            user=os.getenv("PG_USER"),
-            password=os.getenv("PG_PASSWORD"),
-            port=os.getenv("PG_PORT"),
-            options='-c client_encoding=utf8'
-        )
+# =========================
+# MongoDB config
+# =========================
 
-    def _get_connection(self):
-        conn = self.connection_pool.getconn()
-        conn.autocommit = False
-        return conn
-
-
-def get_db_conn():
-    """get a database connection"""
-    try:
-        # 显式指定连接编码为UTF8，并处理参数编码问题
-        conn = psycopg2.connect(
-            host=os.getenv("PG_HOST"),
-            database=os.getenv("PG_DB"),
-            user=os.getenv("PG_USER"),
-            password=os.getenv("PG_PASSWORD"),
-            port=os.getenv("PG_PORT"),
-            options='-c client_encoding=utf8'  # 强制客户端编码为UTF8
-        )
-        # 设置连接的编码
-        conn.set_client_encoding('UTF8')
-        return conn
-    except Exception as e:
-        print(f"数据库连接失败: {str(e)}")
-        raise  # 抛出异常让调用方处理
-
-
-def insert_face(name: str, embedding: np.ndarray, img_path: str = None):
-    """insert a human face embedding"""
-    conn = None
-    cur = None
-    try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-        # 确保字符串参数都是UTF8编码
-        name_utf8 = name.encode('utf-8').decode('utf-8') if name else None
-        img_path_utf8 = img_path.encode('utf-8').decode('utf-8') if img_path else None
-
-        cur.execute(
-            """
-            INSERT INTO face_embeddings (name, embedding, img_path)
-            VALUES (%s, %s, %s)
-            """,
-            (name_utf8, embedding.tolist(), img_path_utf8)
-        )
-        conn.commit()
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"插入人脸数据失败: {str(e)}")
-        raise
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
-def load_all_faces() -> dict:
+def create_mongo_client(
+        mongo_uri: str = settings.mongo_uri,
+        db_name: str = settings.MONGO_DB
+) -> tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]:
     """
-    load all human face embedding
-    return:
-        {
-            "zhangsan": np.ndarray(512,),
-            "lisi": np.ndarray(512,)
-        }
+    创建异步MongoDB客户端。
+
+    Args:
+        mongo_uri: MongoDB连接地址
+        db_name: 默认数据库名称
+
+    Returns:
+        tuple[AsyncIOMotorClient, AsyncIOMotorDatabase]: (全局客户端, 默认数据库)
     """
-    conn = None
-    cur = None
     try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-        cur.execute("SELECT name, embedding FROM face_embeddings")
-        rows = cur.fetchall()
 
-        face_db = {}
-        for name, emb in rows:
-            # 解码数据库返回的字符串为UTF8
-            name_utf8 = name.encode('utf-8').decode('utf-8') if name else None
-            face_db[name_utf8] = np.array(emb, dtype=np.float32)
-
-        return face_db
+        mongo_client = AsyncIOMotorClient(mongo_uri)
+        mongo_db = mongo_client[db_name]
+        log.info(f'✅ MongoDB连接成功: {mongo_uri}, db: {db_name}')
+        return mongo_client, mongo_db
     except Exception as e:
-        print(f"加载人脸数据失败: {str(e)}")
+        logging.error(f'❌ MongoDB连接失败: {e}')
         raise
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
 
+mongo_client, mongo_db = create_mongo_client()
+# 全局MongoDB客户端和默认数据库
+# 环境变量: MONGO_URI, MONGO_DB
+# try:
+#     mongo_client, mongo_db = create_mongo_client()
+# except Exception as e:
+#     # MongoDB可选，如果连接失败不影响PostgreSQL功能
+#     log.warning(f'⚠️ MongoDB未配置或连接失败: {e}。功能将不可用，但不影响主程序运行。')
+#     mongo_client = None
+#     mongo_db = None
 
-if __name__ == "__main__":
+def get_sync_mongo_client(
+        mongo_uri: str = settings.mongo_uri,
+        db_name: str = settings.MONGO_DB
+) -> tuple[MongoClient, object]:
+    """
+    创建同步MongoDB客户端（用于同步代码）
+
+    Args:
+        mongo_uri: MongoDB连接地址
+        db_name: 默认数据库名称
+
+    Returns:
+        tuple[MongoClient, Database]: (同步客户端, 默认数据库)
+    """
     try:
-        conn = get_db_conn()
-        print("PG connected successfully!")
-        conn.close()
+        # print(mongo_uri)
+        sync_client = MongoClient(mongo_uri)
+        sync_db = sync_client[db_name]
+        logging.info(f'✅ 同步MongoDB连接成功: {mongo_uri}, db: {db_name}')
+        return sync_client, sync_db
     except Exception as e:
-        print(f"连接测试失败: {e}")
+        logging.error(f'❌ 同步MongoDB连接失败: {e}')
+        raise
+
+
+# 如果需要使用同步Mongo，可以取消注释下面这行
+# sync_mongo_client, sync_mongo_db = get_sync_mongo_client()
+# sync_mongo_client = None
+# sync_mongo_db = None
+
+async def init_beanie_odm():
+    """初始化Beanie ODM，注册所有MongoDB文档模型"""
+    global mongo_client, mongo_db
+    if mongo_client is None or mongo_db is None:
+        log.warning("⚠️ MongoDB未连接，跳过Beanie初始化")
+        return
+
+    document_models = [
+        Chat,
+        ChatItem
+    ]
+
+    # 兼容性补丁：兼容 motor 3.x + Beanie
+    # 1. 让 AsyncIOMotorDatabase.client 成为属性直接返回客户端
+    #    motor 3.x 改变了 API，client 从属性变为方法，Beanie 还期望它是属性
+    from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
+    AsyncIOMotorDatabase.client = property(lambda self: self._client)
+    # 2. 添加 append_metadata 方法，Beanie 老版本期望这个方法存在
+    #    新版本 motor 不需要，所以加个空方法
+    def append_metadata(self, metadata):
+        pass
+    AsyncIOMotorClient.append_metadata = append_metadata
+
+    await init_beanie(
+        database=mongo_db,
+        document_models=document_models
+    )
+    log.info("✅ Beanie ODM 初始化完成")
+
+if __name__ == '__main__':
+    asyncio.run(init_beanie_odm())

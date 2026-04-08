@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import dashscope
 
-from backend.app.common.core.core import logger
+from backend.app.common.core.logger import log
 
 
 # app/asr/service.py

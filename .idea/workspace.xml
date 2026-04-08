@@ -79,10 +79,12 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Python.Demo.executor": "Run",
     "Python.Demo2.executor": "Run",
+    "Python.Mongo_test.executor": "Run",
     "Python.ai_core.executor": "Run",
     "Python.builder.executor": "Run",
     "Python.controller.executor": "Run",
     "Python.core.executor": "Run",
+    "Python.database.executor": "Run",
     "Python.fastapi_websocket.executor": "Run",
     "Python.hash_bcrpy_util.executor": "Run",
     "Python.main (1).executor": "Run",
@@ -171,7 +173,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Demo2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="Mongo_test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -180,13 +182,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Demo" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo2.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/Mongo_test.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -195,7 +197,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="database" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -204,37 +206,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/modules/workflow" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/common/core" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="D:\pycharmWorkspace\smart_custom\backend\app\modules\workflow\app.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="fastapi_websocket" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="smart_custom" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/fastapi_websocket.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/common/core/database.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -369,19 +347,19 @@
       <item itemvalue="npm.webui" />
       <item itemvalue="npm.front" />
       <item itemvalue="Python.main" />
+      <item itemvalue="Python.Mongo_test" />
+      <item itemvalue="Python.database" />
       <item itemvalue="Python.hash_bcrpy_util" />
-      <item itemvalue="Python.app" />
       <item itemvalue="Python.Demo" />
-      <item itemvalue="Python.Demo2" />
       <item itemvalue="Python.main (1)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.database" />
+        <item itemvalue="Python.Mongo_test" />
         <item itemvalue="Python.hash_bcrpy_util" />
         <item itemvalue="Python.main (1)" />
         <item itemvalue="Python.Demo" />
-        <item itemvalue="Python.app" />
-        <item itemvalue="Python.Demo2" />
       </list>
     </recent_temporary>
   </component>
@@ -440,7 +418,8 @@
       <workItem from="1774852357237" duration="5108000" />
       <workItem from="1774934939584" duration="14590000" />
       <workItem from="1775007729563" duration="22111000" />
-      <workItem from="1775094658518" duration="39193000" />
+      <workItem from="1775094658518" duration="39908000" />
+      <workItem from="1775612431353" duration="22614000" />
     </task>
     <task id="LOCAL-00001" summary="第二次提交">
       <option name="closed" value="true" />
@@ -610,7 +589,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774606838975</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="做了新的webui、实现Workflow接口访问">
+      <option name="closed" value="true" />
+      <created>1775557434583</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1775557434583</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -648,23 +635,26 @@
     <MESSAGE value="2026.3.12,完成主页以及注册页面设计" />
     <MESSAGE value="1" />
     <MESSAGE value="做了登录接口的请求测试" />
-    <option name="LAST_COMMIT_MESSAGE" value="做了登录接口的请求测试" />
+    <MESSAGE value="做了新的webui、实现Workflow接口访问" />
+    <option name="LAST_COMMIT_MESSAGE" value="做了新的webui、实现Workflow接口访问" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/smart_custom$controller.coverage" NAME="controller 覆盖结果" MODIFIED="1773397399996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
     <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1775554070890" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$controller.coverage" NAME="controller 覆盖结果" MODIFIED="1773397399996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
+    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1775641755531" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$path_conf.coverage" NAME="path_conf 覆盖结果" MODIFIED="1773284865366" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$fastapi_websocket.coverage" NAME="fastapi_websocket 覆盖结果" MODIFIED="1774861223642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$main__1_.coverage" NAME="main (1) 覆盖结果" MODIFIED="1775115215801" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
     <SUITE FILE_PATH="coverage/smart_custom$ai_core.coverage" NAME="ai_core 覆盖结果" MODIFIED="1767867668817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common" />
     <SUITE FILE_PATH="coverage/smart_custom$test_websocket.coverage" NAME="test_websocket 覆盖结果" MODIFIED="1767146749793" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$database.coverage" NAME="database 覆盖结果" MODIFIED="1775630618952" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/core" />
     <SUITE FILE_PATH="coverage/smart_custom$Demo.coverage" NAME="Demo 覆盖结果" MODIFIED="1775100439502" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
     <SUITE FILE_PATH="coverage/smart_custom$hash_bcrpy_util.coverage" NAME="hash_bcrpy_util 覆盖结果" MODIFIED="1775549421377" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/utils" />
     <SUITE FILE_PATH="coverage/smart_custom$core.coverage" NAME="core 覆盖结果" MODIFIED="1773397812138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/core" />
     <SUITE FILE_PATH="coverage/smart_custom$setting.coverage" NAME="setting 覆盖结果" MODIFIED="1773397497032" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$builder.coverage" NAME="builder 覆盖结果" MODIFIED="1775036792337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
     <SUITE FILE_PATH="coverage/smart_custom$service.coverage" NAME="service 覆盖结果" MODIFIED="1773302961908" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/module_system/auth" />
+    <SUITE FILE_PATH="coverage/smart_custom$Mongo_test.coverage" NAME="Mongo_test 覆盖结果" MODIFIED="1775627630515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$Demo2.coverage" NAME="Demo2 覆盖结果" MODIFIED="1775010437290" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

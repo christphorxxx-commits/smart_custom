@@ -1,8 +1,8 @@
-from typing import Optional, Any, Self
+from datetime import datetime
+from typing import Optional
 
 from pydantic import ConfigDict, Field, BaseModel, EmailStr, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 
 from backend.app.modules.module_system.user.model import UserModel
 

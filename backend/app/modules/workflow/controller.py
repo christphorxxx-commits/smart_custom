@@ -1,11 +1,10 @@
 import asyncio
 import json
 from typing import Dict
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from pydantic import BaseModel
 
-from backend.app.common.response import StreamResponse
 from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.workflow.app import App
 
@@ -14,10 +13,6 @@ workflow_storage: Dict[str, App] = {}
 
 WorkflowRouter = APIRouter(prefix="/workflow", tags=["Workflow"])
 
-
-class WorkflowCreateRequest(BaseModel):
-    """创建workflow请求"""
-    workflow_data: dict  # 整个workflow的json配置
 
 
 def register_workflow(app: App) -> str:

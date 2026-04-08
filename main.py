@@ -1,5 +1,6 @@
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,13 +16,34 @@ try:
 except ImportError:
     pass
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理：启动时初始化，关闭时清理"""
+    # 启动时：初始化Beanie ODM（MongoDB）
+    try:
+        from backend.app.common.core.database import init_beanie_odm
+
+        await init_beanie_odm()
+        log.info("✅ 应用启动初始化完成")
+    except Exception as e:
+        log.error(f"❌ 应用启动初始化失败: {e}")
+        log.warning("⚠️ MongoDB相关功能可能不可用，但不影响主程序运行")
+
+    yield  # 应用运行中
+
+    # 关闭时：这里不需要额外清理，MongoDB客户端会自动处理
+    log.info("🔻 应用关闭")
+
+
 # 创建FastAPI应用
 app = FastAPI(
     title="Smart Custom AST-TTS API",
     description="智能自定义语音合成和识别服务",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 
@@ -99,14 +121,15 @@ except ImportError as e:
     log.error(f"导入WORKFLOW模块失败: {e}")
     log.warning("请确保所有依赖已正确安装")
 
-# 注册全局异常处理器
-try:
-    from backend.app.common.core.exceptions import handle_exception
-    handle_exception(app)
-    log.info("全局异常处理器已成功注册")
-except ImportError as e:
-    log.error(f"导入异常处理器失败: {e}")
-    log.warning("请确保所有依赖已正确安装")
+# # 注册全局异常处理器
+# try:
+#     from backend.app.common.core.exceptions import handle_exception
+#     handle_exception(app)
+#     log.info("全局异常处理器已成功注册")
+# except ImportError as e:
+#     log.error(f"导入异常处理器失败: {e}")
+#     log.warning("请确保所有依赖已正确安装")
+
 
 if __name__ == "__main__":
     import uvicorn

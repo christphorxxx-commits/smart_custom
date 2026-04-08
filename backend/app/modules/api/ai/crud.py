@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from bson import ObjectId
 
-from backend.app.modules.api.ai.schema import Chat, ChatItem
+from .model import Chat,ChatItem
 from backend.app.common.core.logger import log
 
 
@@ -11,19 +11,23 @@ class AICRUD:
 
     @staticmethod
     async def get_or_create_chat(
-        session_id: Optional[str],
+        chat_id: Optional[str],
         user_id: str,
         first_message: str
     ) -> Chat:
         """获取或创建一个聊天会话"""
-        if session_id:
+        if chat_id:
             # 查找已存在的会话
-            chat = await Chat.get(ObjectId(session_id))
-            if chat and not chat.is_deleted and str(chat.user_id) == str(user_id):
-                # 更新更新时间
-                chat.updated_at = datetime.utcnow()
-                await chat.save()
-                return chat
+            try:
+                chat = await Chat.get(ObjectId(chat_id))
+                if chat and not chat.is_deleted and str(chat.user_id) == str(user_id):
+                    # 更新更新时间
+                    chat.updated_at = datetime.utcnow()
+                    await chat.save()
+                    return chat
+            except Exception:
+                # chat_id 格式不正确或不存在，创建新会话
+                pass
 
         # 创建新会话，标题自动取第一条消息前20个字
         title = first_message[:20] + ("..." if len(first_message) > 20 else "")
