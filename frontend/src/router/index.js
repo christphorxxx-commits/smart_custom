@@ -5,6 +5,7 @@ import Login from '../components/Login.vue'
 import Register from '../components/Register.vue'
 import Home from '../components/Home.vue'
 import WorkflowChat from '../components/WorkflowChat.vue'
+import WorkflowEditorPage from '../pages/WorkflowEditorPage.vue'
 
 // 路由配置
 const routes = [
@@ -28,6 +29,12 @@ const routes = [
     path: '/workflow/chat/:id',
     name: 'WorkflowChat',
     component: WorkflowChat,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/workflow/editor',
+    name: 'WorkflowEditor',
+    component: WorkflowEditorPage,
     meta: { requiresAuth: true }
   },
   // 重定向到登录页

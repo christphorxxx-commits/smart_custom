@@ -300,7 +300,8 @@ const quickApps = ref([
   { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
   { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
   { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }
+  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
+  { id: 7, name: '工作流编排', icon: '⚙️', color: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)' }
 ])
 
 // 当前选中的对话
@@ -331,8 +332,13 @@ const handleChatClick = (index) => {
 // 快捷应用点击事件
 const handleAppClick = (app) => {
   console.log('点击了快捷应用:', app.name)
-  // 跳转到对应workflow聊天页面 /workflow/chat/{app.id}
-  window.location.href = `/workflow/chat/${app.id}`
+  if (app.id === 7) {
+    // 跳转到工作流编辑器
+    window.location.href = '/workflow/editor'
+  } else {
+    // 跳转到对应workflow聊天页面 /workflow/chat/{app.id}
+    window.location.href = `/workflow/chat/${app.id}`
+  }
 }
 
 // 应用中心点击事件
