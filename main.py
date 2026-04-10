@@ -133,16 +133,17 @@ except ImportError as e:
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # 从环境变量获取配置
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", 8000))
+    from backend.app.config.setting import settings
+
+    # 从设置获取配置，环境变量覆盖默认设置
+    host = os.getenv("HOST", settings.SERVER_HOST)
+    port = int(os.getenv("PORT", settings.SERVER_PORT))
     debug = os.getenv("DEBUG", "false").lower() == "true"
-    
+
     log.info(f"🌐 启动服务器: http://{host}:{port}")
     log.info(f"🌐 访问页面: http://localhost:{port}")
     log.info(f"📚 API文档: http://{host}:{port}/docs")
-    
+
     # 启动服务器
     uvicorn.run(
         "main:app",

@@ -5,7 +5,8 @@ from pydantic import Field, BaseModel
 
 from backend.app.common.utils.common_util import uuid4_str
 from backend.app.modules.workflow.base_schema import State, Node, Edge
-from backend.app.modules.workflow.nodes import LLMNode, RouterNode
+from backend.app.modules.workflow.nodes.LLMNode import LLMNode
+from backend.app.modules.workflow.nodes.RouterNode import RouterNode
 
 
 class App(BaseModel):

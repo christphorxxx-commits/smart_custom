@@ -361,8 +361,6 @@ const handleSend = async () => {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-    // 正则匹配 data='内容' 或 data="内容"
-    const dataRegex = /data\s*=\s*(['"])(.*?)\1/
 
     while (true) {
       const { done, value } = await reader.read()
@@ -386,14 +384,20 @@ const handleSend = async () => {
           if (dataLine.trim() === '[DONE]') {
             continue
           }
-          // 匹配data='实际内容' 提取真实内容
-          const match = dataLine.match(dataRegex)
-          if (match) {
-            // 提取引号中的内容
-            messages.value[assistantIndex].content += match[2]
-          } else if (dataLine.trim()) {
-            // 如果没有匹配到，直接追加整行（兼容纯文本）
-            messages.value[assistantIndex].content += dataLine.trim()
+          try {
+            // 直接JSON解析
+            const token = JSON.parse(dataLine)
+            messages.value[assistantIndex].content += token
+          } catch (e) {
+            // JSON解析失败，保持原有兼容逻辑
+            // 正则匹配 data='内容' 或 data="内容"
+            const dataRegex = /data\s*=\s*(['"])(.*?)\1/
+            const match = dataLine.match(dataRegex)
+            if (match) {
+              messages.value[assistantIndex].content += match[2]
+            } else if (dataLine.trim()) {
+              messages.value[assistantIndex].content += dataLine.trim()
+            }
           }
           scrollToBottom()
         }

@@ -46,13 +46,15 @@ async def create_chat(
     else:
         app = workflow_storage[app_id]
 
-    # 使用异步迭代，逐token输出，真正的流式响应
+    # 使用异步迭代，逐token输出，真正的流式响应（SSE格式）
     async def generate():
         async for event in app.astream_tokens({"input": query.message}):
             if event["type"] == "token":
-                yield event["token"].encode('utf-8')
+                # SSE 格式：data: "token"\n\n - 使用JSON编码避免引号问题
+                data = json.dumps(event["token"], ensure_ascii=False)
+                yield f"data: {data}\n\n".encode('utf-8')
 
-    return StreamResponse(generate(), media_type="text/plain; charset=utf-8")
+    return StreamResponse(generate(), media_type="text/event-stream; charset=utf-8")
 
 
 @WorkflowRouter.websocket("/stream/{app_id}")

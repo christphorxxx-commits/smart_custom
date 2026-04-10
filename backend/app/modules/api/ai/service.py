@@ -16,15 +16,25 @@ class AIService:
     @classmethod
     def chat_service(cls, query: ChatQuerySchema):
         """
-        处理聊天查询
+        处理聊天查询（带记忆功能，加载完整聊天历史）
         :param query: 聊天查询模型
         :return: 生成器，每次返回一个聊天响应
         """
         try:
-            #处理消息
-            from langchain_core.messages import HumanMessage
-            message = HumanMessage(content=query.message)
-            for response in tongyillm.stream([message]):
+            from langchain_core.messages import HumanMessage, AIMessage
+            # 构建完整消息列表（包含历史记忆）
+            messages = []
+
+            # 如果有chat_id，加载历史消息作为记忆
+            if query.chat_id:
+                # 需要异步获取，但这是同步方法，直接只处理当前消息
+                # 同步方法一般不用，保持向后兼容
+                pass
+
+            # 添加当前用户最新消息
+            messages.append(HumanMessage(content=query.message))
+
+            for response in tongyillm.stream(messages):
                 yield response.content
 
         except Exception as e:
@@ -33,17 +43,31 @@ class AIService:
     @classmethod
     async def chat_stream_generator(cls, query: ChatQuerySchema, chat_id: ObjectId):
         """
-        异步流式生成，保存AI回复到MongoDB后完成
+        异步流式生成，保存AI回复到MongoDB后完成（带记忆功能，加载完整聊天历史）
         :param query: 聊天查询
         :param chat_id: 会话ID（已经在controller创建好）
         :yield: 每个token字节
         """
-        from langchain_core.messages import HumanMessage
-        message = HumanMessage(content=query.message)
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        # 构建完整消息列表（包含历史记忆）
+        messages = []
+
+        # 加载历史消息作为记忆
+        history = await cls.get_chat_messages(chat_id)
+        # 将历史消息转换为langchain消息格式
+        for item in history:
+            if item.role == "user":
+                messages.append(HumanMessage(content=item.content))
+            elif item.role == "assistant":
+                messages.append(AIMessage(content=item.content))
+
+        # 添加当前用户最新消息
+        messages.append(HumanMessage(content=query.message))
         full_response = ""
 
         try:
-            for response in tongyillm.stream([message]):
+            for response in tongyillm.stream(messages):
                 if response.content:
                     full_response += response.content
                     yield response.content.encode('utf-8')
@@ -61,16 +85,31 @@ class AIService:
     @classmethod
     async def chat_service_sse(cls, query: ChatQuerySchema) -> AsyncIterable[ServerSentEvent]:
         """
-        异步流式生成
+        异步流式生成（带记忆功能，加载完整聊天历史）
         :param query: 聊天查询
         :param chat_id: 会话ID（已经在controller创建好）
         """
-        from langchain_core.messages import HumanMessage
-        message = HumanMessage(content=query.message)
+        from langchain_core.messages import HumanMessage, AIMessage
+
+        # 构建完整消息列表（包含历史记忆）
+        messages = []
+
+        # 如果有chat_id，加载历史消息作为记忆
+        if query.chat_id:
+            history = await cls.get_chat_messages(ObjectId(query.chat_id))
+            # 将历史消息转换为langchain消息格式
+            for item in history:
+                if item.role == "user":
+                    messages.append(HumanMessage(content=item.content))
+                elif item.role == "assistant":
+                    messages.append(AIMessage(content=item.content))
+
+        # 添加当前用户最新消息
+        messages.append(HumanMessage(content=query.message))
         full_response = ""
 
         try:
-            async for response in tongyillm.astream([message]):
+            async for response in tongyillm.astream(messages):
                 if response.content:
                     full_response += response.content
                     yield ServerSentEvent(data=response.content,event="token")

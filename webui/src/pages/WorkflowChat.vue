@@ -212,8 +212,6 @@ const handleSendMessage = async () => {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-    // 正则匹配 data='内容' 或 data="内容"
-    const dataRegex = /data\s*=\s*(['"])(.*?)\1/
 
     while (true) {
       const { done, value } = await reader.read()
@@ -237,13 +235,13 @@ const handleSendMessage = async () => {
           if (dataLine.trim() === '[DONE]') {
             continue
           }
-          // 匹配data='实际内容' 提取真实内容
-          const match = dataLine.match(dataRegex)
-          if (match) {
-            // 提取引号中的内容
-            messages.value[aiMessageIndex].content += match[2]
-          } else if (dataLine.trim()) {
-            // 如果没有匹配到，直接追加整行（兼容纯文本）
+          try {
+            // 直接JSON解析
+            const token = JSON.parse(dataLine)
+            messages.value[aiMessageIndex].content += token
+          } catch (e) {
+            // JSON解析失败，直接追加文本
+            console.warn('Failed to parse SSE token:', e)
             messages.value[aiMessageIndex].content += dataLine.trim()
           }
           scrollToBottom()
