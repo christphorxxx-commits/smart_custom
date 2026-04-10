@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find D:/pycharmWorkspace/smart_custom/frontend/src -type f -name *.vue -o -name *.js -o -name *.ts -o -name *.jsx -o -name *.tsx)",
+      "Bash(npm run:*)",
+      "Bash(mkdir -p ../frontend/src/components/WorkflowEditor)",
+      "Bash(mkdir -p ../frontend/src/composables)",
+      "Bash(mkdir -p ../frontend/src/pages)",
+      "Bash(cp -r src/components/WorkflowEditor/* ../frontend/src/components/WorkflowEditor/)",
+      "Bash(cp src/composables/useWorkflowEditor.js ../frontend/src/composables/)",
+      "Bash(cp src/pages/WorkflowEditorPage.vue ../frontend/src/pages/)"
+    ]
+  }
+}

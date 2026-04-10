@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python main.py)",
+      "Read(//d//**)",
+      "Bash(python -m app.modules.workflow.main)",
+      "Bash(python backend/app/modules/workflow/main.py)",
+      "Skill(update-config)",
+      "WebSearch",
+      "Bash(python -c \"from backend.app.modules.api.ai.controller import AIRouter; print\\(''Import OK''\\)\")",
+      "Bash(python -c \"from backend.app.modules.workflow.controller import WorkflowRouter; print\\(''Import OK''\\)\")",
+      "Bash(xargs grep:*)",
+      "Bash(python test_mongo_connection.py)",
+      "Bash(python backend/test_mongo_connection.py)",
+      "Bash(python Demo/Mongo_test.py)"
+    ]
+  }
+}
