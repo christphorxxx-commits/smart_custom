@@ -1,7 +1,8 @@
 from typing import List, Dict, Any
 
 from backend.app.modules.module_system.auth.schema import AuthSchema
-from .crud import AppCRUD
+from backend.app.modules.workflow.api.crud import AppCRUD
+from backend.app.modules.workflow.api.schema import AppInfoSchema
 
 
 class AppService:
@@ -15,17 +16,18 @@ class AppService:
         # 从PG查询可用应用
         apps = await AppCRUD.get_available_apps_for_user(auth, auth.user.id)
 
-        # 转换为字典返回
+        # 使用 AppInfoSchema 序列化后转字典返回
         result = []
         for app in apps:
-            result.append({
-                "id": app.id,
-                "app_id": app.app_id,
-                "name": app.name,
-                "description": app.description,
-                "icon": app.icon,
-                "type": app.type,
-                "is_public": app.is_public,
-            })
+            schema = AppInfoSchema(
+                id=app.id,
+                app_id=app.app_id,
+                name=app.name,
+                description=app.description,
+                icon=app.icon,
+                type=app.type,
+                is_public=app.is_public,
+            )
+            result.append(schema.model_dump())
 
         return result
