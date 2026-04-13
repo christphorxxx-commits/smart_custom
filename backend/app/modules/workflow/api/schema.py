@@ -46,7 +46,7 @@ class UpdateWorkflowSchema(BaseModel):
 
 
 class AppInfoQuerySchema(BaseModel):
-    """请求字段"""
+    """应用信息查询请求"""
     id: int
     app_id: str
     name: str
@@ -55,6 +55,14 @@ class AppInfoQuerySchema(BaseModel):
     type: str
     is_public: bool
 
+
 class AppInfoSchema(BaseModel):
-    """app信息返回字段"""
+    """应用信息返回字段"""
+    id: int
+    app_id: str
+    name: str
+    description: Optional[str]
+    icon: Optional[str]
+    type: str
+    is_public: bool
 
