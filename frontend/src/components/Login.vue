@@ -1,99 +1,99 @@
 <template>
   <div class="login-container">
-    <!-- 左侧品牌区域 -->
-    <div class="login-brand-section">
-      <div class="brand-content">
-        <div class="brand-logo">
-          <div class="logo-icon">🤖</div>
-        </div>
-        <h1 class="brand-title">智能AI助手</h1>
-        <p class="brand-description">智能语音交互平台</p>
-        <div class="brand-slogan">
-          让语音成为智能交互的新方式
-        </div>
-      </div>
-    </div>
-    
-    <!-- 右侧登录表单区域 -->
-    <div class="login-form-section">
+    <div class="login-wrapper">
       <div class="login-card">
+        <!-- Logo & Title -->
         <div class="login-header">
-          <h2>欢迎登录</h2>
-          <p>请输入您的账号信息</p>
+          <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <span class="logo-text">FastGPT</span>
+          </div>
+          <p class="subtitle">登录您的账号，开始AI对话</p>
         </div>
-        
+
+        <!-- Login Tabs -->
         <div class="login-tabs">
-          <button 
-            :class="['tab-btn', { active: loginType === 'mobile' }]"
-            @click="loginType = 'mobile'"
+          <button
+            :class="['tab-btn', { active: loginType === 'password' }]"
+            @click="loginType = 'password'"
           >
-            手机号登录
+            密码登录
           </button>
-          <button 
+          <button
             :class="['tab-btn', { active: loginType === 'email' }]"
             @click="loginType = 'email'"
           >
             邮箱登录
           </button>
         </div>
-        
+
+        <!-- Login Form -->
         <form @submit.prevent="handleLogin" class="login-form">
-          <div v-if="loginType === 'mobile'" class="form-group">
-            <label for="mobile">手机号</label>
-            <input
-              type="tel"
-              id="mobile"
-              v-model="form.mobile"
-              placeholder="请输入手机号"
-              class="form-input"
-              required
-            />
-          </div>
-          
-          <div v-else class="form-group">
-            <label for="email">邮箱</label>
-            <input
-              type="email"
-              id="email"
-              v-model="form.email"
-              placeholder="请输入邮箱"
-              class="form-input"
-              required
-            />
-          </div>
-          
           <div class="form-group">
-            <label for="password">密码</label>
+            <label v-if="loginType === 'password'">手机号</label>
+            <label v-else>邮箱</label>
+            <input
+              :type="loginType === 'password' ? 'tel' : 'email'"
+              v-model="form.account"
+              :placeholder="loginType === 'password' ? '请输入手机号' : '请输入邮箱'"
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>密码</label>
             <input
               type="password"
-              id="password"
               v-model="form.password"
               placeholder="请输入密码"
               class="form-input"
               required
             />
           </div>
-          
-          <div class="form-actions">
-            <button 
-              type="submit" 
-              class="login-btn"
-              :disabled="isLoading"
-            >
-              <span v-if="!isLoading">登录</span>
-              <span v-else class="loading">登录中...</span>
-            </button>
-            <div class="form-links">
-              <a href="#" class="forgot-password">忘记密码？</a>
-              <a href="/register" class="register">注册账号</a>
-            </div>
+
+          <div class="form-options">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="rememberMe" />
+              <span>记住登录</span>
+            </label>
+            <a href="#" class="forgot-link">忘记密码？</a>
           </div>
-          
+
+          <button
+            type="submit"
+            class="login-btn"
+            :disabled="isLoading"
+          >
+            <span v-if="!isLoading">登录</span>
+            <span v-else>
+              <span class="loading-spinner"></span>
+              登录中...
+            </span>
+          </button>
+
+          <div class="register-link">
+            还没有账号？<router-link to="/register">注册账号</router-link>
+          </div>
+
           <div v-if="error" class="error-message">
             {{ error }}
           </div>
         </form>
       </div>
+
+      <!-- Footer -->
+      <div class="login-footer">
+        <a href="#" target="_blank">使用条款</a>
+        <span>·</span>
+        <a href="#" target="_blank">隐私政策</a>
+      </div>
+    </div>
+
+    <!-- Background decoration -->
+    <div class="bg-decoration">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
     </div>
   </div>
 </template>
@@ -101,14 +101,16 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-const loginType = ref('mobile') // 'mobile' 或 'email'
+const router = useRouter()
+const loginType = ref('password')
 const isLoading = ref(false)
 const error = ref('')
+const rememberMe = ref(false)
 
 const form = reactive({
-  mobile: '',
-  email: '',
+  account: '',
   password: ''
 })
 
@@ -117,19 +119,18 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    const loginData = loginType.value === 'mobile'
-      ? { mobile: form.mobile, password: form.password }
-      : { email: form.email, password: form.password }
+    const loginData = loginType.value === 'password'
+      ? { mobile: form.account, password: form.password }
+      : { email: form.account, password: form.password }
 
-    // 发送登录请求
     const response = await axios.post('/api/auth/login', loginData)
 
-    // 保存token
+    // Save tokens
     localStorage.setItem('access_token', response.data.data.access_token)
     localStorage.setItem('refresh_token', response.data.data.refresh_token)
     localStorage.setItem('token_type', response.data.data.token_type)
 
-    // 获取用户信息
+    // Get user info
     const userInfoRes = await axios.get('/api/user/info', {
       headers: {
         Authorization: `${response.data.data.token_type} ${response.data.data.access_token}`
@@ -137,11 +138,11 @@ const handleLogin = async () => {
     })
     localStorage.setItem('user_info', JSON.stringify(userInfoRes.data.data))
 
-    // 跳转到主页
+    // Redirect to home
     window.location.href = '/'
   } catch (err) {
     error.value = err.response?.data?.msg || '网络错误，请稍后重试'
-    console.error('登录失败:', err)
+    console.error('Login failed:', err)
   } finally {
     isLoading.value = false
   }
@@ -149,327 +150,251 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* 千问紫色主题变量 */
-:root {
-  --qianwen-purple-primary: #6B4EED;
-  --qianwen-purple-light: #8B6EF0;
-  --qianwen-purple-dark: #5035CC;
-  --qianwen-purple-bg: linear-gradient(135deg, #6B4EED 0%, #8B6EF0 100%);
-  --qianwen-purple-border: #D4C5F9;
-  --qianwen-purple-shadow: rgba(107, 78, 237, 0.25);
-  --qianwen-white: #ff02fc;
-  --qianwen-gray-light: #f0f0f5;
-  --qianwen-gray: #888899;
-  --qianwen-gray-dark: #333344;
-}
-
-/* 全局样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: var(--qianwen-purple-bg);
-  overflow: hidden;
-}
-
-/* 左侧品牌区域 */
-.login-brand-section {
-  flex: 1;
-  background: rgba(180, 79, 175, 0.05);
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  flex-direction: column;
-  padding: 80px 60px;
-  min-width: 450px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   position: relative;
-  backdrop-filter: blur(10px);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.login-brand-section::before {
-  content: '';
+.bg-decoration {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(180, 79, 175, 0.1) 0%, transparent 50%);
+  z-index: 0;
   pointer-events: none;
 }
 
-.brand-content {
-  max-width: 450px;
-  color: var(--qianwen-white);
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: float 20s infinite ease-in-out;
+}
+
+.blob-1 {
+  width: 400px;
+  height: 400px;
+  background: #6366f1;
+  top: -100px;
+  left: -100px;
+}
+
+.blob-2 {
+  width: 350px;
+  height: 350px;
+  background: #8b5cf6;
+  bottom: -80px;
+  right: -80px;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
   position: relative;
   z-index: 1;
-}
-
-.brand-logo {
-  margin-bottom: 32px;
-}
-
-.logo-icon {
-  width: 80px;
-  height: 80px;
-  background: rgba(180, 79, 175, 0.2);
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(180, 79, 175, 0.3);
-}
-
-.brand-title {
-  font-size: 56px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  line-height: 1.1;
-  letter-spacing: -0.5px;
-}
-
-.brand-description {
-    font-size: 18px;
-    font-weight: 400;
-    opacity: 0.85;
-    line-height: 1.5;
-    margin-bottom: 24px;
-  }
-
-  .brand-slogan {
-    font-size: 16px;
-    font-weight: 500;
-    opacity: 0.75;
-    line-height: 1.4;
-    margin-bottom: 48px;
-    max-width: 400px;
-  }
-
-  /* 装饰元素 */
-  .login-brand-section::after {
-    content: '';
-    position: absolute;
-    bottom: 40px;
-    right: 60px;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-  .login-brand-section::before {
-    content: '';
-    position: absolute;
-    top: 60px;
-    left: 60px;
-    width: 150px;
-    height: 150px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-/* 右侧登录表单区域 */
-.login-form-section {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 60px;
-  background: transparent;
-  min-width: 500px;
-  position: relative;
-}
-
-.login-form-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
-  pointer-events: none;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
-  padding: 64px;
-  width: 100%;
-  max-width: 480px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  position: relative;
-  z-index: 1;
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .login-header {
-  margin-bottom: 48px;
   text-align: center;
+  margin-bottom: 32px;
 }
 
-.login-header h2 {
-  color: var(--qianwen-gray-dark);
-  font-size: 36px;
-  font-weight: 700;
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   margin-bottom: 12px;
-  letter-spacing: -0.3px;
 }
 
-.login-header p {
-  color: var(--qianwen-gray);
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.5;
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.logo-text {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
 }
 
 .login-tabs {
   display: flex;
-  margin-bottom: 40px;
-  gap: 32px;
-  border-bottom: 1px solid var(--qianwen-gray-light);
-  padding-bottom: 16px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 28px;
 }
 
 .tab-btn {
-  padding: 12px 0;
-  border: none;
-  background: none;
-  font-size: 16px;
-  color: var(--qianwen-gray);
-  cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
-  font-weight: 500;
   flex: 1;
-  text-align: center;
-}
-
-.tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: -17px;
-  left: 20%;
-  right: 20%;
-  height: 3px;
-  background: var(--qianwen-purple-primary);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-  border-radius: 2px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
-  color: var(--qianwen-purple-primary);
+  color: #334155;
 }
 
 .tab-btn.active {
-  color: var(--qianwen-purple-primary);
-  font-weight: 600;
-}
-
-.tab-btn.active::after {
-  transform: scaleX(1);
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .form-group label {
   font-size: 14px;
-  color: var(--qianwen-gray-dark);
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-weight: 500;
+  color: #334155;
 }
 
 .form-input {
-  padding: 16px 20px;
-  border: 1px solid var(--qianwen-gray-light);
-  border-radius: 12px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  background: var(--qianwen-white);
-  color: var(--qianwen-gray-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  background: white;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  outline: none;
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: var(--qianwen-purple-primary);
-  box-shadow: 0 0 0 3px rgba(107, 78, 237, 0.1);
-  background: var(--qianwen-white);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.form-actions {
-  margin-top: 16px;
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  cursor: pointer;
+}
+
+.forgot-link {
+  font-size: 14px;
+  color: #6366f1;
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
 }
 
 .login-btn {
-  width: 100%;
-  padding: 16px;
-  background: var(--qianwen-purple-primary);
-  color: var(--qianwen-white);
+  margin-top: 8px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.login-btn:hover:not(:disabled) {
-  background: var(--qianwen-purple-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 24px var(--qianwen-purple-shadow);
-}
-
-.login-btn:disabled {
-  background: var(--qianwen-gray-light);
-  color: var(--qianwen-gray);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.loading {
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-.loading::before {
-  content: '';
-  width: 18px;
-  height: 18px;
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: var(--qianwen-white);
+  border-top-color: white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -478,190 +403,73 @@ body {
   to { transform: rotate(360deg); }
 }
 
-.form-links {
-  display: flex;
-  justify-content: space-between;
+.register-link {
+  text-align: center;
   font-size: 14px;
+  color: #64748b;
+  margin-top: 8px;
 }
 
-.form-links a {
-  color: var(--qianwen-purple-primary);
-  text-decoration: none;
-  transition: all 0.3s ease;
+.register-link a,
+.register-link router-link {
+  color: #6366f1;
   font-weight: 500;
-  padding: 8px 0;
+  text-decoration: none;
 }
 
-.form-links a:hover {
-  color: var(--qianwen-purple-dark);
+.register-link a:hover,
+.register-link router-link:hover {
   text-decoration: underline;
 }
 
 .error-message {
-  background: #FEF2F2;
-  color: #DC2626;
-  padding: 14px 18px;
-  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
   font-size: 14px;
   text-align: center;
-  border: 1px solid #FECACA;
-  margin-top: 16px;
-  animation: fadeIn 0.3s ease;
+  border: 1px solid #fecaca;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .login-container {
-    flex-direction: column;
-  }
-  
-  .login-brand-section {
-    min-height: 40vh;
-    min-width: 100%;
-    padding: 60px 40px;
-  }
-  
-  .login-form-section {
-    min-width: 100%;
-    padding: 60px 40px;
-  }
-  
-  .brand-title {
-    font-size: 48px;
-  }
-  
-  .brand-description {
-    font-size: 16px;
-  }
-  
-  .login-header h2 {
-    font-size: 36px;
-  }
-  
-  .login-card {
-    max-width: 450px;
-  }
+.login-footer a {
+  color: #64748b;
+  text-decoration: none;
 }
 
-@media (max-width: 768px) {
-  .login-brand-section {
-    padding: 50px 30px;
-  }
-  
-  .login-form-section {
-    padding: 50px 30px;
-  }
-  
-  .brand-title {
-    font-size: 40px;
-  }
-  
-  .brand-description {
-    font-size: 15px;
-  }
-  
-  .login-header h2 {
-    font-size: 32px;
-  }
-  
-  .login-card {
-    padding: 48px;
-    max-width: 100%;
-  }
-  
-  .logo-icon {
-    width: 70px;
-    height: 70px;
-    font-size: 36px;
-  }
-  
-  .feature-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
-  
-  .feature-item {
-    font-size: 15px;
-  }
+.login-footer a:hover {
+  color: #6366f1;
 }
 
-@media (max-width: 480px) {
-  .login-brand-section {
-    padding: 40px 24px;
-  }
-  
-  .login-form-section {
-    padding: 40px 24px;
-  }
-  
-  .brand-title {
-    font-size: 32px;
-  }
-  
-  .brand-description {
-    font-size: 14px;
-  }
-  
-  .login-header h2 {
-    font-size: 28px;
-  }
-  
-  .login-card {
-    padding: 36px;
-  }
-  
-  .login-tabs {
-    gap: 24px;
-  }
-  
-  .form-input {
-    padding: 14px 16px;
-    font-size: 15px;
-  }
-  
-  .login-btn {
+/* Responsive */
+@media (max-width: 640px) {
+  .login-wrapper {
     padding: 16px;
-    font-size: 16px;
   }
-  
-  .logo-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 32px;
+
+  .login-card {
+    padding: 32px 24px;
   }
-  
-  .feature-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+
+  .blob-1 {
+    width: 250px;
+    height: 250px;
   }
-  
-  .feature-item {
-    font-size: 14px;
-  }
-  
-  .brand-features {
-    gap: 16px;
-  }
-  
-  .brand-description {
-    margin-bottom: 32px;
-  }
-  
-  .brand-logo {
-    margin-bottom: 24px;
+
+  .blob-2 {
+    width: 200px;
+    height: 200px;
   }
 }
 </style>

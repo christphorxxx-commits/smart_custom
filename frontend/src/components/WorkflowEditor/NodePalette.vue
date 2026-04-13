@@ -57,7 +57,8 @@ const nodeGroups = [
   }
 ]
 
-const getNodeColor = inject('getNodeColor')
+let getNodeColor = inject('getNodeColor')
+if (!getNodeColor) getNodeColor = () => '#6B4EED'
 
 function handleDragStart(event, type) {
   event.dataTransfer.setData('node-type', type)

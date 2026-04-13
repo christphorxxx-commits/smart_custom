@@ -20,12 +20,12 @@
     ></div>
 
     <div class="node-header" :style="{ backgroundColor: borderColor }">
-      <span class="node-title">{{ node.data.title || node.type }}</span>
+      <span class="node-title">{{ node.data?.title || node.type }}</span>
     </div>
 
     <div class="node-body">
       <!-- Show branch names for if node -->
-      <template v-if="node.type === 'if' && node.data.branches">
+      <template v-if="node.type === 'if' && node.data?.branches">
         <div v-for="(branch, index) in node.data.branches" :key="index" class="branch-label">
           {{ branch || `Branch ${index + 1}` }}
         </div>
@@ -36,7 +36,7 @@
     </div>
 
     <!-- Output ports - single for normal node, multiple for if -->
-    <template v-if="node.type === 'if' && node.data.branches">
+    <template v-if="node.type === 'if' && node.data?.branches">
       <div
         v-for="(branch, index) in node.data.branches"
         :key="index"
@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { ref, inject, computed } from 'vue'
 
 const props = defineProps({
   node: Object
@@ -68,21 +68,26 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'mousedown'])
 
-const selectedNodeId = inject('selectedNodeId')
-const getNodeColor = inject('getNodeColor')
-const startConnection = inject('startConnection')
-const completeConnection = inject('completeConnection')
+let selectedNodeId = inject('selectedNodeId')
+let getNodeColor = inject('getNodeColor')
+let startConnection = inject('startConnection')
+let completeConnection = inject('completeConnection')
+
+if (!selectedNodeId) selectedNodeId = ref(null)
+if (!getNodeColor) getNodeColor = () => '#6B4EED'
+if (!startConnection) startConnection = () => {}
+if (!completeConnection) completeConnection = () => {}
 
 const isSelected = computed(() => selectedNodeId.value === props.node.id)
 
 const borderColor = computed(() => getNodeColor(props.node.type))
 
 const hasMultipleOutputs = computed(() => {
-  return props.node.type === 'if' && props.node.data.branches && props.node.data.branches.length > 1
+  return props.node.type === 'if' && props.node.data?.branches && props.node.data.branches.length > 1
 })
 
 function getBranchPortY(index) {
-  if (!props.node.data.branches || props.node.data.branches.length === 0) {
+  if (!props.node.data?.branches || props.node.data.branches.length === 0) {
     return 50
   }
   const step = 100 / (props.node.data.branches.length + 1)

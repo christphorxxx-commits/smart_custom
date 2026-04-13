@@ -114,21 +114,21 @@ except ImportError as e:
 
 # 注册AI路由
 try:
-    from backend.app.modules.workflow.controller import WorkflowRouter
-    app.include_router(WorkflowRouter, prefix="/api")
+    from backend.app.modules.workflow.controller import AppRouter
+    app.include_router(AppRouter, prefix="/api")
     log.info("WORKFLOW路由已成功注册")
 except ImportError as e:
     log.error(f"导入WORKFLOW模块失败: {e}")
     log.warning("请确保所有依赖已正确安装")
 
-# # 注册全局异常处理器
-# try:
-#     from backend.app.common.core.exceptions import handle_exception
-#     handle_exception(app)
-#     log.info("全局异常处理器已成功注册")
-# except ImportError as e:
-#     log.error(f"导入异常处理器失败: {e}")
-#     log.warning("请确保所有依赖已正确安装")
+# 注册全局异常处理器
+try:
+    from backend.app.common.core.exceptions import handle_exception
+    handle_exception(app)
+    log.info("全局异常处理器已成功注册")
+except ImportError as e:
+    log.error(f"导入异常处理器失败: {e}")
+    log.warning("请确保所有依赖已正确安装")
 
 
 if __name__ == "__main__":

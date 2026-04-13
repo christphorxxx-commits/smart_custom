@@ -4,9 +4,10 @@ from langgraph.graph import StateGraph, START, END
 from pydantic import Field, BaseModel
 
 from backend.app.common.utils.common_util import uuid4_str
-from backend.app.modules.workflow.base_schema import State, Node, Edge
+from backend.app.modules.workflow.schema import State, Node, Edge
 from backend.app.modules.workflow.nodes.LLMNode import LLMNode
 from backend.app.modules.workflow.nodes.RouterNode import RouterNode
+from backend.app.modules.workflow.nodes.RetrieveNode import RetrieveNode
 
 
 class App(BaseModel):
@@ -30,6 +31,8 @@ class App(BaseModel):
                 self.node_instances[node_def.id] = LLMNode(node_def)
             elif node_def.type == "router":
                 self.node_instances[node_def.id] = RouterNode(node_def)
+            elif node_def.type == "retrieve":
+                self.node_instances[node_def.id] = RetrieveNode(node_def)
             else:
                 # start/end 不需要实例
                 self.node_instances[node_def.id] = None
@@ -43,6 +46,8 @@ class App(BaseModel):
                 current_node = LLMNode(node)
             elif node.type == "router":
                 current_node = RouterNode(node)
+            elif node.type == "retrieve":
+                current_node = RetrieveNode(node)
             else:
                 # start/end 不需要实际节点，由框架处理
                 current_node = lambda x: x
@@ -192,6 +197,18 @@ class App(BaseModel):
                 }
                 # 根据决策找下一个节点（App负责流程控制）
                 current_node_id = self._get_next_node_after_router(current_node_id, decision)
+
+            elif node_def.type == "retrieve":
+                # 知识库检索节点：调用node.__call__检索文档
+                update = node_instance(current_state)
+                current_state.update(update)
+                yield {
+                    "type": "node_complete",
+                    "node_id": current_node_id,
+                    "output": update
+                }
+                # 获取下一个节点（App负责流程控制）
+                current_node_id = self._get_next_node(current_node_id)
 
             else:
                 # 其他节点，直接继续

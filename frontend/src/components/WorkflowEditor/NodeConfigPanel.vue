@@ -134,9 +134,13 @@
 import { ref, watch, computed } from 'vue'
 import { inject } from 'vue'
 
-const selectedNode = inject('selectedNode')
-const updateNodeData = inject('updateNodeData')
-const deleteSelected = inject('deleteSelected')
+let selectedNode = inject('selectedNode')
+let updateNodeData = inject('updateNodeData')
+let deleteSelected = inject('deleteSelected')
+
+if (!selectedNode) selectedNode = ref(null)
+if (!updateNodeData) updateNodeData = () => {}
+if (!deleteSelected) deleteSelected = () => {}
 
 const localData = ref({})
 const jsonData = ref('')

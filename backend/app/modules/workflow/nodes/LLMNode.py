@@ -2,7 +2,7 @@ from typing import Dict, Any, Iterator
 
 from backend.app.common.core.base_node import BaseNode
 from backend.app.common.core.core import llm
-from backend.app.modules.workflow.base_schema import Node
+from backend.app.modules.workflow.schema import Node
 
 
 # ============ 类方式实现 ============

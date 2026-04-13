@@ -249,6 +249,8 @@ onMounted(() => {
   }
   // 加载最近对话列表
   loadRecentChats()
+  // 加载用户可用的应用列表
+  loadQuickApps()
 })
 
 // 最近对话列表
@@ -293,16 +295,50 @@ const formatTime = (dateStr) => {
   return date.toLocaleDateString()
 }
 
-// 快捷应用列表（后期从数据库获取）
-const quickApps = ref([
-  { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
-  { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
-  { id: 7, name: '工作流编排', icon: '⚙️', color: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)' }
-])
+// 快捷应用列表（从后端App表获取）
+const quickApps = ref([])
+
+// 加载用户可用的应用列表
+const loadQuickApps = async () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await fetch('/api/app/list', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        quickApps.value = data.data.map(item => ({
+          id: item.app_id,
+          name: item.name || item.app_name,
+          icon: item.icon || '🤖',
+          color: item.color || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+        }))
+        // 始终保留工作流编排入口在最后
+        quickApps.value.push({
+          id: 7,
+          name: '工作流编排',
+          icon: '⚙️',
+          color: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+        })
+      }
+    }
+  } catch (error) {
+    console.error('加载应用列表失败:', error)
+    // 加载失败时使用默认列表
+    quickApps.value = [
+      { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+      { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+      { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+      { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+      { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+      { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
+      { id: 7, name: '工作流编排', icon: '⚙️', color: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)' }
+    ]
+  }
+}
 
 // 当前选中的对话
 const selectedChat = ref(0)
@@ -334,7 +370,7 @@ const handleAppClick = (app) => {
   console.log('点击了快捷应用:', app.name)
   if (app.id === 7) {
     // 跳转到工作流编辑器
-    window.location.href = '/workflow/editor'
+    window.location.href = '/workflow/create'
   } else {
     // 跳转到对应workflow聊天页面 /workflow/chat/{app.id}
     window.location.href = `/workflow/chat/${app.id}`

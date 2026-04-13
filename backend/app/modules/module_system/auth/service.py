@@ -53,7 +53,7 @@ class LoginService:
     async def create_token_service(cls, user: UserModel)-> JWTOutSchema:
 
         #用户唯一id
-        user_uuid = user.uuid
+        user_uuid = user.user_id
         user_name = user.name
         #记录用户信息
         log.info(f"用户ID：{user.id}，用户名：{user_name}正在创建JWT令牌")

@@ -4,7 +4,7 @@
     <div class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
       <div class="sidebar-header">
         <div class="app-info" v-if="!isSidebarCollapsed">
-          <div class="app-icon" :style="{ background: appInfo.color }" v-if="appInfo">
+          <div class="app-icon" :style="{ background: appInfo?.color }" v-if="appInfo">
             {{ appInfo.icon }}
           </div>
           <div class="app-details">
@@ -116,7 +116,8 @@ import axios from 'axios'
 const route = useRoute()
 const router = useRouter()
 const chatMessagesRef = ref(null)
-const appId = route.params.id
+const pgAppId = route.params.id  // PG app table primary key
+const mongoAppId = ref(null)  // MongoDB app uuid for chat
 
 // State
 const isSidebarCollapsed = ref(false)
@@ -130,16 +131,6 @@ const username = ref('用户')
 const userInitial = computed(() => {
   return username.value.charAt(0).toUpperCase()
 })
-
-// Quick apps list to find current app info
-const quickApps = ref([
-  { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', description: '基于大语言模型的智能问答助手' },
-  { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '将文本转换为自然语音' },
-  { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', description: '专业文字转语音服务' },
-  { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', description: 'AI图像生成' },
-  { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', description: '代码编写与调试助手' },
-  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '多语言翻译服务' }
-])
 
 // Scroll to bottom of chat
 const scrollToBottom = () => {
@@ -163,6 +154,15 @@ const handleNewChat = () => {
 // Go back to home
 const goBack = () => {
   window.location.href = '/'
+}
+
+function getDefaultColor(type) {
+  const colors = {
+    ai: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    workflow: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)',
+    chat: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+  }
+  return colors[type] || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
 }
 
 // Send message
@@ -193,7 +193,7 @@ const handleSendMessage = async () => {
   try {
     // Streaming request to backend
     const token = localStorage.getItem('access_token')
-    const response = await fetch(`/api/workflow/chat/${appId}`, {
+    const response = await fetch(`/api/app/chat/${mongoAppId.value}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -259,7 +259,7 @@ const handleSendMessage = async () => {
 }
 
 // On mount
-onMounted(() => {
+onMounted(async () => {
   // Get user info
   const userInfo = localStorage.getItem('user_info')
   if (userInfo) {
@@ -267,260 +267,205 @@ onMounted(() => {
     username.value = user.name || user.username || '用户'
   }
 
-  // Find current app info
-  const parsedId = parseInt(appId)
-  const found = quickApps.value.find(a => a.id === parsedId)
-  if (found) {
-    appInfo.value = found
-  } else {
+  // Load app list and find current app info
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await fetch('/api/app/list', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        // Find current app in list by PG id
+        const currentPgId = parseInt(pgAppId)
+        const found = data.data.find(a => a.id === currentPgId)
+        if (found) {
+          appInfo.value = {
+            id: found.id,
+            name: found.name,
+            icon: found.icon || '🤖',
+            color: found.type === 'workflow'
+              ? 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+              : getDefaultColor(found.type),
+            description: found.description
+          }
+          mongoAppId.value = found.app_id
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载应用信息失败:', error)
     appInfo.value = {
-      id: parsedId,
-      name: `工作流 ${parsedId}`,
+      id: parseInt(pgAppId),
+      name: `工作流 ${pgAppId}`,
       icon: '🤖',
       color: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
       description: '自定义工作流对话'
     }
   }
 })
-
-// Axios interceptor for auth
-axios.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  error => {
-    return Promise.reject(error)
-  }
-)
-
-axios.interceptors.response.use(
-  response => {
-    return response
-  },
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('token_type')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
 </script>
 
 <style scoped>
-:root {
-  --primary-color: #6366f1;
-  --primary-hover: #4f46e5;
-  --background-color: #ffffff;
-  --sidebar-bg: #f7f8fa;
-  --text-primary: #1d2129;
-  --text-secondary: #86909c;
-  --border-color: #e5e7eb;
-  --hover-bg: #f2f3f5;
-  --user-message-bg: #e6f4ff;
-  --user-message-text: #1d2129;
-  --assistant-message-bg: #f7f8fa;
-  --assistant-message-text: #1d2129;
-}
-
 .workflow-chat-container {
   display: flex;
   height: 100vh;
-  background: var(--background-color);
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  width: 100vw;
+  background: #f8f9fa;
 }
 
-/* Sidebar */
 .sidebar {
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
-  width: 260px;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border-color);
-  flex-shrink: 0;
-  transition: all 0.3s ease;
 }
 
 .sidebar.collapsed {
-  width: 56px;
+  width: 50px;
 }
 
 .sidebar-header {
-  padding: 16px 12px;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .app-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1;
 }
 
 .app-icon {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: white;
   font-size: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .app-details h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #1f2937;
 }
 
 .toggle-btn {
   width: 32px;
   height: 32px;
-  padding: 0;
-  background: transparent;
   border: none;
+  background: #f3f4f6;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
 }
 
 .toggle-btn:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
-}
-
-.toggle-icon {
-  font-size: 14px;
+  background: #e5e7eb;
 }
 
 .sidebar-content {
   flex: 1;
-  padding: 16px 12px;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 .app-description {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #6b7280;
   line-height: 1.5;
-  margin-bottom: 20px;
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
 }
 
 .new-chat-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
   width: 100%;
+  padding: 10px;
   background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 8px;
+  cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .new-chat-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  background: var(--primary-hover);
+  opacity: 0.9;
 }
 
 .new-chat-icon {
   font-size: 16px;
-  font-weight: 600;
+  line-height: 1;
 }
 
 .sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid var(--border-color);
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
   width: 100%;
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  padding: 10px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
 }
 
 .back-btn:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  background: #e5e7eb;
 }
 
-/* Chat Area */
 .chat-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--background-color);
-  min-width: 0;
-  position: relative;
+  background: #f9fafb;
 }
 
 .chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 16px 24px;
-  background: var(--background-color);
-  border-bottom: 1px solid var(--border-color);
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.chat-title {
+.chat-header h2 {
+  margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
+  color: #1f2937;
 }
 
 .chat-messages {
   flex: 1;
-  overflow-y: auto;
   padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: relative;
+  overflow-y: auto;
 }
 
-/* Empty state */
 .empty-chat {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
 }
 
 .empty-icon {
@@ -529,97 +474,149 @@ axios.interceptors.response.use(
 }
 
 .empty-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #374151;
 }
 
 .empty-subtitle {
+  margin: 0;
   font-size: 14px;
-  color: var(--text-secondary);
 }
 
-/* Messages */
 .message {
   display: flex;
   gap: 12px;
+  margin-bottom: 24px;
   max-width: 80%;
 }
 
-.user-message {
-  align-self: flex-end;
+.message.user-message {
+  margin-left: auto;
   flex-direction: row-reverse;
 }
 
-.assistant-message {
-  align-self: flex-start;
-}
-
 .message-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
   flex-shrink: 0;
-}
-
-.user-message .message-avatar {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
-  color: white;
-}
-
-.assistant-message .message-avatar {
-  background: #f3f0ff;
-  color: var(--primary-color);
+  font-size: 16px;
 }
 
 .message-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex: 1;
 }
 
 .message-text {
   padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   line-height: 1.6;
-  word-wrap: break-word;
+  color: #374151;
   white-space: pre-wrap;
 }
 
-.user-message .message-text {
-  background: #e6f4ff; /* 淡蓝色 - 用户消息 */
-  color: #1d2129;
-}
-
-.assistant-message .message-text {
-  background: #f5f5f5; /* 淡灰色 - AI回复 */
-  color: #1d2129;
+.message.user-message .message-text {
+  background: var(--primary-color);
+  color: white;
 }
 
 .message-time {
   font-size: 12px;
-  color: var(--text-secondary);
-  padding: 0 4px;
+  color: #9ca3af;
+  margin-top: 4px;
 }
 
-/* Typing indicator */
-.typing {
+.message.user-message .message-time {
+  text-align: right;
+  color: #d1d5db;
+}
+
+.chat-input-area {
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.input-container {
+  position: relative;
   display: flex;
-  gap: 4px;
-  padding: 8px 12px;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 40px;
+  max-height: 200px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(107, 78, 237, 0.1);
+}
+
+.input-actions {
+  flex-shrink: 0;
+}
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--pride);
+  background: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.send-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.send-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.input-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
 }
 
 .typing span {
+  display: inline-block;
   width: 8px;
   height: 8px;
-  background: var(--text-secondary);
+  margin: 0 2px;
+  background: #9ca3af;
   border-radius: 50%;
   animation: typing 1.4s infinite ease-in-out both;
 }
@@ -632,146 +629,16 @@ axios.interceptors.response.use(
   animation-delay: -0.16s;
 }
 
+.typing span:nth-child(3) {
+  animation-delay: 0s;
+}
+
 @keyframes typing {
   0%, 80%, 100% {
     transform: scale(0);
   }
   40% {
     transform: scale(1);
-  }
-}
-
-/* Input area */
-.chat-input-area {
-  padding: 16px 24px 24px;
-  background: var(--background-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.input-container {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  background: var(--hover-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-  transition: all 0.2s ease;
-}
-
-.input-container:focus-within {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.chat-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 15px;
-  color: var(--text-primary);
-  resize: none;
-  min-height: 24px;
-  max-height: 120px;
-  font-family: inherit;
-  outline: none;
-}
-
-.chat-input::placeholder {
-  color: var(--text-secondary);
-}
-
-.input-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.send-btn {
-  width: 40px;
-  height: 40px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.send-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-  background: var(--primary-hover);
-}
-
-.send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.send-icon {
-  font-size: 16px;
-}
-
-.input-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
-  margin-top: 8px;
-}
-
-/* Scrollbar */
-.chat-messages::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    z-index: 1000;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .sidebar.collapsed {
-    transform: translateX(-100%);
-  }
-
-  .chat-header {
-    padding: 12px 16px;
-  }
-
-  .chat-messages {
-    padding: 16px;
-  }
-
-  .chat-input-area {
-    padding: 12px 16px 16px;
-  }
-
-  .message {
-    max-width: 90%;
   }
 }
 </style>

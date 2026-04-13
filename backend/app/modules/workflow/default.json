@@ -1,4 +1,8 @@
 {
+  "app_id": "",
+  "name": "智能分类创作",
+  "description": "根据用户输入自动分类，选择不同类型生成故事/笑话/诗歌",
+  "icon": "🤖",
   "nodes": [
     {"id": "start", "type": "start"},
     {
@@ -53,5 +57,6 @@
     {"source": "story_node", "target": "end", "type": "normal"},
     {"source": "joke_node", "target": "end", "type": "normal"},
     {"source": "poem_node", "target": "end", "type": "normal"}
-  ]
+  ],
+  "is_public": false
 }

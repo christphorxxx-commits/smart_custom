@@ -326,8 +326,11 @@ export function useWorkflowEditor() {
         connections.value = convertedConnections
       } else if (parsed.nodes && parsed.connections) {
         // Editor format
-        nodes.value = parsed.nodes
-        connections.value = parsed.connections
+        nodes.value = parsed.nodes.filter(n => n != null)
+        connections.value = parsed.connections.filter(c => c != null)
+      } else {
+        nodes.value = []
+        connections.value = []
       }
 
       // Update counters based on max ID found

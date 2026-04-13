@@ -35,11 +35,11 @@
       <!-- Connections layer (SVG) -->
       <svg class="connections-layer" :width="svgWidth" :height="svgHeight">
         <ConnectionLine
-          :connections="connections"
-          :selectedConnectionId="selectedConnectionId"
-          :isDrawingConnection="isDrawingConnection"
-          :connectionStart="connectionStart"
-          :connectionCurrentMouse="connectionCurrentMouse"
+          :connections="connections?.value || connections"
+          :selectedConnectionId="selectedConnectionId?.value || selectedConnectionId"
+          :isDrawingConnection="isDrawingConnection?.value || false"
+          :connectionStart="connectionStart?.value || connectionStart"
+          :connectionCurrentMouse="connectionCurrentMouse?.value || connectionCurrentMouse"
           @select-connection="selectConnection"
         />
       </svg>
@@ -47,7 +47,7 @@
       <!-- Nodes layer -->
       <div class="nodes-layer">
         <NodeComponent
-          v-for="node in nodes"
+          v-for="node in (nodes?.value || nodes).filter(n => n != null)"
           :key="node.id"
           :node="node"
           @mousedown="handleNodeMouseDown"
@@ -88,24 +88,43 @@ import ConnectionLine from './ConnectionLine.vue'
 
 const emit = defineEmits(['drop'])
 
-// Inject dependencies
-const nodes = inject('nodes')
-const connections = inject('connections')
-const viewport = inject('viewport')
-const selectedNodeId = inject('selectedNodeId')
-const selectedConnectionId = inject('selectedConnectionId')
-const isDrawingConnection = inject('isDrawingConnection')
-const connectionStart = inject('connectionStart')
-const connectionCurrentMouse = inject('connectionCurrentMouse')
-const addNode = inject('addNode')
-const updateNodePosition = inject('updateNodePosition')
-const selectNode = inject('selectNode')
-const selectConnection = inject('selectConnection')
-const clearSelection = inject('clearSelection')
-const updateConnectionMouse = inject('updateConnectionMouse')
-const cancelConnection = inject('cancelConnection')
-const panView = inject('panView')
-const zoomAt = inject('zoomAt')
+// Inject dependencies and handle null cases
+let nodes = inject('nodes')
+let connections = inject('connections')
+let viewport = inject('viewport')
+let selectedNodeId = inject('selectedNodeId')
+let selectedConnectionId = inject('selectedConnectionId')
+let isDrawingConnection = inject('isDrawingConnection')
+let connectionStart = inject('connectionStart')
+let connectionCurrentMouse = inject('connectionCurrentMouse')
+let addNode = inject('addNode')
+let updateNodePosition = inject('updateNodePosition')
+let selectNode = inject('selectNode')
+let selectConnection = inject('selectConnection')
+let clearSelection = inject('clearSelection')
+let updateConnectionMouse = inject('updateConnectionMouse')
+let cancelConnection = inject('cancelConnection')
+let panView = inject('panView')
+let zoomAt = inject('zoomAt')
+
+// Fallback defaults if inject returns null
+if (!nodes) nodes = ref([])
+if (!connections) connections = ref([])
+if (!viewport) viewport = { x: 0, y: 0, scale: 1 }
+if (!selectedNodeId) selectedNodeId = ref(null)
+if (!selectedConnectionId) selectedConnectionId = ref(null)
+if (!isDrawingConnection) isDrawingConnection = ref(false)
+if (!connectionStart) connectionStart = ref(null)
+if (!connectionCurrentMouse) connectionCurrentMouse = ref({ x: 0, y: 0 })
+if (!addNode) addNode = () => {}
+if (!updateNodePosition) updateNodePosition = () => {}
+if (!selectNode) selectNode = () => {}
+if (!selectConnection) selectConnection = () => {}
+if (!clearSelection) clearSelection = () => {}
+if (!updateConnectionMouse) updateConnectionMouse = () => {}
+if (!cancelConnection) cancelConnection = () => {}
+if (!panView) panView = () => {}
+if (!zoomAt) zoomAt = () => {}
 
 // State for dragging
 const isDraggingNode = ref(false)

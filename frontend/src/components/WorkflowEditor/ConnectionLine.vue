@@ -2,7 +2,7 @@
   <g>
     <!-- Existing connections -->
     <g
-      v-for="conn in connections"
+      v-for="conn in (props.connections || []).filter(c => c != null)"
       :key="conn.id"
       @click.stop="handleConnectionClick(conn.id)"
     >
@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { ref, inject } from 'vue'
 
 const props = defineProps({
   connections: Array,
@@ -49,9 +49,13 @@ const props = defineProps({
 
 const emit = defineEmits(['select-connection'])
 
-const nodes = inject('nodes')
-const getPortPosition = inject('getPortPosition')
-const selectConnection = inject('selectConnection')
+let nodes = inject('nodes')
+let getPortPosition = inject('getPortPosition')
+let selectConnection = inject('selectConnection')
+
+if (!nodes) nodes = ref([])
+if (!getPortPosition) getPortPosition = () => ({ x: 0, y: 0 })
+if (!selectConnection) selectConnection = () => {}
 
 function handleConnectionClick(connectionId) {
   selectConnection(connectionId)

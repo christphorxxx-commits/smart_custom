@@ -88,7 +88,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
 
     async def get_by_uuid_crud(self, uuid: str) -> UserModel | None:
         """
-        根据UUID查询用户
+        根据UUID查询用户 (兼容: uuid -> user_id)
 
         参数:
         - uuid (str): 用户UUID
@@ -97,7 +97,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         - UserModel | None: 用户对象或None
         """
         from sqlalchemy import select
-        stmt = (select(self.model).where(self.model.uuid == uuid)
+        stmt = (select(self.model).where(self.model.user_id == uuid)
         .options(
             selectinload(self.model.created_by),
             selectinload(self.model.updated_by)

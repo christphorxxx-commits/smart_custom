@@ -5,6 +5,8 @@ import uuid_utils
 from sqlalchemy import DateTime,String, Integer,Text, ForeignKey
 from sqlalchemy.orm import Mapped,mapped_column,DeclarativeBase, declared_attr, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from beanie import Document
+from pydantic import Field, BaseModel
 
 from backend.app.common.utils.common_util import uuid4_str
 
@@ -61,8 +63,8 @@ class ModelMixin(MappedBase):
 
     # 基础字段
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment='主键ID')
-    uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
-                                      comment='UUID全局唯一标识')
+    # uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
+    #                                   comment='UUID全局唯一标识')
     status: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="是否启用(0:启用 1:禁用)")
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注/描述")
     created_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False, comment='创建时间')
@@ -119,3 +121,33 @@ class UserMixin(MappedBase):
             foreign_keys=lambda: self.updated_id,
             uselist=False
         )
+
+
+# ============ MongoDB (Beanie) 基础模型 ============
+class BaseMongoDocument(Document):
+    """
+    MongoDB Beanie ODM 基础文档基类
+
+    所有存入MongoDB的文档都应该继承此类，提供通用管理字段
+    """
+
+    # 文档状态
+    is_deleted: bool = Field(default=False, description="是否软删除")
+    status: str = Field(default="active", description="文档状态: active/inactive")
+
+    # 创建和更新时间
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
+    updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
+
+    # 创建者信息（可选，用于权限控制）
+    created_by: Optional[str] = Field(default=None, description="创建人ID")
+    updated_by: Optional[str] = Field(default=None, description="更新人ID")
+
+    # 备注描述
+    description: Optional[str] = Field(default=None, description="备注描述")
+
+    class Settings:
+        # 启用软删除，beanie会自动过滤is_deleted=True的文档
+        # 如果需要查询已删除文档，可以使用 MyDoc.find(MyDoc.is_deleted == True)
+        name = None  # 子类必须覆盖设置集合名称
+        use_revision = False  # 关闭修订版本历史

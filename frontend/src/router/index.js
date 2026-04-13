@@ -32,8 +32,14 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/workflow/editor',
-    name: 'WorkflowEditor',
+    path: '/workflow/create',
+    name: 'WorkflowCreate',
+    component: WorkflowEditorPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/workflow/edit/:id',
+    name: 'WorkflowEdit',
     component: WorkflowEditorPage,
     meta: { requiresAuth: true }
   },

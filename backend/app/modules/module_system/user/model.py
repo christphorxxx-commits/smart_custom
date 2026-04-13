@@ -4,6 +4,7 @@ from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.common.core.base_model import ModelMixin, UserMixin
+from backend.app.common.utils.common_util import uuid4_str
 
 
 class UserModel(ModelMixin, UserMixin):
@@ -16,6 +17,8 @@ class UserModel(ModelMixin, UserMixin):
 
     username: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, comment="用户名/登录账号")
     password: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")  # ✅ 移除了 unique=True
+    user_id: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
+                                      comment='UUID全局唯一标识')
     name: Mapped[str] = mapped_column(String(32), nullable=False, comment="昵称")
     mobile: Mapped[Optional[str]] = mapped_column(String(11), unique=True, comment="手机号")
     email: Mapped[Optional[str]] = mapped_column(String(64), unique=True, comment="邮箱")

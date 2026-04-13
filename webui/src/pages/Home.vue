@@ -217,13 +217,52 @@ const formatTime = (dateStr) => {
   return date.toLocaleDateString()
 }
 
-// Quick apps
-const quickApps = ref([
-  { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' },
-  { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { id: 3, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' },
-  { id: 4, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' }
-])
+// Quick apps - loaded from backend
+const quickApps = ref([])
+
+// Load quick apps from backend
+const loadQuickApps = async () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await fetch('/api/app/list', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        // Map backend format to frontend format
+        quickApps.value = data.data.map(app => ({
+          id: app.app_id,  // app_id 就是去MongoDB查询用
+          name: app.name,
+          icon: app.icon || '🤖',
+          color: app.type === 'workflow'
+            ? 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+            : getDefaultColor(app.type)
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('加载应用列表失败:', error)
+    // Fallback default apps
+    quickApps.value = [
+      { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' },
+      { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+      { id: 3, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' },
+      { id: 4, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' }
+    ]
+  }
+}
+
+function getDefaultColor(type) {
+  const colors = {
+    ai: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    workflow: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)',
+    chat: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+  }
+  return colors[type] || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+}
 
 // Welcome suggestions
 const suggestions = ref([
@@ -293,6 +332,7 @@ const selectChat = async (chat) => {
 
 // Open workflow chat
 const openAppChat = (app) => {
+  // app.id is the pg id, app.app_id is the mongodb app_id
   window.location.href = `/workflow/chat/${app.id}`
 }
 
