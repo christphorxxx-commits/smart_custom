@@ -4,15 +4,14 @@
     @drop="handleDrop"
     @dragover.prevent="handleDragOver"
     @mousedown="handleCanvasMouseDown"
+    @mousemove="handleMouseMove"
+    @mouseup="handleMouseUp"
     @click="handleCanvasClick"
     @wheel.prevent="handleWheel"
   >
     <div
       class="canvas-content"
       :style="canvasTransform"
-      @mousemove="handleMouseMove"
-      @mouseup="handleMouseUp"
-      @mouseleave="handleMouseUp"
     >
       <!-- Grid background -->
       <svg class="grid-bg" :width="gridSize * 100" :height="gridSize * 100">
