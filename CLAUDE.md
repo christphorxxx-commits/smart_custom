@@ -127,7 +127,14 @@ cd frontend && npm install
   2. 在 `workflow/app.py` 添加 import
   3. 在 `_build_node_instances` 和 `compile` 方法中添加 case
 - **认证**: 所有工作流/对话接口都需要通过 `get_current_user` 依赖做 JWT 认证
-- **接口请求**：所有接口都分层处理，controller层、service层、crud层，schema中定义接口输入输出数据格式。
+- **接口请求**：所有接口都分层处理，controller层、service层、crud层，schema中定义接口输入输出数据格式
+- **API 响应格式**: 统一使用 `SuccessResponse` 和 `ErrorResponse`，都继承自 `JSONResponse`:
+  ```python
+  # 成功响应
+  return SuccessResponse(data=your_data, msg="success message")
+  # 失败响应
+  return ErrorResponse(msg="error message")
+  ```
 
 ## 代码组织规范
 
