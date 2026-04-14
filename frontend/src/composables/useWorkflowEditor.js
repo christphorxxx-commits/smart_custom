@@ -372,7 +372,7 @@ export function useWorkflowEditor() {
     const startX = 100
 
     // Do simple sequential horizontal layout by order in JSON
-    return backendNodes.map((node, index) => {
+    return backendNodes.filter(node => node != null).map((node, index) => {
       let editorType = node.type
       // Map backend node types to editor types
       if (editorType === 'router') editorType = 'if'
@@ -408,7 +408,7 @@ export function useWorkflowEditor() {
 
   // Convert backend edges to editor connections
   function convertBackendEdges(backendEdges) {
-    return backendEdges.map((edge, index) => ({
+    return backendEdges.filter(edge => edge != null).map((edge, index) => ({
       id: `conn_${index}`,
       sourceNodeId: edge.source,
       sourcePort: 'output',
