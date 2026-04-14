@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from backend.app.common.core.logger import log
 from backend.app.modules.module_system.auth.schema import AuthSchema
-from .model import App, AiApp
+from backend.app.modules.workflow.api.model import App, AiApp
 
 
 class AppCRUD:
@@ -126,7 +126,7 @@ class AppCRUD:
             return False, str(e)
 
     @staticmethod
-    async def list_public_workflows(
+    async def list_public_apps(
         skip: int = 0,
         limit: int = 20
     ) -> List[App]:

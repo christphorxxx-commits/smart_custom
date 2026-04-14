@@ -4,7 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from pydantic import Field, BaseModel
 
 from backend.app.common.utils.common_util import uuid4_str
-from backend.app.modules.workflow.schema import State, Node, Edge
+from backend.app.modules.workflow.api.schema import State, Node, Edge
 from backend.app.modules.workflow.nodes.LLMNode import LLMNode
 from backend.app.modules.workflow.nodes.RouterNode import RouterNode
 from backend.app.modules.workflow.nodes.RetrieveNode import RetrieveNode

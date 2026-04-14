@@ -47,7 +47,7 @@
       <!-- Nodes layer -->
       <div class="nodes-layer">
         <NodeComponent
-          v-for="node in (nodes?.value || nodes).filter(n => n != null)"
+          v-for="node in (Array.isArray(nodes?.value) ? nodes.value : Array.isArray(nodes) ? nodes : []).filter(n => n != null)"
           :key="node.id"
           :node="node"
           @mousedown="handleNodeMouseDown"

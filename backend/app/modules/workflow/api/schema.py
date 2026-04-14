@@ -3,6 +3,8 @@ from typing import Literal, Dict, Any, TypedDict, Annotated, Optional, List
 
 from pydantic import BaseModel, Field
 
+from backend.app.modules.workflow.api.model import AiApp
+
 
 class Node(BaseModel):
     id: str
@@ -58,11 +60,5 @@ class AppInfoQuerySchema(BaseModel):
 
 class AppInfoSchema(BaseModel):
     """应用信息返回字段"""
-    id: int
-    app_id: str
-    name: str
-    description: Optional[str]
-    icon: Optional[str]
-    type: str
-    is_public: bool
+    data : List[AiApp]
 

@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 
 from backend.app.common.core.base_node import BaseNode
 from backend.app.config.setting import settings
-from backend.app.modules.workflow.schema import Node
+from backend.app.modules.workflow.api.schema import Node
 
 
 class RetrieveNode(BaseNode):

@@ -9,7 +9,7 @@ class AppService:
     """应用业务逻辑层"""
 
     @staticmethod
-    async def get_available_apps(auth: AuthSchema) -> List[Dict[str, Any]]:
+    async def get_available_apps(auth: AuthSchema) -> AppInfoSchema:
         """获取当前用户可用的应用列表
         返回: 格式化后的应用信息列表
         """
@@ -17,17 +17,5 @@ class AppService:
         apps = await AppCRUD.get_available_apps_for_user(auth, auth.user.id)
 
         # 使用 AppInfoSchema 序列化后转字典返回
-        result = []
-        for app in apps:
-            schema = AppInfoSchema(
-                id=app.id,
-                app_id=app.app_id,
-                name=app.name,
-                description=app.description,
-                icon=app.icon,
-                type=app.type,
-                is_public=app.is_public,
-            )
-            result.append(schema.model_dump())
 
-        return result
+        return AppInfoSchema(data=apps)

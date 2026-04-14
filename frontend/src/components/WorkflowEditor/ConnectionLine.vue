@@ -2,7 +2,7 @@
   <g>
     <!-- Existing connections -->
     <g
-      v-for="conn in (props.connections || []).filter(c => c != null)"
+      v-for="conn in (Array.isArray(props.connections) ? props.connections : []).filter(c => c != null)"
       :key="conn.id"
       @click.stop="handleConnectionClick(conn.id)"
     >

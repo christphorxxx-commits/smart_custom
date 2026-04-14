@@ -114,7 +114,7 @@ except ImportError as e:
 
 # 注册AI路由
 try:
-    from backend.app.modules.workflow.controller import AppRouter
+    from backend.app.modules.workflow.api.controller import AppRouter
     app.include_router(AppRouter, prefix="/api")
     log.info("WORKFLOW路由已成功注册")
 except ImportError as e:

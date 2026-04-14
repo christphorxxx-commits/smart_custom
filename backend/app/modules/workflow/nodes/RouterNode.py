@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.app.common.core.base_node import BaseNode
 from backend.app.common.core.core import tongyillm as llm
-from backend.app.modules.workflow.schema import Node
+from backend.app.modules.workflow.api.schema import Node
 
 
 class RouterNode(BaseNode):

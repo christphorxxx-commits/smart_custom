@@ -142,11 +142,11 @@
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\ast_tts" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\workflow\api" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\workflow\nodes" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\api" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\common\core" />
-      <recent name="D:\pycharmWorkspace\smart_custom\backend\app\common" />
     </key>
   </component>
   <component name="RunManager" selected="Python.main">
@@ -356,9 +356,9 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.hash_bcrpy_util" />
         <item itemvalue="Python.database" />
         <item itemvalue="Python.Mongo_test" />
-        <item itemvalue="Python.hash_bcrpy_util" />
         <item itemvalue="Python.main (1)" />
         <item itemvalue="Python.Demo" />
       </list>
@@ -422,7 +422,7 @@
       <workItem from="1775094658518" duration="39908000" />
       <workItem from="1775612431353" duration="24903000" />
       <workItem from="1775713420980" duration="9157000" />
-      <workItem from="1775801339011" duration="3559000" />
+      <workItem from="1775801339011" duration="28997000" />
     </task>
     <task id="LOCAL-00001" summary="第二次提交">
       <option name="closed" value="true" />
@@ -648,7 +648,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775801474426</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="增加了记忆功能">
+      <option name="closed" value="true" />
+      <created>1775806235053</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1775806235053</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -691,12 +699,13 @@
     <MESSAGE value="删除了一定无用文件" />
     <MESSAGE value="定义了前端中画板的实现" />
     <MESSAGE value="增加webui" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加webui" />
+    <MESSAGE value="增加了记忆功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加了记忆功能" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
     <SUITE FILE_PATH="coverage/smart_custom$controller.coverage" NAME="controller 覆盖结果" MODIFIED="1773397399996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1775806125826" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1776076664511" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$path_conf.coverage" NAME="path_conf 覆盖结果" MODIFIED="1773284865366" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$fastapi_websocket.coverage" NAME="fastapi_websocket 覆盖结果" MODIFIED="1774861223642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$main__1_.coverage" NAME="main (1) 覆盖结果" MODIFIED="1775115215801" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
@@ -704,7 +713,7 @@
     <SUITE FILE_PATH="coverage/smart_custom$test_websocket.coverage" NAME="test_websocket 覆盖结果" MODIFIED="1767146749793" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$database.coverage" NAME="database 覆盖结果" MODIFIED="1775630618952" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/core" />
     <SUITE FILE_PATH="coverage/smart_custom$Demo.coverage" NAME="Demo 覆盖结果" MODIFIED="1775100439502" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
-    <SUITE FILE_PATH="coverage/smart_custom$hash_bcrpy_util.coverage" NAME="hash_bcrpy_util 覆盖结果" MODIFIED="1775549421377" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/utils" />
+    <SUITE FILE_PATH="coverage/smart_custom$hash_bcrpy_util.coverage" NAME="hash_bcrpy_util 覆盖结果" MODIFIED="1776072326781" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/utils" />
     <SUITE FILE_PATH="coverage/smart_custom$core.coverage" NAME="core 覆盖结果" MODIFIED="1773397812138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/core" />
     <SUITE FILE_PATH="coverage/smart_custom$setting.coverage" NAME="setting 覆盖结果" MODIFIED="1773397497032" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$builder.coverage" NAME="builder 覆盖结果" MODIFIED="1775036792337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />

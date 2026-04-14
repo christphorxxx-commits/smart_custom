@@ -1,23 +1,19 @@
-import asyncio
 import json
-from typing import Dict, List
+from typing import Dict
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
-from sqlalchemy import select
 
 from backend.app.common.core.dependencies import get_current_user, db_getter
-from backend.app.common.response import SuccessResponse, ErrorResponse
+from backend.app.common.response import SuccessResponse
 from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.model import UserModel
-from backend.app.modules.workflow.model import AiApp, App
+from backend.app.modules.workflow.api.model import App
 from backend.app.modules.workflow.app import App
-from backend.app.modules.workflow.crud import AppCRUD
-from backend.app.modules.workflow.service import AppService
-from backend.app.modules.workflow.schema import CreateWorkflowSchema, UpdateWorkflowSchema
-# from backend.app.common.core.db.session import async_session
+from backend.app.modules.workflow.api.crud import AppCRUD
+from backend.app.modules.workflow.api.service import AppService
 
 # 内存存储已创建的Workflow应用 {app_id: App}
 workflow_storage: Dict[str, App] = {}
@@ -66,104 +62,11 @@ async def create_chat(
 
     return StreamResponse(generate(), media_type="text/event-stream; charset=utf-8")
 
-#
-# @AppRouter.websocket("/stream/{app_id}")
-# async def stream_workflow(
-#     websocket: WebSocket,
-#     app_id: str,
-#     input: str = Query(...),
-# ):
-#     """
-#     WebSocket流式运行workflow
-#     - app_id: workflow应用ID
-#     - input: 用户输入
-#     - 服务端逐token推送事件:
-#       {"type": "token", "token": "text", "full_content": "...", "node_id": "..."}
-#       {"type": "node_complete", "node_id": "...", "output": {...}}
-#       {"type": "workflow_complete", "final_output": "...", "final_state": {...}}
-#       {"type": "error", "message": "error message"}
-#     """
-#     await websocket.accept()
-#
-#     # 检查app_id是否存在
-#     if app_id not in workflow_storage:
-#         await websocket.send_json({
-#             "type": "error",
-#             "message": f"Workflow app_id {app_id} not found"
-#         })
-#         await websocket.close()
-#         return
-#
-#     app = workflow_storage[app_id]
-#
-#     try:
-#         # 流式运行，逐个发送事件
-#         async for event in app.astream_tokens({"input": input}):
-#             await websocket.send_json(event)
-#             # 给WebSocket一点呼吸空间，避免拥塞
-#             await asyncio.sleep(0)
-#
-#         # 完成后可以关闭
-#         await asyncio.sleep(0)
-#
-#     except WebSocketDisconnect:
-#         # 客户端断开，正常退出
-#         pass
-#     except Exception as e:
-#         await websocket.send_json({
-#             "type": "error",
-#             "message": f"Server error: {str(e)}"
-#         })
-
-
-# @AppRouter.websocket("/create_and_stream")
-# async def create_and_stream(
-#     websocket: WebSocket,
-# ):
-#     """
-#     创建workflow并立即流式运行
-#     - 客户端先发送创建请求JSON: {"workflow_data": {...}, "input": "..."}
-#     - 服务端开始流式输出，和 /stream/{app_id} 一样的事件格式
-#     """
-#     await websocket.accept()
-#
-#     try:
-#         # 接收客户端发送的初始化数据
-#         data = await websocket.receive_text()
-#         init_data = json.loads(data)
-#         workflow_data = init_data["workflow_data"]
-#         input_text = init_data.get("input", "")
-#
-#         # 创建App对象
-#         app = App.model_validate(workflow_data)
-#         app_id = register_workflow(app)
-#
-#         # 返回app_id给客户端
-#         await websocket.send_json({
-#             "type": "created",
-#             "app_id": app_id
-#         })
-#         await asyncio.sleep(0)
-#
-#         # 开始流式运行
-#         async for event in app.astream_tokens({"input": input_text}):
-#             await websocket.send_json(event)
-#             await asyncio.sleep(0)
-#
-#     except WebSocketDisconnect:
-#         pass
-#     except Exception as e:
-#         await websocket.send_json({
-#             "type": "error",
-#             "message": f"Server error: {str(e)}"
-#         })
-
-
 @AppRouter.get("/list", summary="获取当前用户可用的应用列表")
 async def list_apps(
     current_user: UserModel = Depends(get_current_user),
     db : AsyncSession = Depends(db_getter),
-) -> SuccessResponse:
+) -> JSONResponse:
     """
     获取当前用户有权限可以使用的所有应用
 
