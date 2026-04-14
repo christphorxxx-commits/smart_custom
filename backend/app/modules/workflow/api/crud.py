@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+
+from beanie import SortDirection
 from bson import ObjectId
 from pydantic import Field
 from sqlalchemy import select
@@ -11,13 +13,6 @@ from backend.app.modules.workflow.api.model import App, AiApp
 
 class AppCRUD:
     """工作流应用数据访问层"""
-
-
-
-    @staticmethod
-    async def get_app_by_appid(app_id:str):
-        return App.find({"app_id": app_id})
-
     @staticmethod
     async def create_app(
         user_id: str,
@@ -73,7 +68,7 @@ class AppCRUD:
         """获取用户创建的所有工作流（分页）"""
         apps = await App.find(
             {"user_id": user_id, "is_deleted": False}
-        ).sort([("updated_at", -1)]).skip(skip).limit(limit).to_list()
+        ).sort([("updated_at", SortDirection.ASCENDING)]).skip(skip).limit(limit).to_list()
         return apps
 
     @staticmethod
@@ -165,7 +160,14 @@ class AppCRUD:
         app_id: str,
     ) -> Optional[App]:
         """根据app_id从MongoDB获取完整应用配置"""
+        # 兼容：文档可能没有 is_deleted 字段（旧数据）
         app = await App.find_one(
-            {"app_id": app_id, "is_deleted": False}
+            {
+                "app_id": app_id,
+                "$or": [
+                    {"is_deleted": False},
+                    {"is_deleted": {"$exists": False}}
+                ]
+            }
         )
         return app
