@@ -83,6 +83,21 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAppSchema]):
             "type": "workflow",
         }
         return await self.create(pg_data)
+
+    async def get_app_by_id_crud(self, app_id: int) -> Optional[AiApp]:
+        """
+        根据PG主键ID获取应用基本信息
+
+        参数:
+        - app_id (int): 应用PostgreSQL主键ID
+
+        返回:
+        - Optional[AiApp]: PG应用记录，不存在返回None
+        """
+        stmt = select(AiApp).where(AiApp.id == app_id)
+        result = await self.auth.db.execute(stmt)
+        return result.scalar_one_or_none()
+
 class AppMongoCRUD(BaseMongoCRUD[App]):
     """
     工作流应用数据访问层 (MongoDB)

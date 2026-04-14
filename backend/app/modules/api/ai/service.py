@@ -2,6 +2,7 @@ from collections.abc import AsyncIterable
 
 from bson import ObjectId
 from fastapi.sse import ServerSentEvent
+from langchain_core.messages import HumanMessage, AIMessage
 
 from backend.app.common.core.core import tongyillm
 from backend.app.common.core.logger import log
@@ -89,7 +90,6 @@ class AIService:
         :param query: 聊天查询
         :param chat_id: 会话ID（已经在controller创建好）
         """
-        from langchain_core.messages import HumanMessage, AIMessage
 
         # 构建完整消息列表（包含历史记忆）
         messages = []

@@ -131,15 +131,45 @@ const userInitial = computed(() => {
   return username.value.charAt(0).toUpperCase()
 })
 
-// Quick apps list to find current app info
-const quickApps = ref([
-  { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '基于大语言模型的智能问答助手' },
-  { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '将文本转换为自然语音' },
-  { id: 3, name: '文字转语音', icon: '📝', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', description: '专业文字转语音服务' },
-  { id: 4, name: 'AI绘画', icon: '🎨', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', description: 'AI图像生成' },
-  { id: 5, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', description: '代码编写与调试助手' },
-  { id: 6, name: '翻译助手', icon: '🌐', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '多语言翻译服务' }
-])
+// 获取应用信息
+const loadAppInfo = async () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await fetch(`/api/app/${appId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.data) {
+        appInfo.value = {
+          id: parseInt(appId),
+          name: data.data.name,
+          icon: data.data.icon,
+          type: data.data.type,
+          description: data.data.description,
+          app_id: data.data.app_id
+        }
+        // 保存app_id用于发送消息
+        currentAppUuid.value = data.data.app_id
+      }
+    }
+  } catch (error) {
+    console.error('加载应用信息失败:', error)
+    // 如果加载失败，使用占位信息
+    appInfo.value = {
+      id: parseInt(appId),
+      name: `工作流 ${appId}`,
+      icon: '🤖',
+      type: 'workflow',
+      description: '自定义工作流对话'
+    }
+  }
+}
+
+// 当前应用的 UUID（用于 chat API）
+const currentAppUuid = ref('')
 
 // Scroll to bottom of chat
 const scrollToBottom = () => {
@@ -200,9 +230,10 @@ const handleSendMessage = async () => {
   isLoading.value = true
 
   try {
-    // Streaming request to backend
+    // Streaming request to backend - use app_uuid (not PG id)
+    const chatAppId = currentAppUuid.value || appId
     const token = localStorage.getItem('access_token')
-    const response = await fetch(`/api/app/chat/${appId}`, {
+    const response = await fetch(`/api/app/chat/${chatAppId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -217,7 +248,7 @@ const handleSendMessage = async () => {
       throw new Error('API request failed')
     }
 
-    // Process streaming response
+    // Process SSE streaming response
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
 
@@ -226,7 +257,15 @@ const handleSendMessage = async () => {
       if (done) break
 
       const chunk = decoder.decode(value, { stream: true })
-      messages.value[aiMessageIndex].content += chunk
+      // Parse SSE format: each line is "data: tokenText\n\n"
+      const lines = chunk.split('\n')
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const token = line.slice(6)
+          // Backend already outputs correct raw text, just append directly
+          messages.value[aiMessageIndex].content += token
+        }
+      }
       scrollToBottom()
     }
 
@@ -248,20 +287,8 @@ onMounted(() => {
     username.value = user.name || user.username || '用户'
   }
 
-  // Find current app info
-  const parsedId = parseInt(appId)
-  const found = quickApps.value.find(a => a.id === parsedId)
-  if (found) {
-    appInfo.value = found
-  } else {
-    appInfo.value = {
-      id: parsedId,
-      name: `工作流 ${parsedId}`,
-      icon: '🤖',
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      description: '自定义工作流对话'
-    }
-  }
+  // Load app info from backend
+  loadAppInfo()
 })
 
 // Axios interceptor for auth
@@ -527,12 +554,12 @@ axios.interceptors.response.use(
 }
 
 .user-message {
-  align-self: flex-start;
+  align-self: flex-end;
+  flex-direction: row-reverse;
 }
 
 .assistant-message {
-  align-self: flex-end;
-  flex-direction: row-reverse;
+  align-self: flex-start;
 }
 
 .message-avatar {
@@ -572,13 +599,14 @@ axios.interceptors.response.use(
 }
 
 .user-message .message-text {
-  background: white;
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
 }
 
 .assistant-message .message-text {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  color: white;
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .message-time {

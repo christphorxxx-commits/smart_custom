@@ -300,11 +300,44 @@ export function useWorkflowEditor() {
     viewport.scale = 1
   }
 
-  // Serialize workflow
+  // Serialize workflow - output directly in backend expected format
   function serialize() {
+    // Node type mapping: editor type -> backend type
+    const typeMap = {
+      'start': 'start',
+      'input': 'start',
+      'llm': 'llm',
+      'if': 'router',
+      'router': 'router',
+      'endpoint': 'end',
+      'output': 'end',
+      'end': 'end',
+      'retrieve': 'retrieve',
+    }
+
+    // Convert editor nodes to backend format
+    const convertedNodes = nodes.value.map(node => {
+      const backendType = typeMap[node.type] || node.type
+      return {
+        id: node.id,
+        type: backendType,
+        config: node.data || {}  // config comes from node.data
+      }
+    })
+
+    // Convert editor connections to backend edges format
+    const convertedEdges = connections.value.map(conn => {
+      return {
+        source: conn.sourceNodeId,
+        target: conn.targetNodeId,
+        type: 'normal',
+        condition: null
+      }
+    })
+
     return JSON.stringify({
-      nodes: nodes.value,
-      connections: connections.value,
+      nodes: convertedNodes,
+      connections: convertedEdges,
       version: 1
     }, null, 2)
   }

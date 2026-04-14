@@ -1,7 +1,7 @@
 from typing import Dict, Any, Iterator
 
 from backend.app.common.core.base_node import BaseNode
-from backend.app.common.core.core import llm
+from backend.app.common.core.core import tongyillm
 from backend.app.modules.workflow.api.schema import Node
 
 
@@ -11,7 +11,7 @@ class LLMNode(BaseNode):
         self.node_id = node.id
         self.node_type = node.type
         self.config = node.config
-        self.llm = llm
+        self.llm = tongyillm
 
     def stream(self, state: Dict[str, Any]) -> Iterator[tuple[str, str]]:
         """为Token级流式输出生成每个token

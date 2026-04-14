@@ -26,20 +26,20 @@ const routes = [
     component: Register
   },
   {
-    path: '/workflow/chat/:id',
-    name: 'WorkflowChat',
+    path: '/app/chat/:id',
+    name: 'AppChat',
     component: WorkflowChat,
     meta: { requiresAuth: true }
   },
   {
-    path: '/workflow/create',
-    name: 'WorkflowCreate',
+    path: '/app/create',
+    name: 'AppCreate',
     component: WorkflowEditorPage,
     meta: { requiresAuth: true }
   },
   {
-    path: '/workflow/edit/:id',
-    name: 'WorkflowEdit',
+    path: '/app/edit/:id',
+    name: 'AppEdit',
     component: WorkflowEditorPage,
     meta: { requiresAuth: true }
   },
