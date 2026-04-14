@@ -5,16 +5,18 @@ from pydantic import BaseModel, Field
 
 
 class Node(BaseModel):
-    id: str
-    type: Literal["start", "llm", "router", "end"]
-    config: Dict[str, Any] = {}
+    """工作流节点基础模型"""
+    id: str = Field(..., description="节点唯一ID")
+    type: Literal["start", "llm", "router", "end"] = Field(..., description="节点类型")
+    config: Dict[str, Any] = Field(default={}, description="节点配置字典")
 
 
 class Edge(BaseModel):
-    source: str
-    target: str
-    type: Literal["normal", "conditional"]
-    condition: str | None = None  # router用
+    """工作流边模型"""
+    source: str = Field(..., description="源节点ID")
+    target: str = Field(..., description="目标节点ID")
+    type: Literal["normal", "conditional"] = Field(..., description="边类型")
+    condition: str | None = Field(default=None, description="条件表达式（router节点专用）")
 
 
 class State(TypedDict, total=False):
@@ -24,34 +26,34 @@ class State(TypedDict, total=False):
     decision: str  # 路由决策（临时）
     output: str  # 最终输出
 # ============ Pydantic 请求模型 ============
-class CreateWorkflowSchema(BaseModel):
+class CreateAppSchema(BaseModel):
     """创建工作流请求"""
     name: str = Field(..., description="工作流名称")
     description: Optional[str] = Field(None, description="工作流描述")
     icon: Optional[str] = Field(None, description="图标emoji")
-    nodes: List[Dict[str, dict]] = Field(..., description="节点列表")
-    edges: List[Dict[str, dict]] = Field(..., description="边列表")
+    nodes: List[Dict[str, Any]] = Field(..., description="节点列表")
+    edges: List[Dict[str, Any]] = Field(..., description="边列表")
     is_public: bool = Field(default=False, description="是否公开")
 
 
-class UpdateWorkflowSchema(BaseModel):
+class UpdateAppSchema(BaseModel):
     """更新工作流请求"""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    nodes: Optional[List[Dict[str, dict]]] = None
-    edges: Optional[List[Dict[str, dict]]] = None
-    is_public: Optional[bool] = None
+    name: Optional[str] = Field(None, description="工作流名称")
+    description: Optional[str] = Field(None, description="工作流描述")
+    icon: Optional[str] = Field(None, description="图标emoji")
+    nodes: Optional[List[Dict[str, Any]]] = Field(None, description="节点列表")
+    edges: Optional[List[Dict[str, Any]]] = Field(None, description="边列表")
+    is_public: Optional[bool] = Field(None, description="是否公开")
 
 class AppInfoSchema(BaseModel):
     """应用信息返回字段"""
-    id: int
-    app_id: str
-    name: str
-    description: Optional[str]
-    icon: Optional[str]
-    type: str
-    is_public: bool
+    id: int = Field(..., description="PostgreSQL 主键ID")
+    app_id: str = Field(..., description="应用UUID，对应MongoDB中的app_id")
+    name: str = Field(..., description="应用名称")
+    description: Optional[str] = Field(None, description="应用描述")
+    icon: Optional[str] = Field(None, description="图标emoji")
+    type: str = Field(..., description="应用类型: workflow/ai/chat")
+    is_public: bool = Field(..., description="是否公开分享")
 
 
 class AppResponseSchema(BaseModel):

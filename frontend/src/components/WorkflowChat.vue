@@ -4,8 +4,8 @@
     <div class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
       <div class="sidebar-header">
         <div class="app-info" v-if="!isSidebarCollapsed">
-          <div class="app-icon" :style="{ background: app.color }" v-if="appInfo">
-            {{ app.icon }}
+          <div class="app-icon" :style="{ background: getDefaultColor(appInfo.type) }" v-if="appInfo">
+            {{ appInfo.icon || '🤖' }}
           </div>
           <div class="app-details">
             <h3 class="app-name">{{ appInfo?.name || '工作流对话' }}</h3>
@@ -165,6 +165,15 @@ const goBack = () => {
   window.location.href = '/'
 }
 
+function getDefaultColor(type) {
+  const colors = {
+    ai: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    workflow: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)',
+    chat: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+  }
+  return colors[type] || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
+}
+
 // Send message
 const handleSendMessage = async () => {
   if (!inputMessage.value.trim() || isLoading.value) return
@@ -193,7 +202,7 @@ const handleSendMessage = async () => {
   try {
     // Streaming request to backend
     const token = localStorage.getItem('access_token')
-    const response = await fetch(`/api/workflow/chat/${appId}`, {
+    const response = await fetch(`/api/app/chat/${appId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

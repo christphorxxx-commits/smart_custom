@@ -13,9 +13,9 @@ from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.model import UserModel
 from backend.app.modules.workflow.api.model import App
 from backend.app.modules.workflow.app import App
-from backend.app.modules.workflow.api.crud import AppCRUD
+from backend.app.modules.workflow.api.crud import AppCRUD, AppMongoCRUD
 from backend.app.modules.workflow.api.service import AppService
-from backend.app.modules.workflow.api.schema import AppResponseSchema
+from backend.app.modules.workflow.api.schema import AppResponseSchema, AppInfoSchema, CreateAppSchema
 
 # 内存存储已创建的Workflow应用 {app_id: App}
 workflow_storage: Dict[str, App] = {}
@@ -85,48 +85,10 @@ async def list_apps(
         msg="获取成功"
     )
 
-@AppRouter.get("/my/list", summary="获取当前用户的所有工作流")
-async def list_my_workflows(
-    skip: int = 0,
-    limit: int = 20,
-    current_user: UserModel = Depends(get_current_user)
-) -> JSONResponse:
-    """获取当前用户创建的所有工作流列表"""
-    apps = await AppCRUD.list_user_workflows(str(current_user.id), skip, limit)
-    total = await AppCRUD.count_user_workflows(str(current_user.id))
-    data = [
-        {
-            "id": str(app.id),
-            "app_id": app.app_id,
-            "name": app.name,
-            "description": app.description,
-            "icon": app.icon,
-            "is_public": app.is_public,
-            "created_at": app.created_at,
-            "updated_at": app.updated_at,
-            "version": app.version,
-            "nodes": app.nodes,
-            "edges": app.edges,
-        }
-        for app in apps
-    ]
-    return SuccessResponse(
-        data={
-            "list": data,
-            "total": total,
-        },
-        msg="获取成功"
-    )
-
 @AppRouter.get("/default", summary="获取默认示例工作流")
 async def get_default_workflow(
         db: AsyncSession = Depends(db_getter),
 ) -> JSONResponse:
-    """获取默认示例工作流配置，用于编辑器"加载默认"按钮"""
-    # from pathlib import Path
-    # default_json_path = Path(__file__).parent.parent / "default.json"
-    # with open(default_json_path, "r", encoding="utf-8") as f:
-    #     default_data = json.load(f)
     auth = AuthSchema(db=db)
     object_id = ObjectId("69dca6647d321630360ce492")
     default_app = await AppService.get_app_by_object_id(object_id)
@@ -151,4 +113,19 @@ async def get_default_workflow(
     return SuccessResponse(
         data=schema.model_dump(),
         msg="获取成功"
+    )
+
+@AppRouter.post("/save", description="保存画板中的app")
+async def save_app(
+        data: CreateAppSchema,
+        db: AsyncSession = Depends(db_getter),
+        current_user: UserModel = Depends(get_current_user),
+) -> JSONResponse:
+    """保存画板中的工作流应用"""
+    auth = AuthSchema(db=db, user=current_user)
+    result = await AppService.save_app(auth=auth, user=current_user, data=data)
+
+    return SuccessResponse(
+        data=result,
+        msg="保存成功"
     )

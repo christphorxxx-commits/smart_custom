@@ -5,7 +5,7 @@ from fastapi.sse import ServerSentEvent
 
 from backend.app.common.core.core import tongyillm
 from backend.app.common.core.logger import log
-from backend.app.modules.api.ai.crud import AICRUD
+from backend.app.modules.api.ai.crud import ChatMongoCRUD, ChatItemMongoCRUD
 from backend.app.modules.api.ai.schema import ChatQuerySchema
 from .model import Chat, ChatItem
 
@@ -128,29 +128,40 @@ class AIService:
     @classmethod
     async def get_or_create_chat(cls, chat_id: str | None, user_id: str, first_message: str) -> Chat:
         """获取或创建一个聊天会话"""
-        return await AICRUD.get_or_create_chat(chat_id, user_id, first_message)
+        chat_crud = ChatMongoCRUD()
+        return await chat_crud.get_or_create_chat_crud(chat_id, user_id, first_message)
 
     @classmethod
     async def save_message(cls, chat_id: ObjectId, role: str, content: str) -> ChatItem:
         """保存一条消息到对话记录"""
-        return await AICRUD.save_message(chat_id, role, content)
+        chat_item_crud = ChatItemMongoCRUD()
+        return await chat_item_crud.save_message_crud(chat_id, role, content)
 
     @classmethod
     async def update_chat_time(cls, chat_id: ObjectId):
         """更新会话最后更新时间"""
-        await AICRUD.update_chat_time(chat_id)
+        chat_crud = ChatMongoCRUD()
+        chat = await chat_crud.get_by_id(chat_id)
+        if chat:
+            from datetime import datetime
+            chat.updated_at = datetime.utcnow()
+            await chat.save()
 
     @classmethod
     async def list_user_chats(cls, user_id: str, skip: int, limit: int):
         """获取用户聊天列表"""
-        return await AICRUD.list_user_chats(user_id, skip, limit)
+        chat_crud = ChatMongoCRUD()
+
+        return await chat_crud.list_user_chats_crud(user_id, skip, limit)
 
     @classmethod
     async def get_chat_messages(cls, chat_id: ObjectId):
         """获取会话消息列表"""
-        return await AICRUD.get_chat_messages(chat_id)
+        chat_item_crud = ChatItemMongoCRUD()
+        return await chat_item_crud.get_chat_messages_crud(chat_id)
 
     @classmethod
     async def delete_chat(cls, chat_id: ObjectId, user_id: str):
         """删除会话"""
-        return await AICRUD.delete_chat(chat_id, user_id)
+        chat_crud = ChatMongoCRUD()
+        return await chat_crud.delete_by_id(chat_id, user_id)

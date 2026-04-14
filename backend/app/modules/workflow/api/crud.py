@@ -1,148 +1,43 @@
-from datetime import datetime
 from typing import List, Optional, Dict, Any
 
-from beanie import SortDirection
-from bson import ObjectId
-from pydantic import Field
 from sqlalchemy import select
 
-from backend.app.common.core.logger import log
+from backend.app.common.core.base_crud import CRUDBase
+from backend.app.common.core.base_mongo_crud import BaseMongoCRUD
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.workflow.api.model import App, AiApp
+from backend.app.modules.workflow.api.schema import CreateAppSchema, UpdateAppSchema
 
 
-class AppCRUD:
-    """工作流应用数据访问层"""
-    @staticmethod
-    async def create_app(
-        user_id: str,
-        name: str,
-        description: Optional[str],
-        nodes: List[Dict[str, Any]],
-        edges: List[Dict[str, Any]],
-        app_id: Optional[str] = Field(default=None, alias="id"),
-        icon: Optional[str] = None,
-        is_public: bool = False,
-    ) -> App:
-        """创建一个新的工作流应用
+class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAppSchema]):
+    """
+    应用数据访问层 (PostgreSQL)
 
-        返回: 创建好的WorkflowApp对象，其中.id字段就是自动生成的ObjectId
-              可以通过str(app.id)获取字符串格式的id
+    负责操作 PostgreSQL 的 AiApp 表，存储应用基本信息和权限控制
+    """
+
+    def __init__(self, auth: AuthSchema) -> None:
         """
-        app = App(
-            app_id=app_id,
-            name=name,
-            description=description,
-            user_id=user_id,
-            nodes=nodes,
-            edges=edges,
-            icon=icon,
-            is_public=is_public,
-            created_by=user_id,
-            updated_by=user_id,
-        )
-        await app.insert()
-        # ✅ 创建完成后，app.id 已经自动赋值了！就是MongoDB自动生成的_id
-        return app
+        初始化应用CRUD
 
-    @staticmethod
-    async def get_by_id(workflow_id: str | ObjectId) -> Optional[App]:
-        """根据ID获取工作流"""
-        if isinstance(workflow_id, str):
-            workflow_id = ObjectId(workflow_id)
+        参数:
+        - auth (AuthSchema): 认证信息模型
+        """
+        self.auth = auth
+        super().__init__(model=AiApp, auth=auth)
 
-        try:
-            app = await App.get(workflow_id)
-            if app and not app.is_deleted:
-                return app
-            return None
-        except Exception:
-            return None
-
-    @staticmethod
-    async def list_user_workflows(
-        user_id: str,
-        skip: int = 0,
-        limit: int = 20
-    ) -> List[App]:
-        """获取用户创建的所有工作流（分页）"""
-        apps = await App.find(
-            {"user_id": user_id, "is_deleted": False}
-        ).sort([("updated_at", SortDirection.ASCENDING)]).skip(skip).limit(limit).to_list()
-        return apps
-
-    @staticmethod
-    async def count_user_workflows(user_id: str) -> int:
-        """统计用户工作流总数"""
-        count = await App.find(
-            {"user_id": user_id, "is_deleted": False}
-        ).count()
-        return count
-
-    @staticmethod
-    async def update_workflow(
-        workflow_id: str | ObjectId,
-        user_id: str,
-        **kwargs
-    ) -> Optional[App]:
-        """更新工作流信息"""
-        app = await AppCRUD.get_by_id(workflow_id)
-        if not app:
-            return None
-
-        # 检查权限
-        if str(app.user_id) != str(user_id):
-            return None
-
-        # 更新传入的字段
-        for key, value in kwargs.items():
-            if hasattr(app, key):
-                setattr(app, key, value)
-
-        app.updated_at = datetime.utcnow()
-        app.updated_by = user_id
-        app.version += 1
-        await app.save()
-        return app
-
-    @staticmethod
-    async def delete_workflow(workflow_id: str | ObjectId, user_id: str) -> tuple[bool, str]:
-        """软删除工作流"""
-        try:
-            app = await AppCRUD.get_by_id(workflow_id)
-            if not app:
-                return False, "工作流不存在"
-            if app.is_deleted:
-                return False, "工作流已删除"
-            if str(app.user_id) != str(user_id):
-                return False, "无权限删除此工作流"
-
-            app.is_deleted = True
-            app.updated_at = datetime.utcnow()
-            app.updated_by = user_id
-            await app.save()
-            return True, "删除成功"
-        except Exception as e:
-            log.error(f"删除工作流出错: {e}", exc_info=True)
-            return False, str(e)
-
-    @staticmethod
-    async def list_public_apps(
-        skip: int = 0,
-        limit: int = 20
-    ) -> List[App]:
-        """获取公开的工作流列表"""
-        apps = await App.find(
-            {"is_public": True, "is_deleted": False}
-        ).sort([("updated_at", -1)]).skip(skip).limit(limit).to_list()
-        return apps
-
-    @staticmethod
-    async def get_available_apps_for_user(
-        auth: AuthSchema,
+    async def get_available_apps_for_user_crud(
+        self,
         current_user_id: int,
     ) -> List[AiApp]:
-        """获取当前用户可用的应用列表（PostgreSQL查询）
+        """
+        获取当前用户可用的应用列表（PostgreSQL查询）
+
+        参数:
+        - current_user_id (int): 当前用户ID
+
+        返回:
+        - List[AiApp]: 可用应用列表
         权限规则：用户自己创建的 OR 公开应用，且状态为启用
         """
         stmt = select(AiApp).where(
@@ -151,23 +46,105 @@ class AppCRUD:
             AiApp.status == '0'  # 只返回启用的应用
         ).order_by(AiApp.created_time.desc())
 
-        result = await auth.db.execute(stmt)
+        result = await self.auth.db.execute(stmt)
         apps = result.scalars().all()
         return list(apps)
 
-    @staticmethod
-    async def get_app_by_appid(
+    async def create_app_pg_crud(
+        self,
+        user_id: int,
+        name: str,
         app_id: str,
-    ) -> Optional[App]:
-        """根据app_id从MongoDB获取完整应用配置"""
-        # 兼容：文档可能没有 is_deleted 字段（旧数据）
-        app = await App.find_one(
-            {
-                "app_id": app_id,
-                "$or": [
-                    {"is_deleted": False},
-                    {"is_deleted": {"$exists": False}}
-                ]
-            }
-        )
-        return app
+        description: Optional[str] = None,
+        icon: Optional[str] = None,
+        is_public: bool = False,
+    ) -> AiApp:
+        """
+        创建应用基本信息到 PostgreSQL
+
+        参数:
+        - user_id (int): 用户ID
+        - name (str): 应用名称
+        - app_id (str): 应用UUID
+        - description (Optional[str]): 应用描述
+        - icon (Optional[str]): 图标emoji
+        - is_public (bool): 是否公开
+
+        返回:
+        - AiApp: 创建后的 PG 记录
+        """
+        pg_data = {
+            "name": name,
+            "app_id": app_id,
+            "user_id": user_id,
+            "description": description,
+            "icon": icon,
+            "is_public": is_public,
+            "type": "workflow",
+        }
+        return await self.create(pg_data)
+class AppMongoCRUD(BaseMongoCRUD[App]):
+    """
+    工作流应用数据访问层 (MongoDB)
+
+    负责操作 MongoDB 的 App 文档，存储完整工作流配置（nodes, edges）
+    """
+
+    def __init__(self):
+        """
+        初始化MongoDB CRUD
+        """
+        super().__init__(model=App)
+
+    async def create_mongo_app_crud(
+        self,
+        user_id: str,
+        name: str,
+        description: Optional[str],
+        nodes: List[Dict[str, Any]],
+        edges: List[Dict[str, Any]],
+        app_id: Optional[str] = None,
+        icon: Optional[str] = None,
+        is_public: bool = False,
+    ) -> App:
+        """
+        创建一个新的工作流应用到MongoDB
+
+        参数:
+        - user_id (str): 创建用户ID
+        - name (str): 工作流名称
+        - description (Optional[str]): 工作流描述
+        - nodes (List[Dict[str, Any]]): 节点列表
+        - edges (List[Dict[str, Any]]): 边列表
+        - app_id (Optional[str]): 应用UUID
+        - icon (Optional[str]): 图标emoji
+        - is_public (bool): 是否公开
+
+        返回:
+        - App: 创建好的WorkflowApp对象
+        """
+        data = {
+            "app_id": app_id,
+            "name": name,
+            "description": description,
+            "user_id": user_id,
+            "nodes": nodes,
+            "edges": edges,
+            "icon": icon,
+            "is_public": is_public,
+            "created_by": user_id,
+            "updated_by": user_id,
+        }
+        return await self.create(data)
+
+    async def get_app_by_appid_crud(self, app_id: str) -> Optional[App]:
+        """
+        根据app_id从MongoDB获取完整应用配置
+
+        参数:
+        - app_id (str): 应用UUID
+
+        返回:
+        - Optional[App]: MongoDB中的应用文档，不存在返回None
+        """
+        return await self.get_by_field("app_id", app_id)
