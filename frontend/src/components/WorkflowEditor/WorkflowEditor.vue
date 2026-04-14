@@ -240,10 +240,10 @@ function showToast(message, type = 'success') {
 
 async function loadDefaultWorkflow() {
   try {
-    const response = await fetch('/api/workflow/default')
+    const response = await fetch('/api/app/default')
     if (response.ok) {
       const data = await response.json()
-      deserialize(data)
+      deserialize(data.data || data)
       showToast('默认工作流加载成功', 'success')
     } else {
       // If API fails, try to embed the default json directly

@@ -275,6 +275,19 @@ async def list_my_workflows(
 #     )
 
 
+@AppRouter.get("/default", summary="获取默认示例工作流")
+async def get_default_workflow() -> SuccessResponse:
+    """获取默认示例工作流配置，用于编辑器"加载默认"按钮"""
+    from pathlib import Path
+    default_json_path = Path(__file__).parent.parent / "default.json"
+    with open(default_json_path, "r", encoding="utf-8") as f:
+        default_data = json.load(f)
+    return SuccessResponse(
+        data=default_data,
+        msg="获取成功"
+    )
+
+
 # @AppRouter.delete("/{workflow_id}/persist", summary="删除MongoDB中的工作流")
 # async def delete_workflow_persist(
 #     workflow_id: str,
