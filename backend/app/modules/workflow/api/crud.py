@@ -12,6 +12,12 @@ from backend.app.modules.workflow.api.model import App, AiApp
 class AppCRUD:
     """工作流应用数据访问层"""
 
+
+
+    @staticmethod
+    async def get_app_by_appid(app_id:str):
+        return App.find({"app_id": app_id})
+
     @staticmethod
     async def create_app(
         user_id: str,
@@ -153,3 +159,13 @@ class AppCRUD:
         result = await auth.db.execute(stmt)
         apps = result.scalars().all()
         return list(apps)
+
+    @staticmethod
+    async def get_app_by_appid(
+        app_id: str,
+    ) -> Optional[App]:
+        """根据app_id从MongoDB获取完整应用配置"""
+        app = await App.find_one(
+            {"app_id": app_id, "is_deleted": False}
+        )
+        return app
