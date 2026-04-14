@@ -32,18 +32,6 @@
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
 
-      <!-- Connections layer (SVG) -->
-      <svg class="connections-layer" :width="svgWidth" :height="svgHeight">
-        <ConnectionLine
-          :connections="connections?.value || connections"
-          :selectedConnectionId="selectedConnectionId?.value || selectedConnectionId"
-          :isDrawingConnection="isDrawingConnection?.value || false"
-          :connectionStart="connectionStart?.value || connectionStart"
-          :connectionCurrentMouse="connectionCurrentMouse?.value || connectionCurrentMouse"
-          @select-connection="selectConnection"
-        />
-      </svg>
-
       <!-- Nodes layer -->
       <div class="nodes-layer">
         <NodeComponent
@@ -77,6 +65,18 @@
           </template>
         </NodeComponent>
       </div>
+
+      <!-- Connections layer (SVG) - must be on top of nodes but not block mouse events -->
+      <svg class="connections-layer" :width="svgWidth" :height="svgHeight">
+        <ConnectionLine
+          :connections="connections?.value || connections"
+          :selectedConnectionId="selectedConnectionId?.value || selectedConnectionId"
+          :isDrawingConnection="isDrawingConnection?.value || false"
+          :connectionStart="connectionStart?.value || connectionStart"
+          :connectionCurrentMouse="connectionCurrentMouse?.value || connectionCurrentMouse"
+          @select-connection="selectConnection"
+        />
+      </svg>
     </div>
   </div>
 </template>
@@ -281,6 +281,10 @@ function handleWheel(event) {
   position: absolute;
   top: 0;
   left: 0;
+  pointer-events: none;
+}
+/* Connection handles still need to be clickable */
+.connections-layer .connection-handle {
   pointer-events: auto;
 }
 
