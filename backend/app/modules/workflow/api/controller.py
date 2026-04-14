@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from backend.app.common.core.dependencies import get_current_user, db_getter
-from backend.app.common.response import SuccessResponse
+from backend.app.common.response import SuccessResponse, ErrorResponse
 from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.model import UserModel
@@ -15,6 +15,7 @@ from backend.app.modules.workflow.api.model import App
 from backend.app.modules.workflow.app import App
 from backend.app.modules.workflow.api.crud import AppCRUD
 from backend.app.modules.workflow.api.service import AppService
+from backend.app.modules.workflow.api.schema import DefaultAppResponseSchema
 
 # 内存存储已创建的Workflow应用 {app_id: App}
 workflow_storage: Dict[str, App] = {}
@@ -130,24 +131,24 @@ async def get_default_workflow(
     object_id = ObjectId("69dca6647d321630360ce492")
     default_app = await AppService.get_app_by_object_id(object_id)
 
-    # Convert to dict and convert ObjectId to string for JSON serialization
+    # Use schema for serialization
     if not default_app:
-        return JSONResponse(content={"success": False, "msg": "默认应用不存在"}, status_code=404)
+        return ErrorResponse(msg="默认应用不存在")
 
-    data = {
-        "id": str(default_app.id),
-        "app_id": default_app.app_id,
-        "name": default_app.name,
-        "description": default_app.description,
-        "user_id": default_app.user_id,
-        "icon": default_app.icon,
-        "type": default_app.type,
-        "nodes": default_app.nodes,
-        "edges": default_app.edges,
-        "is_public": default_app.is_public,
-        "version": default_app.version,
-    }
+    schema = DefaultAppResponseSchema(
+        id=str(default_app.id),
+        app_id=default_app.app_id,
+        name=default_app.name,
+        description=default_app.description,
+        user_id=default_app.user_id,
+        icon=default_app.icon,
+        type=default_app.type,
+        nodes=default_app.nodes,
+        edges=default_app.edges,
+        is_public=default_app.is_public,
+        version=default_app.version,
+    )
     return SuccessResponse(
-        data=data,
+        data=schema.model_dump(),
         msg="获取成功"
     )

@@ -3,8 +3,6 @@ from typing import Literal, Dict, Any, TypedDict, Annotated, Optional, List
 
 from pydantic import BaseModel, Field
 
-from backend.app.modules.workflow.api.model import AiApp
-
 
 class Node(BaseModel):
     id: str
@@ -25,7 +23,6 @@ class State(TypedDict, total=False):
     variables: dict  # 节点输出（按节点存储）
     decision: str  # 路由决策（临时）
     output: str  # 最终输出
-
 # ============ Pydantic 请求模型 ============
 class CreateWorkflowSchema(BaseModel):
     """创建工作流请求"""
@@ -46,9 +43,8 @@ class UpdateWorkflowSchema(BaseModel):
     edges: Optional[List[Dict[str, dict]]] = None
     is_public: Optional[bool] = None
 
-
-class AppInfoQuerySchema(BaseModel):
-    """应用信息查询请求"""
+class AppInfoSchema(BaseModel):
+    """应用信息返回字段"""
     id: int
     app_id: str
     name: str
@@ -58,7 +54,16 @@ class AppInfoQuerySchema(BaseModel):
     is_public: bool
 
 
-class AppInfoSchema(BaseModel):
-    """应用信息返回字段"""
-    data : List[AiApp]
-
+class DefaultAppResponseSchema(BaseModel):
+    """默认应用详情返回schema"""
+    id: str
+    app_id: str
+    name: str
+    description: Optional[str]
+    user_id: Optional[str]
+    icon: Optional[str]
+    type: str
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    is_public: bool
+    version: int
