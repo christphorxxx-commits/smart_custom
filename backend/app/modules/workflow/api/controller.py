@@ -1,6 +1,7 @@
 import json
 from typing import Dict
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
@@ -83,88 +84,6 @@ async def list_apps(
         msg="获取成功"
     )
 
-
-# @AppRouter.delete("/{app_id}")
-# async def delete_workflow(app_id: str):
-#     """删除一个workflow (内存缓存)"""
-#     if app_id in workflow_storage:
-#         del workflow_storage[app_id]
-#         return {"success": True, "message": f"Workflow {app_id} deleted"}
-#     return {"success": False, "message": f"Workflow {app_id} not found"}
-
-
-# ============ 持久化到MongoDB接口 ============
-
-# @AppRouter.post("/save", summary="保存工作流应用到MongoDB + PG")
-# async def save_workflow(
-#     data: CreateWorkflowSchema,
-#     current_user: UserModel = Depends(get_current_user)
-# ) -> SuccessResponse:
-#     """
-#     保存工作流应用：
-#     1. 保存完整配置到 MongoDB apps 集合
-#     2. 保存基本信息到 PostgreSQL app 表（用于权限查询和列表）
-#     """
-#     # 1. 创建并保存到 MongoDB
-#     app = await AppCRUD.create_app(
-#         user_id=str(current_user.id),
-#         name=data.name,
-#         description=data.description,
-#         nodes=data.nodes,
-#         edges=data.edges,
-#         icon=data.icon,
-#         is_public=data.is_public,
-#     )
-#
-#     # 2. 同时保存基本信息到 PostgreSQL app 表
-#     from backend.app.common.core.db.session import async_session
-#     async with async_session() as session:
-#         pg_app = AiApp(
-#             app_id=app.app_id,
-#             name=data.name,
-#             user_id=current_user.id,
-#             description=data.description,
-#             icon=data.icon,
-#             is_public=data.is_public,
-#             type="workflow",
-#         )
-#         session.add(pg_app)
-#         await session.commit()
-#
-#     return SuccessResponse(
-#         data={
-#             "id": str(app.id),
-#             "app_id": app.app_id,
-#             "name": app.name,
-#         },
-#         msg="保存成功"
-#     )
-
-
-# @AppRouter.put("/{workflow_id}", summary="更新工作流")
-# async def update_workflow(
-#     workflow_id: str,
-#     data: UpdateWorkflowSchema,
-#     current_user: UserModel = Depends(get_current_user)
-# ) -> JSONResponse:
-#     """更新已保存的工作流"""
-#     app = await AppCRUD.update_workflow(
-#         workflow_id=workflow_id,
-#         user_id=str(current_user.id),
-#         **data.model_dump(exclude_unset=True)
-#     )
-#     if not app:
-#         return ErrorResponse(msg="工作流不存在或无权限")
-#     return SuccessResponse(
-#         data={
-#             "id": str(app.id),
-#             "app_id": app.app_id,
-#             "name": app.name,
-#         },
-#         msg="更新成功"
-#     )
-#
-
 @AppRouter.get("/my/list", summary="获取当前用户的所有工作流")
 async def list_my_workflows(
     skip: int = 0,
@@ -198,107 +117,37 @@ async def list_my_workflows(
         msg="获取成功"
     )
 
-
-# @AppRouter.get("/detail/{app_id}", summary="根据app_id获取应用完整配置（从MongoDB）")
-# async def get_app_detail(
-#     app_id: str,
-#     current_user: UserModel = Depends(get_current_user)
-# ) -> JSONResponse:
-#     """
-#     根据app_id从MongoDB获取应用完整配置（nodes, edges等）
-#
-#     查询流程：
-#     1. 根据app_id查询MongoDB中的App文档
-#     2. 检查权限：公开或创建者本人可访问
-#     3. 返回完整配置给前端
-#     """
-#     # 在MongoDB中 app.app_id = 我们要查询的 app_id
-#     # 需要查询 app collection where app_id == app_id
-#     from pymongo import MongoClient
-#     from backend.app.config.setting import settings
-#     client = MongoClient(settings.MONGO_URL)
-#     db = client[settings.MONGO_DB_NAME]
-#     collection = db['apps']
-#
-#     app_doc = collection.find_one({"app_id": app_id, "is_deleted": False})
-#     if not app_doc:
-#         return ErrorResponse(msg="应用不存在")
-#
-#     # 检查权限
-#     if not app_doc.get("is_public", False) and str(app_doc.get("user_id")) != str(current_user.id):
-#         return ErrorResponse(msg="无权限访问此应用")
-#
-#     return SuccessResponse(
-#         data={
-#             "id": str(app_doc["_id"]),
-#             "app_id": app_doc["app_id"],
-#             "name": app_doc["name"],
-#             "description": app_doc.get("description"),
-#             "icon": app_doc.get("icon", "🤖"),
-#             "is_public": app_doc.get("is_public", False),
-#             "type": app_doc.get("type", "workflow"),
-#             "created_at": app_doc.get("created_at"),
-#             "updated_at": app_doc.get("updated_at"),
-#             "nodes": app_doc["nodes"],
-#             "edges": app_doc["edges"],
-#         },
-#         msg="获取成功"
-#     )
-
-# @AppRouter.get("/{workflow_id}", summary="获取工作流详情(按MongoDB ID)")
-# async def get_workflow_detail(
-#     workflow_id: str,
-#     current_user: UserModel = Depends(get_current_user)
-# ) -> JSONResponse:
-#     """获取工作流完整配置（按MongoDB ID）"""
-#     app = await AppCRUD.get_by_id(workflow_id)
-#     if not app:
-#         return ErrorResponse(msg="工作流不存在")
-#     # 检查权限：公开或者是自己创建的
-#     if not app.is_public and str(app.user_id) != str(current_user.id):
-#         return ErrorResponse(msg="无权限访问此工作流")
-#     return SuccessResponse(
-#         data={
-#             "id": str(app.id),
-#             "app_id": app.app_id,
-#             "name": app.name,
-#             "description": app.description,
-#             "icon": app.icon,
-#             "is_public": app.is_public,
-#             "created_at": app.created_at,
-#             "updated_at": app.updated_at,
-#             "version": app.version,
-#             "nodes": app.nodes,
-#             "edges": app.edges,
-#         },
-#         msg="获取成功"
-#     )
-
-
 @AppRouter.get("/default", summary="获取默认示例工作流")
-async def get_default_workflow() -> SuccessResponse:
+async def get_default_workflow(
+        db: AsyncSession = Depends(db_getter),
+) -> JSONResponse:
     """获取默认示例工作流配置，用于编辑器"加载默认"按钮"""
-    from pathlib import Path
-    default_json_path = Path(__file__).parent.parent / "default.json"
-    with open(default_json_path, "r", encoding="utf-8") as f:
-        default_data = json.load(f)
+    # from pathlib import Path
+    # default_json_path = Path(__file__).parent.parent / "default.json"
+    # with open(default_json_path, "r", encoding="utf-8") as f:
+    #     default_data = json.load(f)
+    auth = AuthSchema(db=db)
+    object_id = ObjectId("69dca6647d321630360ce492")
+    default_app = await AppService.get_app_by_object_id(object_id)
+
+    # Convert to dict and convert ObjectId to string for JSON serialization
+    if not default_app:
+        return JSONResponse(content={"success": False, "msg": "默认应用不存在"}, status_code=404)
+
+    data = {
+        "id": str(default_app.id),
+        "app_id": default_app.app_id,
+        "name": default_app.name,
+        "description": default_app.description,
+        "user_id": default_app.user_id,
+        "icon": default_app.icon,
+        "type": default_app.type,
+        "nodes": default_app.nodes,
+        "edges": default_app.edges,
+        "is_public": default_app.is_public,
+        "version": default_app.version,
+    }
     return SuccessResponse(
-        data=default_data,
+        data=data,
         msg="获取成功"
     )
-
-
-# @AppRouter.delete("/{workflow_id}/persist", summary="删除MongoDB中的工作流")
-# async def delete_workflow_persist(
-#     workflow_id: str,
-#     current_user: UserModel = Depends(get_current_user)
-# ) -> JSONResponse:
-#     """从MongoDB删除工作流"""
-#     success, msg = await AppCRUD.delete_workflow(workflow_id, str(current_user.id))
-#     if success:
-#         # 同时删除内存缓存
-#         app = await AppCRUD.get_by_id(workflow_id)
-#         if app and app.app_id in workflow_storage:
-#             del workflow_storage[app.app_id]
-#         return SuccessResponse(msg=msg)
-#     return ErrorResponse(msg=msg)
