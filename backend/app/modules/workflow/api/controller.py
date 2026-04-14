@@ -15,7 +15,7 @@ from backend.app.modules.workflow.api.model import App
 from backend.app.modules.workflow.app import App
 from backend.app.modules.workflow.api.crud import AppCRUD
 from backend.app.modules.workflow.api.service import AppService
-from backend.app.modules.workflow.api.schema import DefaultAppResponseSchema
+from backend.app.modules.workflow.api.schema import AppResponseSchema
 
 # 内存存储已创建的Workflow应用 {app_id: App}
 workflow_storage: Dict[str, App] = {}
@@ -135,7 +135,7 @@ async def get_default_workflow(
     if not default_app:
         return ErrorResponse(msg="默认应用不存在")
 
-    schema = DefaultAppResponseSchema(
+    schema = AppResponseSchema(
         id=str(default_app.id),
         app_id=default_app.app_id,
         name=default_app.name,
