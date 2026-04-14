@@ -45,7 +45,7 @@ class App(BaseMongoDocument):
     app_id: str = Field(default_factory=uuid4_str, description="应用UUID，用于跨库关联PG表")
     name: str                       # 应用名称
     description: Optional[str]     # 应用描述
-    user_id: str                    # 创建用户ID
+    user_id: Optional[str] = Field(default=None, description="创建用户ID")
     icon: Optional[str] = Field(default="🤖", description="应用图标emoji")
     type: str = Field(default="workflow", description="应用类型: workflow/ai/chat")
 
