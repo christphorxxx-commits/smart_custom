@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import MongoClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine, create_async_engine
 from backend.app.modules.api.ai.model import Chat,ChatItem
+from backend.app.modules.workflow.api.model import App
 
 from backend.app.common.core.logger import log
 
@@ -145,7 +146,8 @@ async def init_beanie_odm():
 
     document_models = [
         Chat,
-        ChatItem
+        ChatItem,
+        App
     ]
 
     # 兼容性补丁：兼容 motor 3.x + Beanie
