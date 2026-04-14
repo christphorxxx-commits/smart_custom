@@ -81,16 +81,16 @@ class App(BaseModel):
 
         return graph.compile()
 
-    def run(self, input_data: dict):
-        """直接运行工作流，返回最终结果"""
-        graph = self.compile()
-        return graph.invoke(input_data)
-
-    def stream(self, input_data: dict):
-        """流式输出工作流，按节点返回（每个节点完成后输出一次）"""
-        graph = self.compile()
-        for chunk in graph.stream(input_data):
-            yield chunk
+    # def run(self, input_data: dict):
+    #     """直接运行工作流，返回最终结果"""
+    #     graph = self.compile()
+    #     return graph.invoke(input_data)
+    #
+    # def stream(self, input_data: dict):
+    #     """流式输出工作流，按节点返回（每个节点完成后输出一次）"""
+    #     graph = self.compile()
+    #     for chunk in graph.stream(input_data):
+    #         yield chunk
 
     async def astream(self, input_data: dict):
         """异步流式输出，按节点返回"""

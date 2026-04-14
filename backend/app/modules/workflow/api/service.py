@@ -117,6 +117,36 @@ class AppService:
         app_id = uuid4_str()
         user_id_str = str(user.id)
 
+        # 格式转换：双重保险，确保存储的一定是正确格式
+        def convert_node(node: dict) -> dict:
+            node_type_map = {
+                "input": "start",
+                "output": "end",
+                "if": "router",
+                "llm": "llm",
+                "retrieve": "retrieve",
+            }
+            original_type = node.get("type", "")
+            backend_type = node_type_map.get(original_type, original_type)
+            return {
+                "id": node.get("id", ""),
+                "type": backend_type,
+                "config": node.get("data", {}).get("config", {}) or node.get("config", {})
+            }
+
+        def convert_edge(edge: dict) -> dict:
+            source = edge.get("source") or edge.get("sourceNodeId", "")
+            target = edge.get("target") or edge.get("targetNodeId", "")
+            return {
+                "source": source,
+                "target": target,
+                "type": edge.get("type", "normal"),
+                "condition": edge.get("condition", None)
+            }
+
+        converted_nodes = [convert_node(n) for n in data.nodes]
+        converted_edges = [convert_edge(e) for e in data.edges]
+
         # 1. 创建到 PostgreSQL（存储基本信息）
         app_crud = AppCRUD(auth)
         await app_crud.create_app_pg_crud(
@@ -129,14 +159,14 @@ class AppService:
         )
         log.info(f"[{user.username}] 成功保存应用到PG: {data.name}")
 
-        # 2. 创建完整配置到 MongoDB（存储nodes和edges）
+        # 2. 创建完整配置到 MongoDB（存储转换后的nodes和edges）
         app_mongo_crud = AppMongoCRUD()
         mongo_app = await app_mongo_crud.create_mongo_app_crud(
             user_id=user_id_str,
             name=data.name,
             description=data.description,
-            nodes=data.nodes,
-            edges=data.edges,
+            nodes=converted_nodes,
+            edges=converted_edges,
             app_id=app_id,
             icon=data.icon,
             is_public=data.is_public,
