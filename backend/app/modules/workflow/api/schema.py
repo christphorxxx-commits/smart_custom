@@ -80,15 +80,8 @@ class ChatSystemConfigSchema(SystemConfigSchema):
 
 
 # ============ 基础共享 schema ============
-class CreateAppSchema(SystemConfigSchema):
-    """应用基础信息共享schema（创建起点）
-
-    创建规则：
-    - 只有 name 是必填项
-    - description/icon/is_public/type 都有默认值，可省略
-    - type 由前端点击创建按钮自动设置 (WORKFLOW/CHAT)
-    - SystemConfigSchema 所有配置字段都使用默认值，创建后在编辑阶段设置
-    """
+class CreateAppPGSchema(BaseModel):
+    """PostgreSQL 创建应用 schema - 只保留 PG 需要的基本字段"""
     name: str = Field(..., description="Agent名称（必填）")
     uuid: Optional[str] = Field(None, description="应用UUID（后端生成）")
     user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）")
@@ -97,6 +90,16 @@ class CreateAppSchema(SystemConfigSchema):
     type: Optional[AgentType] = Field(None, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
     is_public: bool = Field(default=False, description="是否公开分享，默认不公开")
 
+
+class CreateAppSchema(CreateAppPGSchema, SystemConfigSchema):
+    """应用完整创建 schema（包含所有字段，用于创建后同时写入 PG + MongoDB）
+
+    创建规则：
+    - 只有 name 是必填项
+    - description/icon/is_public/type 都有默认值，可省略
+    - type 由前端点击创建按钮自动设置 (WORKFLOW/CHAT)
+    - SystemConfigSchema 所有配置字段都使用默认值，创建后在编辑阶段设置
+    """
     nodes: Optional[List[Dict[str, Any]]] = Field(None, description="初始节点列表（工作流Agent）")
     edges: Optional[List[Dict[str, Any]]] = Field(None, description="初始边列表（工作流Agent）")
     version: Optional[int] = Field(None, description="版本号")
@@ -105,7 +108,7 @@ class CreateAppSchema(SystemConfigSchema):
 # ============ 工作流Agent（可视化编排） ============
 class UpdateWorkflowAgentSchema(CreateAppSchema, WorkflowSystemConfigSchema):
     """更新工作流Agent请求（可视化编排）"""
-    id: int = Field(..., description="PG数据库中主键id")
+    app_id: int = Field(..., description="app的唯一id")
 
 
 # ============ 对话式Agent（配置式，默认线性） ============
@@ -116,7 +119,7 @@ class UpdateChatAgentSchema(CreateAppSchema, ChatSystemConfigSchema):
     - 默认: start → llm → end
     - 启用知识库后: start → retrieve → llm → end
     """
-    id: int = Field(..., description="PG数据库中主键id")
+    app_id: int = Field(..., description="app的唯一id")
 
 
 class AppInfoSchema(BaseModel):

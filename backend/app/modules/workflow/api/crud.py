@@ -8,7 +8,7 @@ from backend.app.common.core.base_mongo_crud import BaseMongoCRUD
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.workflow.api.model import App, AiApp
 from backend.app.modules.workflow.api.schema import (
-    CreateAppSchema, UpdateWorkflowAgentSchema, UpdateChatAgentSchema,
+    CreateAppPGSchema, CreateAppSchema, UpdateWorkflowAgentSchema, UpdateChatAgentSchema,
 )
 
 
@@ -55,29 +55,20 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateChatAgentSchema | UpdateWor
 
     async def create_app_pg_crud(
             self,
-            data: CreateAppSchema
+            data: CreateAppPGSchema
     ) -> AiApp:
         """
         创建应用基本信息到 PostgreSQL
 
         参数:
-        - data (CreateAppSchema): 创建数据，只提取 PG 需要的字段
+        - data (CreateAppPGSchema): 创建数据，只包含 PG 需要的基本字段
 
         返回:
         - AiApp: 创建后的 PG 记录
         """
         # PostgreSQL AiApp 只存储基本信息，不存储系统配置（系统配置在MongoDB）
-        # 只提取 PG 需要的字段，避免传入额外字段导致错误
-        pg_data = {
-            "name": data.name,
-            "uuid": data.uuid,
-            "user_id": data.user_id,
-            "description": data.description,
-            "icon": data.icon,
-            "type": data.type,
-            "is_public": data.is_public,
-        }
-        return await self.create(pg_data)
+        # CreateAppPGSchema 只包含 PG 需要的字段，直接序列化
+        return await self.create(data.model_dump(exclude_unset=True))
 
     async def update_app_pg_crud(
             self,
