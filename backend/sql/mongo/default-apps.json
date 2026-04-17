@@ -1,0 +1,178 @@
+[
+  {
+    "uuid": "8488bff8-30a2-415d-8d1d-7c4fb4b6567b",
+    "name": "示例工作流",
+    "description": "这是一个示例条件分支工作流，展示多分支路由能力",
+    "user_id": "1",
+    "icon": "🌐",
+    "type": "WORKFLOW",
+    "is_deleted": false,
+    "status": "active",
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "config": {}
+      },
+      {
+        "id": "router",
+        "type": "router",
+        "config": {
+          "options": ["story", "joke", "poem"]
+        }
+      },
+      {
+        "id": "story_node",
+        "type": "llm",
+        "config": {
+          "model": "qwen-max",
+          "systemPrompt": "写一个故事：{input}",
+          "temperature": 0.7,
+          "maxTokens": 2000
+        }
+      },
+      {
+        "id": "joke_node",
+        "type": "llm",
+        "config": {
+          "model": "qwen-max",
+          "systemPrompt": "讲一个笑话：{input}",
+          "temperature": 0.9,
+          "maxTokens": 500
+        }
+      },
+      {
+        "id": "poem_node",
+        "type": "llm",
+        "config": {
+          "model": "qwen-max",
+          "systemPrompt": "写一首诗：{input}",
+          "temperature": 0.8,
+          "maxTokens": 1000
+        }
+      },
+      {
+        "id": "end",
+        "type": "end",
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "source": "start",
+        "target": "router",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "router",
+        "target": "story_node",
+        "type": "conditional",
+        "condition": "story"
+      },
+      {
+        "source": "router",
+        "target": "joke_node",
+        "type": "conditional",
+        "condition": "joke"
+      },
+      {
+        "source": "router",
+        "target": "poem_node",
+        "type": "conditional",
+        "condition": "poem"
+      },
+      {
+        "source": "story_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "joke_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "poem_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      }
+    ],
+    "is_public": true,
+    "version": 1,
+    "enableFileUpload": false,
+    "globalVariables": {},
+    "enableTTS": false,
+    "enableASR": false,
+    "guessedQuestions": false,
+    "inputGuidance": false,
+    "timeExecute": false,
+    "autoExecute": false
+  },
+  {
+    "uuid": "9a8aa9f8-41b2-52cd-9e2a-8d5ea12c4d3e",
+    "name": "默认聊天助手",
+    "description": "一个通用的AI对话助手",
+    "user_id": "1",
+    "icon": "🤖",
+    "type": "CHAT",
+    "is_deleted": false,
+    "status": "active",
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "config": {}
+      },
+      {
+        "id": "llm",
+        "type": "llm",
+        "config": {
+          "model": "qwen-max",
+          "systemPrompt": "你是一个智能AI助手，乐于助人，回答用户问题准确简洁。",
+          "temperature": 0.7,
+          "maxTokens": 5000
+        }
+      },
+      {
+        "id": "end",
+        "type": "end",
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "source": "start",
+        "target": "llm",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "llm",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      }
+    ],
+    "is_public": true,
+    "version": 1,
+    "enableFileUpload": false,
+    "globalVariables": {},
+    "openingMessage": "你好！我是你的AI助手，有什么可以帮你的吗？",
+    "enableTTS": false,
+    "enableASR": false,
+    "guessedQuestions": false,
+    "inputGuidance": false,
+    "llmConfig": {
+      "model": "qwen-max",
+      "systemPrompt": "你是一个智能AI助手，乐于助人，回答用户问题准确简洁。",
+      "temperature": 0.7,
+      "maxTokens": 5000
+    },
+    "enableKnowledgeBase": false,
+    "enableToolCall": false
+  }
+]

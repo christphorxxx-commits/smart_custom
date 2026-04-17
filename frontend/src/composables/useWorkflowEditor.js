@@ -350,17 +350,18 @@ export function useWorkflowEditor() {
       clearAll()
 
       // Check if it's backend format (nodes + edges)
-      if (parsed.nodes && parsed.edges) {
+      // Backend format always has nodes and edges
+      if (typeof parsed.nodes !== 'undefined' && typeof parsed.edges !== 'undefined') {
         // Backend format: convert to editor format
         // Do simple auto-layout
-        const convertedNodes = convertBackendNodes(parsed.nodes)
-        const convertedConnections = convertBackendEdges(parsed.edges)
+        const convertedNodes = convertBackendNodes(parsed.nodes || [])
+        const convertedConnections = convertBackendEdges(parsed.edges || [])
         nodes.value = convertedNodes
         connections.value = convertedConnections
-      } else if (parsed.nodes && parsed.connections) {
+      } else if (typeof parsed.nodes !== 'undefined' && typeof parsed.connections !== 'undefined') {
         // Editor format
-        nodes.value = parsed.nodes.filter(n => n != null)
-        connections.value = parsed.connections.filter(c => c != null)
+        nodes.value = (parsed.nodes || []).filter(n => n != null)
+        connections.value = (parsed.connections || []).filter(c => c != null)
       } else {
         nodes.value = []
         connections.value = []
@@ -370,10 +371,12 @@ export function useWorkflowEditor() {
       if (nodes.value.length > 0) {
         let maxId = 0
         nodes.value.forEach(n => {
-          const numMatch = n.id.match(/\d+/)
-          if (numMatch) {
-            const num = parseInt(numMatch[0], 10)
-            if (num > maxId) maxId = num
+          if (n && n.id) {
+            const numMatch = n.id.match(/\d+/)
+            if (numMatch) {
+              const num = parseInt(numMatch[0], 10)
+              if (num > maxId) maxId = num
+            }
           }
         })
         nodeIdCounter = maxId
@@ -382,10 +385,12 @@ export function useWorkflowEditor() {
       if (connections.value.length > 0) {
         let maxId = 0
         connections.value.forEach(c => {
-          const numMatch = c.id.match(/\d+/)
-          if (numMatch) {
-            const num = parseInt(numMatch[0], 10)
-            if (num > maxId) maxId = num
+          if (c && c.id) {
+            const numMatch = c.id.match(/\d+/)
+            if (numMatch) {
+              const num = parseInt(numMatch[0], 10)
+              if (num > maxId) maxId = num
+            }
           }
         })
         connectionIdCounter = maxId

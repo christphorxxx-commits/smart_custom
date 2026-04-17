@@ -32,15 +32,27 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/app/create',
-    name: 'AppCreate',
+    path: '/workflow/create',
+    name: 'WorkflowCreate',
     component: WorkflowEditorPage,
     meta: { requiresAuth: true }
   },
   {
-    path: '/app/edit/:id',
-    name: 'AppEdit',
+    path: '/workflow/edit/:uuid',
+    name: 'WorkflowEdit',
     component: WorkflowEditorPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chatagent/create',
+    name: 'ChatAgentCreate',
+    component: WorkflowChat,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chatagent/edit/:uuid',
+    name: 'ChatAgentEdit',
+    component: WorkflowChat,
     meta: { requiresAuth: true }
   },
   // 重定向到登录页

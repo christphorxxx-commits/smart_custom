@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Optional, Type, List, Any
+from typing import TypeVar, Generic, Optional, Type, List, Any, Union
 from pydantic import BaseModel
 from bson import ObjectId
 
@@ -10,9 +10,9 @@ from backend.app.common.core.base_model import BaseMongoDocument
 ModelType = TypeVar("ModelType", bound=BaseMongoDocument)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 
-
-class BaseMongoCRUD(Generic[ModelType]):
+class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """
     MongoDB Beanie ODM 基础数据访问层基类
 
@@ -102,7 +102,7 @@ class BaseMongoCRUD(Generic[ModelType]):
         获取指定用户创建的所有未删除文档（分页）
 
         参数:
-        - user_id (str): 用户 ID
+        - uuid (str): 用户 ID
         - skip (int): 跳过条数
         - limit (int): 返回条数
         - order_by (str): 排序字段
@@ -112,7 +112,7 @@ class BaseMongoCRUD(Generic[ModelType]):
         - List[ModelType]: 文档列表
         """
         docs = await self.model.find(
-            {"user_id": user_id, "is_deleted": False}
+            {"uuid": user_id, "is_deleted": False}
         ).sort([(order_by, sort_dir)]).skip(skip).limit(limit).to_list()
         return docs
 
@@ -133,17 +133,17 @@ class BaseMongoCRUD(Generic[ModelType]):
         统计指定用户创建的未删除文档总数
 
         参数:
-        - user_id (str): 用户 ID
+        - uuid (str): 用户 ID
 
         返回:
         - int: 文档总数
         """
         count = await self.model.find(
-            {"user_id": user_id, "is_deleted": False}
+            {"uuid": user_id, "is_deleted": False}
         ).count()
         return count
 
-    async def create(self, data: dict) -> ModelType:
+    async def create(self, data: Union[CreateSchemaType, dict]) -> ModelType:
         """
         创建新文档
 
@@ -157,18 +157,18 @@ class BaseMongoCRUD(Generic[ModelType]):
         await doc.insert()
         return doc
 
-    async def update_by_id(
+    async def update(
         self,
-        doc_id: str | ObjectId,
+        id: str | ObjectId,
         user_id: str,
-        update_data: dict
+        data: Union[UpdateSchemaType, dict]
     ) -> Optional[ModelType]:
         """
         更新文档（检查用户权限）
 
         参数:
         - doc_id (str | ObjectId): 文档 ID
-        - user_id (str): 当前用户 ID（权限检查）
+        - uuid (str): 当前用户 ID（权限检查）
         - update_data (dict): 需要更新的字段
 
         返回:
@@ -176,16 +176,16 @@ class BaseMongoCRUD(Generic[ModelType]):
         """
         from datetime import datetime
 
-        doc = await self.get_by_id(doc_id)
+        doc = await self.get_by_id(id)
         if not doc:
             return None
 
         # 检查权限
-        if hasattr(doc, "user_id") and str(doc.user_id) != str(user_id):
+        if hasattr(doc, "uuid") and str(doc.user_id) != str(user_id):
             return None
 
         # 更新传入字段
-        for key, value in update_data.items():
+        for key, value in data.items():
             if hasattr(doc, key):
                 setattr(doc, key, value)
 
@@ -201,9 +201,9 @@ class BaseMongoCRUD(Generic[ModelType]):
         await doc.save()
         return doc
 
-    async def delete_by_id(
+    async def delete(
         self,
-        doc_id: str | ObjectId,
+        id: str | ObjectId,
         user_id: str
     ) -> tuple[bool, str]:
         """
@@ -211,21 +211,21 @@ class BaseMongoCRUD(Generic[ModelType]):
 
         参数:
         - doc_id (str | ObjectId): 文档 ID
-        - user_id (str): 当前用户 ID（权限检查）
+        - uuid (str): 当前用户 ID（权限检查）
 
         返回:
         - tuple[bool, str]: (是否成功, 消息)
         """
         from datetime import datetime
 
-        doc = await self.get_by_id(doc_id)
+        doc = await self.get_by_id(id)
         if not doc:
             return False, "文档不存在"
         if doc.is_deleted:
             return False, "文档已删除"
 
         # 检查权限
-        if hasattr(doc, "user_id") and str(doc.user_id) != str(user_id):
+        if hasattr(doc, "uuid") and str(doc.user_id) != str(user_id):
             return False, "无权限删除此文档"
 
         doc.is_deleted = True

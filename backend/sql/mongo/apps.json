@@ -1,0 +1,96 @@
+[
+  {
+    "app_id": "8488bff8-30a2-415d-8d1d-7c4fb4b6567b",
+    "name": "智能写诗/笑话/故事",
+    "description": "根据你的请求自动路由到不同类型生成，演示router节点功能",
+    "user_id": "1",
+    "icon": "🎯",
+    "type": "workflow",
+    "is_public": true,
+    "version": 1,
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "config": {}
+      },
+      {
+        "id": "router",
+        "type": "router",
+        "config": {
+          "options": ["poem", "joke", "story"]
+        }
+      },
+      {
+        "id": "poem_node",
+        "type": "llm",
+        "config": {
+          "prompt": "写一首诗：{input}"
+        }
+      },
+      {
+        "id": "joke_node",
+        "type": "llm",
+        "config": {
+          "prompt": "讲一个笑话：{input}"
+        }
+      },
+      {
+        "id": "story_node",
+        "type": "llm",
+        "config": {
+          "prompt": "写一个故事：{input}"
+        }
+      },
+      {
+        "id": "end",
+        "type": "end",
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "source": "start",
+        "target": "router",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "router",
+        "target": "poem_node",
+        "type": "conditional",
+        "condition": "poem"
+      },
+      {
+        "source": "router",
+        "target": "joke_node",
+        "type": "conditional",
+        "condition": "joke"
+      },
+      {
+        "source": "router",
+        "target": "story_node",
+        "type": "conditional",
+        "condition": "story"
+      },
+      {
+        "source": "poem_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "joke_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "story_node",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      }
+    ]
+  }
+]

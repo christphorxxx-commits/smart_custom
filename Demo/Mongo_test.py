@@ -88,7 +88,7 @@ async def test_mongo_connection():
 
         # 查询验证
         print("\n🔄 正在验证写入的数据...")
-        all_chats = await Chat.find({"user_id": "test_user_001"}).to_list()
+        all_chats = await Chat.find({"uuid": "test_user_001"}).to_list()
         print(f"  查询到 {len(all_chats)} 个测试会话")
 
         messages = await ChatItem.find({"chat_id": chat.id}).sort([("created_at", 1)]).to_list()

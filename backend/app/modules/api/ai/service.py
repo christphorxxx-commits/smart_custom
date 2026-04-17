@@ -164,4 +164,4 @@ class AIService:
     async def delete_chat(cls, chat_id: ObjectId, user_id: str):
         """删除会话"""
         chat_crud = ChatMongoCRUD()
-        return await chat_crud.delete_by_id(chat_id, user_id)
+        return await chat_crud.delete(chat_id, user_id)

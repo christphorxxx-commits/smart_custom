@@ -11,15 +11,17 @@ from backend.app.modules.workflow.nodes.RetrieveNode import RetrieveNode
 
 
 class App(BaseModel):
-    app_id: str
+    uuid: str
+    name: Optional[str] = None
+    description: Optional[str] = None
     nodes: List[Node]
     edges: List[Edge]
     # 缓存已创建的node实例，避免重复构建，exclude=True不让Pydantic序列化它
     node_instances: Dict[str, Any] = Field(default_factory=dict, exclude=True)
     # 初始化/之前必须按照位置传递（仅位置参数），之后**data必须作为关键字参数传递
     def __init__(self, /, **data: Any):
-        if 'app_id' not in data:
-            data['app_id'] = uuid4_str()
+        if 'uuid' not in data:
+            data['uuid'] = uuid4_str()
         super().__init__(**data)
         # 预构建所有node实例，分层清晰：App持有node实例
         self._build_node_instances()

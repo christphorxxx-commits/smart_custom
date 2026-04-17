@@ -9,7 +9,8 @@ from backend.app.common.core.logger import log
 from .model import Chat, ChatItem
 
 
-class ChatMongoCRUD(BaseMongoCRUD[Chat]):
+from pydantic import BaseModel
+class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
     """
     聊天会话数据访问层 (MongoDB)
 
@@ -33,7 +34,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
 
         参数:
         - chat_id (Optional[str]): 会话ID，为空则创建新会话
-        - user_id (str): 用户ID
+        - uuid (str): 用户ID
         - first_message (str): 第一条消息，用于生成会话标题
 
         返回:
@@ -55,7 +56,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
         # 创建新会话，标题自动取第一条消息前20个字
         title = first_message[:20] + ("..." if len(first_message) > 20 else "")
         data = {
-            "user_id": user_id,
+            "uuid": user_id,
             "title": title,
             "created_by": user_id,
             "updated_by": user_id,
@@ -72,7 +73,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
         获取用户的聊天会话列表
 
         参数:
-        - user_id (str): 用户ID
+        - uuid (str): 用户ID
         - skip (int): 跳过条数
         - limit (int): 返回条数
 
@@ -88,7 +89,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
         )
 
 
-class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem]):
+class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem, BaseModel, BaseModel]):
     """
     聊天消息数据访问层 (MongoDB)
 

@@ -1,0 +1,97 @@
+// MongoDB 数据库初始化脚本
+// 使用方法: mongosh [--host localhost --port 27017] < init.js
+// 或者: mongo < init.js
+
+print();
+print("========================================");
+print("  MongoDB 数据库初始化");
+print("========================================");
+print();
+
+// 使用 smart_custom 数据库，如果不存在会自动创建
+use smart_custom;
+print("📂 使用数据库: smart_custom");
+
+// ========================================
+// 1. 创建 apps 集合 - 存储工作流应用完整配置
+// ========================================
+print();
+print("📦 创建集合: apps");
+db.createCollection("apps");
+
+// 创建索引
+db.apps.createIndex({ "uuid": 1 }, { unique: true });
+db.apps.createIndex({ "uuid": 1 });
+db.apps.createIndex({ "is_public": 1 });
+print("✅ apps 集合创建完成");
+
+// ========================================
+// 2. 创建 chat 集合 - 存储对话会话列表
+// ========================================
+print();
+print("📦 创建集合: chat");
+db.createCollection("chat");
+
+// 创建索引
+db.chat.createIndex({ "uuid": 1, "uuid": 1 });
+db.chat.createIndex({ "updated_at": -1 });
+print("✅ chat 集合创建完成");
+
+// ========================================
+// 3. 创建 chat_items 集合 - 存储单条对话消息
+// ========================================
+print();
+print("📦 创建集合: chat_items");
+db.createCollection("chat_items");
+
+// 创建索引
+db.chat_items.createIndex({ "chat_id": 1 });
+db.chat_items.createIndex({ "created_at": 1 });
+print("✅ chat_items 集合创建完成");
+
+// ========================================
+// 插入默认示例应用
+// ========================================
+print();
+print("📝 插入默认示例应用");
+
+db.apps.insertOne({
+  "uuid": "8488bff8-30a2-415d-8d1d-7c4fb4b6567b",
+  "name": "智能写诗/笑话/故事",
+  "description": "根据你的请求自动路由到不同类型生成，演示router节点功能",
+  "uuid": "1",
+  "icon": "🎯",
+  "type": "workflow",
+  "nodes": [
+    { "id": "start", "type": "start", "config": {} },
+    { "id": "router", "type": "router", "config": { "options": ["poem", "joke", "story"] } },
+    { "id": "poem_node", "type": "llm", "config": { "prompt": "写一首诗：{input}" } },
+    { "id": "joke_node", "type": "llm", "config": { "prompt": "讲一个笑话：{input}" } },
+    { "id": "story_node", "type": "llm", "config": { "prompt": "写一个故事：{input}" } },
+    { "id": "end", "type": "end", "config": {} }
+  ],
+  "edges": [
+    { "source": "start", "target": "router", "type": "normal", "condition": null },
+    { "source": "router", "target": "poem_node", "type": "conditional", "condition": "poem" },
+    { "source": "router", "target": "joke_node", "type": "conditional", "condition": "joke" },
+    { "source": "router", "target": "story_node", "type": "conditional", "condition": "story" },
+    { "source": "poem_node", "target": "end", "type": "normal", "condition": null },
+    { "source": "joke_node", "target": "end", "type": "normal", "condition": null },
+    { "source": "story_node", "target": "end", "type": "normal", "condition": null }
+  ],
+  "is_public": true,
+  "version": 1
+});
+
+print("✅ 默认示例应用插入完成");
+
+print();
+print("========================================");
+print("🎉 初始化完成！");
+print("========================================");
+print();
+print("集合说明:");
+print("   apps      - 工作流应用配置 (nodes/edges)");
+print("   chat      - 对话会话列表");
+print("   chat_items - 单条对话消息");
+print();

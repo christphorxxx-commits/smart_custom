@@ -142,13 +142,23 @@
       <div v-if="activeCategory === 'agent'" class="agent-content">
         <div class="content-header">
           <h2>我的 Agent</h2>
+          <div class="header-actions">
+            <button class="btn-new-chat" @click="openCreateModal('chat')">
+              <span>+</span>
+              <span>新建对话式Agent</span>
+            </button>
+            <button class="btn-new-workflow" @click="openCreateModal('workflow')">
+              <span>+</span>
+              <span>新建工作流Agent</span>
+            </button>
+          </div>
         </div>
         <div class="agent-grid" v-loading="loadingAgents">
           <div
             v-for="agent in agentList"
-            :key="agent.app_id"
+            :key="agent.id"
             class="agent-card"
-            @click="openAgentChat(agent)"
+            @click="openAgent(agent)"
           >
             <div class="agent-icon" :style="{ background: getDefaultColor(agent.type) }">
               {{ agent.icon || '🤖' }}
@@ -172,6 +182,59 @@
         </div>
       </div>
     </div>
+
+    <!-- 创建 Agent 弹窗 -->
+    <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>新建{{ modalTitle }}</h3>
+          <button class="close-btn" @click="closeCreateModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-item">
+            <label>Agent 名称 <span class="required">*</span></label>
+            <input
+              v-model="createForm.name"
+              type="text"
+              placeholder="请输入Agent名称"
+            />
+          </div>
+          <div class="form-item">
+            <label>Agent 描述</label>
+            <textarea
+              v-model="createForm.description"
+              placeholder="请输入Agent描述（可选）"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-item">
+            <label>图标</label>
+            <input
+              v-model="createForm.icon"
+              type="text"
+              placeholder="emoji图标，例如 🤖"
+            />
+          </div>
+          <div class="form-item">
+            <label class="checkbox-label">
+              <input v-model="createForm.is_public" type="checkbox">
+              <span>公开分享</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="closeCreateModal">取消</button>
+          <button class="confirm-btn" @click="handleCreate" :disabled="creating">
+            {{ creating ? '创建中...' : '确认创建' }}
+          </button>
+        </div>
+
+        <!-- Toast -->
+        <div v-if="toastVisible" class="toast" :class="toastClass">
+          {{ toastMessage }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,17 +250,40 @@ const isLeftSidebarCollapsed = ref(false)
 const isUserMenuExpanded = ref(false)
 
 // 导航状态
-const activeNav = ref('portal')
+const activeNav = ref('workbench')
 const activeCategory = ref('agent')
 
 // Agent 列表
 const agentList = ref([])
 const loadingAgents = ref(false)
 
+// 创建弹窗状态
+const showCreateModal = ref(false)
+const creating = ref(false)
+const targetType = ref('') // 'chat' | 'workflow'
+
+// 创建表单
+const createForm = ref({
+  name: '',
+  description: '',
+  icon: '🤖',
+  is_public: false
+})
+
+// Toast
+const toastVisible = ref(false)
+const toastMessage = ref('')
+const toastClass = ref('success')
+
 // 用户信息
 const username = ref('用户')
 const userInitial = computed(() => {
   return username.value.charAt(0).toUpperCase()
+})
+
+// 计算弹窗标题
+const modalTitle = computed(() => {
+  return targetType.value === 'chat' ? '对话式Agent' : '工作流Agent'
 })
 
 // 页面加载
@@ -254,7 +340,7 @@ const handleNavClick = (nav) => {
     loadAgentList()
   } else if (nav === 'flow-editor') {
     // 跳转到应用编排（创建新应用）
-    router.push('/app/create')
+    openCreateModal('workflow')
   }
 }
 
@@ -266,10 +352,91 @@ const handleCategoryClick = (category) => {
   }
 }
 
-// 打开 Agent 对话
-const openAgentChat = (agent) => {
-  // app.id 是 PG 主键，跳转到聊天页面
-  window.location.href = `/app/chat/${agent.id}`
+// 打开创建弹窗
+const openCreateModal = (type) => {
+  targetType.value = type
+  // 重置表单
+  createForm.value = {
+    name: '',
+    description: '',
+    icon: '🤖',
+    is_public: false
+  }
+  showCreateModal.value = true
+}
+
+// 关闭创建弹窗
+const closeCreateModal = () => {
+  showCreateModal.value = false
+  creating.value = false
+}
+
+// 显示 Toast
+const showToast = (message, type = 'success') => {
+  toastMessage.value = message
+  toastClass.value = type
+  toastVisible.value = true
+  setTimeout(() => {
+    toastVisible.value = false
+  }, 3000)
+}
+
+// 确认创建
+const handleCreate = async () => {
+  if (!createForm.value.name.trim()) {
+    showToast('请输入Agent名称', 'error')
+    return
+  }
+
+  creating.value = true
+  try {
+    // 构建请求数据
+    const requestData = {
+      name: createForm.value.name.trim(),
+      description: createForm.value.description || null,
+      icon: createForm.value.icon || '🤖',
+      is_public: createForm.value.is_public,
+      type: targetType.value === 'workflow' ? 'WORKFLOW' : 'CHAT'
+    }
+
+    // 调用 create 接口
+    const response = await axios.post('/api/app/create', requestData)
+    if (response.data.success) {
+      showToast('创建成功', 'success')
+      closeCreateModal()
+      // 刷新列表
+      loadAgentList()
+      // 创建成功后跳转到编辑页面
+      const appId = response.data.data.id
+      if (targetType.value === 'workflow') {
+        router.push(`/workflow/edit/${appId}`)
+      } else {
+        router.push(`/chatagent/edit/${appId}`)
+      }
+    } else {
+      showToast(response.data.msg || '创建失败', 'error')
+    }
+  } catch (error) {
+    console.error('创建失败:', error)
+    showToast(error.response?.data?.msg || '网络错误', 'error')
+  } finally {
+    creating.value = false
+  }
+}
+
+// 根据 Agent 类型打开对应编辑页面
+const openAgent = (agent) => {
+  // 使用 uuid (UUID) 进行路由和请求
+  if (agent.type === 'WORKFLOW') {
+    // 工作流 Agent → 跳转到可视化画板编辑
+    router.push(`/workflow/edit/${agent.app_id}`)
+  } else if (agent.type === 'CHAT') {
+    // 对话式 Agent → 跳转到AI配置页面编辑
+    router.push(`/chatagent/edit/${agent.app_id}`)
+  } else {
+    // 默认 → 直接打开对话
+    router.push(`/app/chat/${agent.app_id}`)
+  }
 }
 
 // 切换用户菜单
@@ -292,6 +459,8 @@ const getPlaceholderText = () => {
 // 获取默认颜色
 function getDefaultColor(type) {
   const colors = {
+    WORKFLOW: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)',
+    CHAT: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     ai: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     workflow: 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)',
     chat: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
@@ -637,6 +806,9 @@ axios.interceptors.response.use(
 
 .content-header {
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .content-header h2 {
@@ -644,6 +816,46 @@ axios.interceptors.response.use(
   font-size: 24px;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-new-chat,
+.btn-new-workflow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-new-chat {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.btn-new-workflow {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+}
+
+.btn-new-chat:hover,
+.btn-new-workflow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 78, 237, 0.3);
+}
+
+.header-actions span:first-child {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .agent-grid {
@@ -776,6 +988,196 @@ axios.interceptors.response.use(
   .agent-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+}
+
+/* 创建弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 480px;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.close-btn:hover {
+  background: var(--hover-bg);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.form-item label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.form-item .required {
+  color: #ef4444;
+}
+
+.form-item input,
+.form-item textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.form-item input:focus,
+.form-item textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(107, 78, 237, 0.1);
+}
+
+.form-item input::placeholder,
+.form-item textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.form-item textarea {
+  resize: vertical;
+}
+
+.form-item .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.form-item .checkbox-label input {
+  width: auto;
+  cursor: pointer;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 24px;
+}
+
+.cancel-btn {
+  padding: 10px 24px;
+  border: 1px solid var(--border-color);
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: var(--hover-bg);
+}
+
+.confirm-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 78, 237, 0.35);
+}
+
+.confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 1001;
+  animation: fadeInUp 0.3s ease;
+}
+
+.toast.success {
+  background: #10b981;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }
 </style>

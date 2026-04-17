@@ -2,6 +2,9 @@
 
 from enum import Enum, unique
 
+class AgentType(Enum):
+    WORKFLOW = "WORKFLOW"
+    CHAT = "CHAT"
 
 @unique
 class EnvironmentEnum(str, Enum):

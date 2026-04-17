@@ -3,11 +3,13 @@ from typing import Literal, Dict, Any, TypedDict, Annotated, Optional, List
 
 from pydantic import BaseModel, Field
 
+from backend.app.common.enums import AgentType
+
 
 class Node(BaseModel):
     """工作流节点基础模型"""
     id: str = Field(..., description="节点唯一ID")
-    type: Literal["start", "llm", "router", "end"] = Field(..., description="节点类型")
+    type: Literal["start", "llm", "router", "retrieve", "end"] = Field(..., description="节点类型")
     config: Dict[str, Any] = Field(default={}, description="节点配置字典")
 
 
@@ -25,47 +27,123 @@ class State(TypedDict, total=False):
     variables: dict  # 节点输出（按节点存储）
     decision: str  # 路由决策（临时）
     output: str  # 最终输出
-# ============ Pydantic 请求模型 ============
-class CreateAppSchema(BaseModel):
-    """创建工作流请求"""
-    name: str = Field(..., description="工作流名称")
-    description: Optional[str] = Field(None, description="工作流描述")
-    icon: Optional[str] = Field(None, description="图标emoji")
-    nodes: List[Dict[str, Any]] = Field(..., description="节点列表")
-    edges: List[Dict[str, Any]] = Field(..., description="边列表")
-    is_public: bool = Field(default=False, description="是否公开")
 
 
-class UpdateAppSchema(BaseModel):
-    """更新工作流请求"""
-    name: Optional[str] = Field(None, description="工作流名称")
-    description: Optional[str] = Field(None, description="工作流描述")
-    icon: Optional[str] = Field(None, description="图标emoji")
-    nodes: Optional[List[Dict[str, Any]]] = Field(None, description="节点列表")
-    edges: Optional[List[Dict[str, Any]]] = Field(None, description="边列表")
-    is_public: Optional[bool] = Field(None, description="是否公开")
+# ============ LLM 配置 ============
+class LLMConfigSchema(BaseModel):
+    """LLM配置schema"""
+    model: Optional[str] = Field(None, description="模型名称")
+    systemPrompt: Optional[str] = Field(None, description="系统提示词")
+    temperature: Optional[float] = Field(None, description="温度")
+    maxTokens: Optional[int] = Field(None, description="最大token数")
+
+
+# ============ 知识库配置 ============
+class KnowledgeBaseConfigSchema(BaseModel):
+    """知识库配置schema"""
+    collectionId: Optional[str] = Field(None, description="知识库集合ID")
+    topK: Optional[int] = Field(5, description="返回结果数量")
+    scoreThreshold: Optional[float] = Field(0.5, description="相似度阈值")
+
+
+# ============ 对话式Agent 完整配置schema ============
+class SystemConfigSchema(BaseModel):
+    """Agent完整系统配置schema"""
+    enableFileUpload: Optional[bool] = Field(default=False, description="是否启用文件上传")
+    globalVariables: Optional[Dict[str, str]] = Field(default={}, description="全局变量字典")
+    openingMessage: Optional[str] = Field(default=None, description="对话开场白")
+    enableTTS: Optional[bool] = Field(default=False, description="是否启用语音播放")
+    enableASR: Optional[bool] = Field(default=False, description="是否启用语音输入")
+    guessedQuestions: Optional[bool] = Field(default=False, description="是否启用猜你想问")
+    inputGuidance: Optional[bool] = Field(default=False, description="是否启用输入引导")
+
+
+class WorkflowSystemConfigSchema(SystemConfigSchema):
+    """工作流Agent系统配置"""
+    timeExecute: bool = Field(default=False, description="是否定时执行")
+    autoExecute: Optional[bool] = Field(default=False, description="是否自动执行")
+
+
+class ChatSystemConfigSchema(SystemConfigSchema):
+    """对话式Agent系统配置"""
+    llmConfig: LLMConfigSchema = Field(
+        default=LLMConfigSchema(
+            model="qwen-max",
+            systemPrompt="你是一个智能AI助手",
+            temperature=0.7, maxTokens=5000
+        ),
+        description="大模型配置"
+    )
+    enableKnowledgeBase: Optional[bool] = Field(default=False, description="是否启用知识库检索")
+    knowledgeBaseConfig: Optional[KnowledgeBaseConfigSchema] = Field(default=None, description="知识库配置")
+    enableToolCall: Optional[bool] = Field(default=False, description="是否启用工具调用")
+
+
+# ============ 基础共享 schema ============
+class CreateAppSchema(SystemConfigSchema):
+    """应用基础信息共享schema（创建起点）
+
+    创建规则：
+    - 只有 name 是必填项
+    - description/icon/is_public/type 都有默认值，可省略
+    - type 由前端点击创建按钮自动设置 (WORKFLOW/CHAT)
+    - SystemConfigSchema 所有配置字段都使用默认值，创建后在编辑阶段设置
+    """
+    name: str = Field(..., description="Agent名称（必填）")
+    uuid: Optional[str] = Field(None, description="应用UUID（后端生成）")
+    user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）")
+    description: Optional[str] = Field(None, description="Agent描述（可选）")
+    icon: Optional[str] = Field("🤖", description="图标emoji，默认 🤖")
+    type: Optional[AgentType] = Field(None, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
+    is_public: bool = Field(default=False, description="是否公开分享，默认不公开")
+
+    nodes: Optional[List[Dict[str, Any]]] = Field(None, description="初始节点列表（工作流Agent）")
+    edges: Optional[List[Dict[str, Any]]] = Field(None, description="初始边列表（工作流Agent）")
+    version: Optional[int] = Field(None, description="版本号")
+
+
+# ============ 工作流Agent（可视化编排） ============
+class UpdateWorkflowAgentSchema(CreateAppSchema, WorkflowSystemConfigSchema):
+    """更新工作流Agent请求（可视化编排）"""
+    id: int = Field(..., description="PG数据库中主键id")
+
+
+# ============ 对话式Agent（配置式，默认线性） ============
+class UpdateChatAgentSchema(CreateAppSchema, ChatSystemConfigSchema):
+    """更新对话式Agent请求
+
+    对话式Agent自动生成线性工作流：
+    - 默认: start → llm → end
+    - 启用知识库后: start → retrieve → llm → end
+    """
+    id: int = Field(..., description="PG数据库中主键id")
+
 
 class AppInfoSchema(BaseModel):
-    """应用信息返回字段"""
-    id: int = Field(..., description="PostgreSQL 主键ID")
-    app_id: str = Field(..., description="应用UUID，对应MongoDB中的app_id")
-    name: str = Field(..., description="应用名称")
-    description: Optional[str] = Field(None, description="应用描述")
-    icon: Optional[str] = Field(None, description="图标emoji")
-    type: str = Field(..., description="应用类型: workflow/ai/chat")
-    is_public: bool = Field(..., description="是否公开分享")
+    app_id: int = Field(..., description="app的唯一id")
+    uuid: Optional[str] = Field(None, description="应用UUID（后端生成）")
+    name: str = Field(..., description="Agent名称（必填）")
+    description: Optional[str] = Field(None, description="Agent描述（可选）")
+    icon: Optional[str] = Field("🤖", description="图标emoji，默认 🤖")
+    type: Optional[str] = Field(None, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
+    is_public: bool = Field(default=False, description="是否公开分享，默认不公开")
 
 
-class AppResponseSchema(BaseModel):
-    """应用详情返回schema - 完整工作流配置"""
-    id: str = Field(..., description="MongoDB ObjectId 字符串")
-    app_id: str = Field(..., description="应用UUID，用于跨库关联PG表")
-    name: str = Field(..., description="应用名称")
-    description: Optional[str] = Field(None, description="应用描述")
-    user_id: Optional[str] = Field(None, description="创建用户ID")
-    icon: Optional[str] = Field(None, description="图标emoji")
-    type: str = Field(..., description="应用类型: workflow/ai/chat")
-    nodes: List[Dict[str, Any]] = Field(..., description="节点列表，每个节点包含id, type, config")
-    edges: List[Dict[str, Any]] = Field(..., description="边列表，每个边包含source, target, type")
-    is_public: bool = Field(default=False, description="是否公开分享")
-    version: int = Field(default=1, description="版本号")
+class AppDetailResponseSchema(CreateAppSchema):
+    """获取应用详情响应 schema
+    - id: MongoDB 文档 ObjectId 转换为字符串
+    - pg_id: PostgreSQL 主键 ID
+    - uuid: 应用 UUID，跨库关联使用
+    """
+    # 工作流特有配置
+    timeExecute: Optional[bool] = Field(default=False, description="是否定时执行")
+    autoExecute: Optional[bool] = Field(default=False, description="是否自动执行")
+    # 对话式 Agent 特有配置
+    llmConfig: Optional[LLMConfigSchema] = Field(default=None, description="大模型配置")
+    enableKnowledgeBase: Optional[bool] = Field(default=False, description="是否启用知识库检索")
+    knowledgeBaseConfig: Optional[KnowledgeBaseConfigSchema] = Field(default=None, description="知识库配置")
+    enableToolCall: Optional[bool] = Field(default=False, description="是否启用工具调用")
+
+    model_config = {
+        "arbitrary_types_allowed": True
+    }
