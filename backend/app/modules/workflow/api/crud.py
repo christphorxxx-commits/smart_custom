@@ -61,35 +61,46 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateChatAgentSchema | UpdateWor
         创建应用基本信息到 PostgreSQL
 
         参数:
-        - uuid (int): 用户ID
-        - name (str): 应用名称
-        - uuid (str): 应用UUID
-        - description (Optional[str]): 应用描述
-        - icon (Optional[str]): 图标emoji
-        - is_public (bool): 是否公开
-        - type (str): 应用类型
+        - data (CreateAppSchema): 创建数据，只提取 PG 需要的字段
 
         返回:
         - AiApp: 创建后的 PG 记录
         """
-
-        return await self.create(data)
+        # PostgreSQL AiApp 只存储基本信息，不存储系统配置（系统配置在MongoDB）
+        # 只提取 PG 需要的字段，避免传入额外字段导致错误
+        pg_data = {
+            "name": data.name,
+            "uuid": data.uuid,
+            "user_id": data.user_id,
+            "description": data.description,
+            "icon": data.icon,
+            "type": data.type,
+            "is_public": data.is_public,
+        }
+        return await self.create(pg_data)
 
     async def update_app_pg_crud(
             self,
-            data: UpdateWorkflowAgentSchema
+            data: UpdateWorkflowAgentSchema | UpdateChatAgentSchema
     ) -> AiApp:
         """
         更新应用基本信息到 PostgreSQL
 
         参数:
-        - app (AiApp): 现有PG应用记录
-        - update_data (Dict[str, Any]): 更新数据字典
+        - data: 更新数据，只提取 PG 需要的字段
 
         返回:
         - AiApp: 更新后的 PG 记录
         """
-        return await self.update(id=data.id, data=data)
+        # PostgreSQL AiApp 只更新基本信息，系统配置只更新 MongoDB
+        update_data = {
+            "name": data.name,
+            "description": data.description,
+            "icon": data.icon,
+            "type": data.type,
+            "is_public": data.is_public,
+        }
+        return await self.update(id=data.app_id, data=update_data)
 
     async def get_app_by_id_crud(self, id: int) -> Optional[AiApp]:
         """
