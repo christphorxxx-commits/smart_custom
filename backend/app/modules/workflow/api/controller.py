@@ -258,8 +258,8 @@ async def get_app_detail(
     pg_app = await app_crud.get_app_by_app_id_crud(app_id)
 
     # 从MongoDB直接获取完整配置
-    mongo_app = await AppService.get_app_by_app_id(app_id)
-    if not mongo_app:
+    mongo_app_dict = await AppService.get_app_by_app_id(app_id)
+    if not mongo_app_dict:
         return ErrorResponse(msg="应用配置不存在")
 
     # 使用 AppDetailResponseSchema 构建响应
@@ -268,31 +268,31 @@ async def get_app_detail(
     # - 工作流数据 (nodes, edges)
     # - 所有系统配置字段
     response_data = AppDetailResponseSchema(
-        name=mongo_app.name,
-        description=mongo_app.description,
-        user_id=mongo_app.user_id,
-        icon=mongo_app.icon,
-        type=mongo_app.type,
-        is_public=mongo_app.is_public,
-        nodes=mongo_app.nodes,
-        edges=mongo_app.edges,
-        version=mongo_app.version,
+        name=mongo_app_dict['name'],
+        description=mongo_app_dict['description'],
+        user_id=mongo_app_dict['user_id'],
+        icon=mongo_app_dict['icon'],
+        type=mongo_app_dict['type'],
+        is_public=mongo_app_dict['is_public'],
+        nodes=mongo_app_dict['nodes'],
+        edges=mongo_app_dict['edges'],
+        version=mongo_app_dict['version'],
         # 通用系统配置
-        enableFileUpload=mongo_app.enableFileUpload,
-        globalVariables=mongo_app.globalVariables,
-        openingMessage=mongo_app.openingMessage,
-        enableTTS=mongo_app.enableTTS,
-        enableASR=mongo_app.enableASR,
-        guessedQuestions=mongo_app.guessedQuestions,
-        inputGuidance=mongo_app.inputGuidance,
+        enableFileUpload=mongo_app_dict['enableFileUpload'],
+        globalVariables=mongo_app_dict['globalVariables'],
+        openingMessage=mongo_app_dict['openingMessage'],
+        enableTTS=mongo_app_dict['enableTTS'],
+        enableASR=mongo_app_dict['enableASR'],
+        guessedQuestions=mongo_app_dict['guessedQuestions'],
+        inputGuidance=mongo_app_dict['inputGuidance'],
         # 工作流特有配置
-        timeExecute=mongo_app.timeExecute,
-        autoExecute=mongo_app.autoExecute,
+        timeExecute=mongo_app_dict['timeExecute'],
+        autoExecute=mongo_app_dict['autoExecute'],
         # 对话式 Agent 特有配置
-        llmConfig=mongo_app.llmConfig,
-        enableKnowledgeBase=mongo_app.enableKnowledgeBase,
-        knowledgeBaseConfig=mongo_app.knowledgeBaseConfig,
-        enableToolCall=mongo_app.enableToolCall,
+        llmConfig=mongo_app_dict['llmConfig'],
+        enableKnowledgeBase=mongo_app_dict['enableKnowledgeBase'],
+        knowledgeBaseConfig=mongo_app_dict['knowledgeBaseConfig'],
+        enableToolCall=mongo_app_dict['enableToolCall'],
     )
 
     return SuccessResponse(

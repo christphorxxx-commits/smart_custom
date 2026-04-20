@@ -341,7 +341,7 @@ const currentAppId = ref(null)
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown)
 
-  const appId = route.params.app_id
+  const appId = route.params.uuid
   if (appId) {
     isEditing.value = true
     // Load existing workflow data - use GET /api/app/{uuid} directly by UUID
