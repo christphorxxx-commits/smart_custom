@@ -68,7 +68,13 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateChatAgentSchema | UpdateWor
         """
         # PostgreSQL AiApp 只存储基本信息，不存储系统配置（系统配置在MongoDB）
         # CreateAppPGSchema 只包含 PG 需要的字段，直接序列化
-        return await self.create(data.model_dump(exclude_unset=True))
+        # type 是枚举 AgentType，需要转换为字符串才能写入数据库
+        pg_data = data.model_dump(exclude_unset=True)
+        if pg_data.get('type') is not None:
+            from backend.app.common.enums import AgentType
+            if isinstance(pg_data['type'], AgentType):
+                pg_data['type'] = pg_data['type'].value
+        return await self.create(pg_data)
 
     async def update_app_pg_crud(
             self,
@@ -88,9 +94,15 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateChatAgentSchema | UpdateWor
             "name": data.name,
             "description": data.description,
             "icon": data.icon,
-            "type": data.type,
             "is_public": data.is_public,
         }
+        # type 是枚举 AgentType，需要转换为字符串才能写入数据库
+        if data.type is not None:
+            from backend.app.common.enums import AgentType
+            if isinstance(data.type, AgentType):
+                update_data['type'] = data.type.value
+            else:
+                update_data['type'] = data.type
         return await self.update(id=data.app_id, data=update_data)
 
     async def get_app_by_id_crud(self, id: int) -> Optional[AiApp]:
