@@ -4,6 +4,7 @@ from typing import Literal, Dict, Any, TypedDict, Annotated, Optional, List
 from pydantic import BaseModel, Field
 
 from backend.app.common.enums import AgentType
+from backend.app.common.utils.common_util import uuid4_str
 
 
 class Node(BaseModel):
@@ -83,11 +84,11 @@ class ChatSystemConfigSchema(SystemConfigSchema):
 class CreateAppPGSchema(BaseModel):
     """PostgreSQL 创建应用 schema - 只保留 PG 需要的基本字段"""
     name: str = Field(..., description="Agent名称（必填）")
-    uuid: Optional[str] = Field(None, description="应用UUID（后端生成）")
-    user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）")
-    description: Optional[str] = Field(None, description="Agent描述（可选）")
+    uuid: Optional[str] = Field(default_factory=uuid4_str, description="应用UUID（后端生成）")
+    user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）- PG 外键引用 sys_user.id，必须 int")
+    description: Optional[str] = Field(default=None, description="Agent描述（可选）")
     icon: Optional[str] = Field("🤖", description="图标emoji，默认 🤖")
-    type: Optional[AgentType] = Field(None, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
+    type: Optional[AgentType] = Field(AgentType.WORKFLOW, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
     is_public: bool = Field(default=False, description="是否公开分享，默认不公开")
 
 
@@ -100,9 +101,9 @@ class CreateAppSchema(CreateAppPGSchema, SystemConfigSchema):
     - type 由前端点击创建按钮自动设置 (WORKFLOW/CHAT)
     - SystemConfigSchema 所有配置字段都使用默认值，创建后在编辑阶段设置
     """
-    nodes: Optional[List[Dict[str, Any]]] = Field(None, description="初始节点列表（工作流Agent）")
-    edges: Optional[List[Dict[str, Any]]] = Field(None, description="初始边列表（工作流Agent）")
-    version: Optional[int] = Field(None, description="版本号")
+    nodes: Optional[List[Dict[str, Any]]] = Field(default=[], description="初始节点列表（工作流Agent）")
+    edges: Optional[List[Dict[str, Any]]] = Field(default=[], description="初始边列表（工作流Agent）")
+    version: Optional[int] = Field(default=1, description="版本号")
 
 
 # ============ 工作流Agent（可视化编排） ============
