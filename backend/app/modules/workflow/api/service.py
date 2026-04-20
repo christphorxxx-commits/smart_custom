@@ -195,7 +195,7 @@ class AppService:
         """
         # 1. 从PG获取应用基本信息
         app_crud = AppCRUD(auth)
-        pg_app = await app_crud.get_app_by_id_crud(data.id)
+        pg_app = await app_crud.get_app_by_id_crud(data.app_id)
         if not pg_app:
             return {"success": False, "message": "应用不存在"}
 
@@ -295,15 +295,27 @@ class AppService:
         # 1. 创建到 PostgreSQL（存储基本信息）
         app_crud = AppCRUD(auth)
         data.uuid = uuid4_str()
-        data.user_id = user.id
+        data.user_id = user.id  # PG 需要 int，MongoDB 需要 str，保持 data 中是 int 因为 CreateAppPGSchema 需要 int
 
         pg_app = await app_crud.create_app_pg_crud(data=data)
         log.info(f"[{user.username}] 创建新应用到PG: {data.name}, type={data.type}")
 
         # 3. 创建到 MongoDB（存储初始nodes和edges）
         app_mongo_crud = AppMongoCRUD()
+        # MongoDB App 模型需要:
+        # - user_id: str (因为存储字符串形式的PG主键)
+        # - nodes/edges: 默认空列表
+        # - version: 默认 1
+        mongo_data = data.model_dump()
+        mongo_data['user_id'] = str(mongo_data['user_id'])
+        if mongo_data.get('nodes') is None:
+            mongo_data['nodes'] = []
+        if mongo_data.get('edges') is None:
+            mongo_data['edges'] = []
+        if mongo_data.get('version') is None:
+            mongo_data['version'] = 1
 
-        mongo_app = await app_mongo_crud.create_mongo_app_crud(data=data)
+        mongo_app = await app_mongo_crud.create_mongo_app_crud(mongo_data)
         log.info(f"[{user.username}] 创建新应用到MongoDB: {data.name}, id={str(mongo_app.id)}, type={pg_app.type}")
 
         return {
