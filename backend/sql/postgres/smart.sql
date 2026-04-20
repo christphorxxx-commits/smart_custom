@@ -179,14 +179,15 @@ EXECUTE FUNCTION public.update_updated_time();
 -- 用户名: admin
 -- 密码: admin123 (BCrypt 哈希: $argon2id$v=19$m=65536,t=3,p=4$vXchZ5IJb5m0iSsw+lB2MA$MzdSo0ikqcKMpubW6HMrmZgRjnPdBHd3ssVADb6tVoY)
 INSERT INTO public.sys_user (
-    username, password, name, is_superuser, status, description
+    username, password, name, is_superuser, status, description,mobile
 ) VALUES (
     'admin',
     '$argon2id$v=19$m=65536,t=3,p=4$vXchZ5IJb5m0iSsw+lB2MA$MzdSo0ikqcKMpubW6HMrmZgRjnPdBHd3ssVADb6tVoY',
     '超级管理员',
     true,
     '0',
-    '系统内置最高权限账号'
+    '系统内置最高权限账号',
+    '18770335001'
 );
 
 -- 6.2 插入默认角色

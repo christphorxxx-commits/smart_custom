@@ -296,7 +296,7 @@ class AppService:
         app_crud = AppCRUD(auth)
         data.uuid = uuid4_str()
         data.user_id = user.id  # PG 需要 int，外键引用 sys_user.id 必须是 int
-
+        data.type = data.type.value
         pg_app = await app_crud.create_app_pg_crud(data=data)
         log.info(f"[{user.username}] 创建新应用到PG: {data.name}, type={data.type}")
 
@@ -304,10 +304,9 @@ class AppService:
         app_mongo_crud = AppMongoCRUD()
         # MongoDB App 模型需要 user_id 是 str（约定存储字符串形式 ID）
         # 复制一份 data 转换 user_id 到 string
-        data_for_mongo = data.model_copy()
-        data_for_mongo.user_id = str(data_for_mongo.user_id)
+        data.user_id = str(user.id)
 
-        mongo_app = await app_mongo_crud.create_mongo_app_crud(data_for_mongo)
+        mongo_app = await app_mongo_crud.create_mongo_app_crud(data=data)
         log.info(f"[{user.username}] 创建新应用到MongoDB: {data.name}, id={str(mongo_app.id)}, type={pg_app.type}")
 
         return {
