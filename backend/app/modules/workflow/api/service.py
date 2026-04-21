@@ -1,21 +1,81 @@
-from typing import List, Dict, Any, Optional
-
+import json
+from typing import List, Dict, Any, Optional, Coroutine
+from collections.abc import AsyncIterable
 from bson import ObjectId
+from fastapi.sse import ServerSentEvent
 
 from backend.app.common.core.logger import log
-from backend.app.common.enums import AgentType
+from backend.app.common.utils.common_util import uuid4_str
+from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.model import UserModel
 from backend.app.modules.workflow.api.crud import AppCRUD, AppMongoCRUD
-from backend.app.modules.workflow.api.model import App, AiApp
+from backend.app.modules.workflow.api.model import AiApp
 from backend.app.modules.workflow.api.schema import (
-    CreateAppSchema, UpdateWorkflowAgentSchema, UpdateChatAgentSchema,
-    ChatSystemConfigSchema, AppInfoSchema,
+    CreateAppSchema, UpdateAgentSchema, AppInfoSchema, BaseCreateAppSchema,
 )
-from backend.app.common.utils.common_util import uuid4_str
+from backend.app.modules.workflow.app import App
+
 
 class AppService:
     """应用业务逻辑层"""
+    # 内存缓存已编译的应用 {uuid: App}
+    app_storage: Dict[str, App] = {}
+
+    @staticmethod
+    def register_app(app: App) -> str:
+        """注册一个app到缓存，返回uuid"""
+        AppService.app_storage[app.uuid] = app
+        return app.uuid
+
+    @staticmethod
+    async def exist(auth: AuthSchema, uuid: str) -> App | None:
+        """
+        从缓存获取 App，如果缓存不存在则从 MongoDB 加载并编译
+        - uuid: 应用 UUID
+        - returns: 编译好的 App 实例，不存在返回 None
+        """
+        if uuid in AppService.app_storage:
+            return AppService.app_storage[uuid]
+
+        # 从 MongoDB 根据 app_id 获取完整配置
+        app_mongo_crud = AppMongoCRUD(auth)
+        mongo_app = await app_mongo_crud.get_app_by_uuid_crud(uuid)
+        if not mongo_app:
+            return None
+
+        # 前端格式已经统一，直接使用 MongoDB 中保存的原始数据（包含 x y 坐标）
+        # 不需要格式转换，nodes 已经是正确格式：id/type/x/y/config
+        app_data = {
+            "name": mongo_app.name,
+            "description": mongo_app.description,
+            "uuid": mongo_app.uuid,
+            "nodes": mongo_app.nodes,
+            "edges": mongo_app.edges,
+        }
+        app = App(**app_data)
+        AppService.register_app(app)
+        return app
+
+    @staticmethod
+    async def chat_sse(app: App, query: ChatQuerySchema) -> AsyncIterable[ServerSentEvent]:
+        """
+        SSE 流式对话生成器
+        Yields each token event as it's generated
+        """
+        # 是否是第一个token，用于去掉开头的markdown标题符号
+        is_first = True
+        async for event in app.astream_tokens({"input": query.message}):
+            if event["type"] == "token":
+                data = event["token"]
+                # 去掉开头的 markdown 标题符号 ## 等
+                if is_first:
+                    # 去掉开头连续的 # 和空格
+                    data = data.lstrip('# ')
+                    is_first = False
+                # 如果data为空，跳过不输出
+                if data:
+                    yield ServerSentEvent(data=data, event="token")
 
     @staticmethod
     async def get_available_apps(auth: AuthSchema) -> List[Dict[str, Any]]:
@@ -41,7 +101,7 @@ class AppService:
                 name=app.name,
                 description=app.description,
                 icon=app.icon,
-                type= app.type,
+                type=app.type,
                 is_public=app.is_public,
             )
             result.append(schema.model_dump())
@@ -60,13 +120,13 @@ class AppService:
         - Optional[App]: 默认应用MongoDB文档，不存在返回None
         """
         app_id = "8488bff8-30a2-415d-8d1d-7c4fb4b6567b"
-        app_mongo_crud = AppMongoCRUD()
-        default_app = await app_mongo_crud.get_app_by_appid_crud(app_id)
+        app_mongo_crud = AppMongoCRUD(auth)
+        default_app = await app_mongo_crud.get_app_by_uuid_crud(app_id)
 
         return default_app
 
     @staticmethod
-    async def get_app_by_object_id(objectid: ObjectId) -> Optional[App]:
+    async def get_app_by_object_id(auth: AuthSchema, objectid: ObjectId) -> Optional[App]:
         """
         根据ObjectId获取应用
 
@@ -76,13 +136,13 @@ class AppService:
         返回:
         - Optional[App]: 应用MongoDB文档，不存在返回None
         """
-        app_mongo_crud = AppMongoCRUD()
+        app_mongo_crud = AppMongoCRUD(auth)
         default_app = await app_mongo_crud.get_by_id(objectid)
 
         return default_app
 
     @staticmethod
-    async def get_app_by_app_id(app_id: str) -> Dict[str, Any]:
+    async def get_app_by_uuid(auth: AuthSchema, uuid: str) -> Dict[str, Any]:
         """
         根据app_id获取应用
 
@@ -92,94 +152,21 @@ class AppService:
         返回:
         - Optional[App]: 应用MongoDB文档，不存在返回None
         """
-        app_mongo_crud = AppMongoCRUD()
-        app = await app_mongo_crud.get_app_by_appid_crud(app_id)
+        app_mongo_crud = AppMongoCRUD(auth)
+        app = await app_mongo_crud.get_app_by_uuid_crud(uuid)
         app.type = str(app.type)
 
         app.created_at = app.created_at.isoformat()
         app.updated_at = app.updated_at.isoformat()
-
+        app.id=str(app.id)
 
         return app.model_dump()
 
-    # @staticmethod
-    # async def save_app(
-    #     auth: AuthSchema,
-    #     user: UserModel,
-    #     data: CreateAppSchema
-    # ) -> Dict[str, Any]:
-    #     """
-    #     保存新建的工作流应用
-    #
-    #     先创建基本信息到 PostgreSQL，再创建完整配置到 MongoDB
-    #
-    #     参数:
-    #     - auth (AuthSchema): 认证信息
-    #     - user (UserModel): 当前用户
-    #     - data (CreateAppSchema): 创建请求数据
-    #
-    #     返回:
-    #     - Dict[str, Any]: 创建结果
-    #     """
-    #
-    #     # 生成全局唯一 uuid，用于跨库关联
-    #     uuid_val = uuid4_str()
-    #     user_id_str = str(user.id)
-    #
-    #     # 格式转换：双重保险，确保存储的一定是正确格式
-    #     def convert_node(node: dict) -> dict:
-    #         node_type_map = {
-    #             "input": "start",
-    #             "output": "end",
-    #             "if": "router",
-    #             "llm": "llm",
-    #             "retrieve": "retrieve",
-    #         }
-    #         original_type = node.get("type", "")
-    #         backend_type = node_type_map.get(original_type, original_type)
-    #         return {
-    #             "id": node.get("id", ""),
-    #             "type": backend_type,
-    #             "config": node.get("data", {}).get("config", {}) or node.get("config", {})
-    #         }
-    #
-    #     def convert_edge(edge: dict) -> dict:
-    #         source = edge.get("source") or edge.get("sourceNodeId", "")
-    #         target = edge.get("target") or edge.get("targetNodeId", "")
-    #         return {
-    #             "source": source,
-    #             "target": target,
-    #             "type": edge.get("type", "normal"),
-    #             "condition": edge.get("condition", None)
-    #         }
-    #
-    #     converted_nodes = [convert_node(n) for n in data.nodes]
-    #     converted_edges = [convert_edge(e) for e in data.edges]
-    #
-    #     # 1. 创建到 PostgreSQL（存储基本信息）
-    #     app_crud = AppCRUD(auth)
-    #     data.uuid = uuid_val
-    #     data.user_id = user.id
-    #
-    #     pg_app = await app_crud.create_app_pg_crud(data=data)
-    #     log.info(f"[{user.username}] 成功保存应用到PG: {data.name}")
-    #
-    #     # 2. 创建完整配置到 MongoDB（存储转换后的nodes和edges）
-    #     app_mongo_crud = AppMongoCRUD()
-    #     mongo_app = await app_mongo_crud.create_mongo_app_crud(data=data)
-    #     log.info(f"[{user.username}] 成功保存应用到MongoDB: {data.name}, id={str(mongo_app.id)}")
-    #
-    #     return {
-    #         "uuid": uuid_val,
-    #         "mongo_id": str(mongo_app.id),
-    #         "message": "保存成功"
-    #     }
-
     @staticmethod
     async def update_app(
-        auth: AuthSchema,
-        user: UserModel,
-        data: UpdateWorkflowAgentSchema | UpdateChatAgentSchema,
+            auth: AuthSchema,
+            user: UserModel,
+            data: UpdateAgentSchema,
     ) -> Dict[str, Any]:
         """
         更新工作流应用
@@ -193,9 +180,9 @@ class AppService:
         返回:
         - Dict: 更新结果
         """
-        # 1. 从PG获取应用基本信息
+        # 1. 从PG获取应用基本信息（通过 uuid 查询）
         app_crud = AppCRUD(auth)
-        pg_app = await app_crud.get_app_by_id_crud(data.app_id)
+        pg_app = await app_crud.get_app_by_uuid_crud(data.uuid)
         if not pg_app:
             return {"success": False, "message": "应用不存在"}
 
@@ -204,64 +191,23 @@ class AppService:
             return {"success": False, "message": "无权限更新此应用"}
 
         # 2. 更新PG基本信息
-        pg_app.name = data.name
-        pg_app.description = data.description
-        pg_app.icon = data.icon
-        pg_app.is_public = data.is_public
-
-        await app_crud.update_app_pg_crud(data)
+        update_data = BaseCreateAppSchema(
+            name=data.name,
+            icon=data.icon,
+            is_public=data.is_public,
+            description=data.description
+        )
+        await app_crud.update_app_pg_crud(pg_app.id, update_data)
+        f"[{user.username}] PG成功更新Agent应用: id={pg_app.id}, type={pg_app.type}"
 
         # 3. 更新MongoDB完整配置
-        app_mongo_crud = AppMongoCRUD()
-        mongo_app = await app_mongo_crud.get_app_by_appid_crud(pg_app.uuid)
+        app_mongo_crud = AppMongoCRUD(auth)
+        mongo_app = await app_mongo_crud.get_app_by_uuid_crud(pg_app.uuid)
         if not mongo_app:
             return {"success": False, "message": "应用配置不存在"}
 
-        # 4. 格式转换并构建Mongo更新数据
-        mongo_app.name = data.name
-        mongo_app.description = data.description
-        mongo_app.icon = data.icon
-        mongo_app.is_public = data.is_public
-
-        # 如果提供了nodes和edges，转换格式后更新
-        if data.nodes is not None or data.edges is not None:
-            # 格式转换：双重保险，确保存储的一定是正确格式
-            def convert_node(node: dict) -> dict:
-                node_type_map = {
-                    "input": "start",
-                    "output": "end",
-                    "if": "router",
-                    "llm": "llm",
-                    "retrieve": "retrieve",
-                }
-                original_type = node.get("type", "")
-                backend_type = node_type_map.get(original_type, original_type)
-                return {
-                    "id": node.get("id", ""),
-                    "type": backend_type,
-                    "config": node.get("data", {}).get("config", {}) or node.get("config", {})
-                }
-
-            def convert_edge(edge: dict) -> dict:
-                source = edge.get("source") or edge.get("sourceNodeId", "")
-                target = edge.get("target") or edge.get("targetNodeId", "")
-                return {
-                    "source": source,
-                    "target": target,
-                    "type": edge.get("type", "normal"),
-                    "condition": edge.get("condition", None)
-                }
-
-            if data.nodes is not None:
-                converted_nodes = [convert_node(n) for n in data.nodes]
-                mongo_app.nodes = converted_nodes
-
-            if data.edges is not None:
-                converted_edges = [convert_edge(e) for e in data.edges]
-                mongo_app.edges = converted_edges
-
         # 5. 执行MongoDB更新
-        await app_mongo_crud.update_mongo_app_crud(mongo_app.id, data)
+        app = await app_mongo_crud.update_mongo_app_crud(mongo_app.id, data)
 
         log.info(f"[{user.username}] 成功更新Agent应用: id={pg_app.id}, type={pg_app.type}")
 
@@ -273,9 +219,8 @@ class AppService:
 
     @staticmethod
     async def create_app(
-        auth: AuthSchema,
-        user: UserModel,
-        data: CreateAppSchema,
+            auth: AuthSchema,
+            data: CreateAppSchema,
     ) -> Dict[str, Any]:
         """
         创建新应用（生命周期第一步）
@@ -293,21 +238,65 @@ class AppService:
         """
         # 生成全局唯一 uuid，用于跨库关联
         # 1. 创建到 PostgreSQL（存储基本信息）
-        app_crud = AppCRUD(auth)
+        app_crud = AppCRUD(auth=auth)
         data.uuid = uuid4_str()
-        data.user_id = user.id  # PG 需要 int，外键引用 sys_user.id 必须是 int
+        data.user_id = auth.user.id  # PG 需要 int，外键引用 sys_user.id 必须是 int
         data.type = data.type.value
         pg_app = await app_crud.create_app_pg_crud(data=data)
-        log.info(f"[{user.username}] 创建新应用到PG: {data.name}, type={data.type}")
+        log.info(f"[{auth.user.username}] 创建新应用到PG: {data.name}, type={data.type}")
+
+        # 2. 如果是对话式Agent (CHAT)，自动生成默认nodes和edges
+        from backend.app.common.enums import AgentType
+        if data.type == AgentType.CHAT.value:
+            # 对话式Agent默认生成线性工作流
+            # 默认: start → llm → end
+            # 启用知识库: start → retrieve → llm → end
+            enable_kb = getattr(data, 'enableKnowledgeBase', False)
+            if enable_kb:
+                data.nodes = [
+                    {"id": "start", "type": "start", "x": 100, "y": 200, "config": {}},
+                    {"id": "retrieve", "type": "retrieve", "x": 300, "y": 200, "config": {
+                        "collection_name": "knowledge_base",
+                        "top_k": 5,
+                        "score_threshold": 0.5
+                    }},
+                    {"id": "llm", "type": "llm", "x": 500, "y": 200, "config": {
+                        "model": "qwen-max",
+                        "systemPrompt": "你是一个智能AI助手，请基于上下文回答用户问题{question}",
+                        "temperature": 0.7,
+                        "maxTokens": 5000
+                    }},
+                    {"id": "end", "type": "end", "x": 700, "y": 200, "config": {}}
+                ]
+                data.edges = [
+                    {"source": "start", "target": "retrieve", "type": "normal", "condition": None},
+                    {"source": "retrieve", "target": "llm", "type": "normal", "condition": None},
+                    {"source": "llm", "target": "end", "type": "normal", "condition": None}
+                ]
+            else:
+                data.nodes = [
+                    {"id": "start", "type": "start", "x": 100, "y": 200, "config": {}},
+                    {"id": "llm", "type": "llm", "x": 350, "y": 200, "config": {
+                        "model": "qwen-max",
+                        "systemPrompt": "你是一个智能AI助手",
+                        "temperature": 0.7,
+                        "maxTokens": 5000
+                    }},
+                    {"id": "end", "type": "end", "x": 600, "y": 200, "config": {}}
+                ]
+                data.edges = [
+                    {"source": "start", "target": "llm", "type": "normal", "condition": None},
+                    {"source": "llm", "target": "end", "type": "normal", "condition": None}
+                ]
 
         # 3. 创建到 MongoDB（存储初始nodes和edges）
-        app_mongo_crud = AppMongoCRUD()
+        app_mongo_crud = AppMongoCRUD(auth=auth)
         # MongoDB App 模型需要 user_id 是 str（约定存储字符串形式 ID）
         # 复制一份 data 转换 user_id 到 string
-        data.user_id = str(user.id)
+        data.user_id = str(auth.user.id)
 
         mongo_app = await app_mongo_crud.create_mongo_app_crud(data=data)
-        log.info(f"[{user.username}] 创建新应用到MongoDB: {data.name}, id={str(mongo_app.id)}, type={pg_app.type}")
+        log.info(f"[{auth.user.username}] 创建新应用到MongoDB: {data.name}, id={str(mongo_app.id)}, type={pg_app.type}")
 
         return {
             "app_id": pg_app.id,
@@ -316,7 +305,31 @@ class AppService:
             "message": "创建成功"
         }
 
+    @staticmethod
+    async def get_pg_app_by_uuid(
+            uuid:str,
+            auth: AuthSchema,
+    )-> Coroutine[Any, Any, AiApp | None]:
+        app_crud = AppCRUD(auth)
+        return app_crud.get_app_by_uuid_crud(uuid)
 
+    @staticmethod
+    async def get_app_detail(auth, uuid) -> Dict[str, Any]:
+        # 先从 PostgreSQL 根据 uuid 找到 PG 记录，获取 PG 主键 id
+        app_crud = AppCRUD(auth)
+        pg_app = await app_crud.get_app_by_uuid_crud(uuid)
 
+        if not pg_app:
+            return {"success": False, "message": "应用不存在"}
+
+        # 检查权限：只有创建者可以更新
+        if pg_app.user_id != auth.user.id:
+            return {"success": False, "message": "无权查看该app"}
+
+        # 从MongoDB直接获取完整配置
+        mongo_app = await AppService.get_app_by_uuid(auth,uuid)
+        # 添加 pg_id 到返回数据，供前端更新请求使用
+        mongo_app['pg_id'] = pg_app.id
+        return mongo_app
 
 

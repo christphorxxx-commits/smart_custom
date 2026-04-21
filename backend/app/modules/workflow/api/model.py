@@ -84,5 +84,6 @@ class App(BaseMongoDocument):
         name = "apps"  # MongoDB集合名称
 
     model_config = {
-        "arbitrary_types_allowed": True
+        "arbitrary_types_allowed": True,
+        "extra": "allow"
     }

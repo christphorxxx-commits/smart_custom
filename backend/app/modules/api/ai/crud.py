@@ -9,7 +9,11 @@ from backend.app.common.core.logger import log
 from .model import Chat, ChatItem
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from ...module_system.auth.schema import AuthSchema
+
+
 class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
     """
     聊天会话数据访问层 (MongoDB)
@@ -17,11 +21,12 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
     负责操作 MongoDB 的 Chat 文档，存储聊天会话基本信息
     """
 
-    def __init__(self):
+    def __init__(self, auth: AuthSchema):
         """
         初始化聊天会话CRUD
         """
-        super().__init__(model=Chat)
+        self.auth = auth
+        super().__init__(model=Chat, auth=auth)
 
     async def get_or_create_chat_crud(
         self,
@@ -56,7 +61,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
         # 创建新会话，标题自动取第一条消息前20个字
         title = first_message[:20] + ("..." if len(first_message) > 20 else "")
         data = {
-            "uuid": user_id,
+            "user_id": user_id,
             "title": title,
             "created_by": user_id,
             "updated_by": user_id,
@@ -73,20 +78,18 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
         获取用户的聊天会话列表
 
         参数:
-        - uuid (str): 用户ID
+        - user_id (str): 用户ID
         - skip (int): 跳过条数
         - limit (int): 返回条数
 
         返回:
         - List[Chat]: 聊天会话列表，按更新时间倒序
         """
-        return await self.list_by_user(
-            user_id=user_id,
-            skip=skip,
-            limit=limit,
-            order_by="updated_at",
-            sort_dir=SortDirection.DESCENDING
-        )
+        # Chat模型用户ID字段是user_id，不是uuid，所以需要自定义查询
+        docs = await self.model.find(
+            {"user_id": user_id, "is_deleted": False}
+        ).sort([("updated_at", SortDirection.DESCENDING)]).skip(skip).limit(limit).to_list()
+        return docs
 
 
 class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem, BaseModel, BaseModel]):
@@ -96,11 +99,11 @@ class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem, BaseModel, BaseModel]):
     负责操作 MongoDB 的 ChatItem 文档，存储单条聊天消息
     """
 
-    def __init__(self):
+    def __init__(self, auth: AuthSchema):
         """
         初始化聊天消息CRUD
         """
-        super().__init__(model=ChatItem)
+        super().__init__(model=ChatItem, auth=auth)
 
     async def save_message_crud(
         self,

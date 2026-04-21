@@ -1,23 +1,35 @@
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import Field
+
+from backend.app.common.core.logger import log
 
 from backend.app.common.core.base_node import BaseNode
 from backend.app.common.core.core import tongyillm as llm
-from backend.app.modules.workflow.api.schema import Node
 
 
 class RouterNode(BaseNode):
-    def __init__(self, node: Node):
-        self.node_id = node.id
-        self.node_type = node.type
-        self.config = node.config
-        self.options = node.config["options"]
+    """条件路由节点
+
+    根据用户输入让 LLM 选择一个分支，支持多分支条件路由
+    """
+    options: List[str] = Field(default_factory=list)
+    llm: Any = Field(default=llm, description="大模型供应商")
+
+    def __init__(self, **data):
+        log.info(f"初始化RouterNode")
+        super().__init__(**data)
+        # 从 config 覆盖 options
+        if "options" in self.config:
+            self.options = self.config["options"]
+        log.info(f"父类初始化完成，config={self.config}, options={self.options}")
         self.llm = llm
 
     def __call__(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """LangGraph会调用这个方法"""
+        log.info(f"调用RouterNode，执行call方法")
         system_prompt = f"根据用户输入选择一个类别: {self.options}"
         decision = self.llm.invoke([
             SystemMessage(content=system_prompt),
@@ -33,8 +45,8 @@ class RouterNode(BaseNode):
 
         # 将路由决策也保存到 messages
         message = {
-            "node_id": self.node_id,
-            "node_type": self.node_type,
+            "node_id": self.id,
+            "node_type": self.type,
             "decision": selected,
             "content": decision.content
         }

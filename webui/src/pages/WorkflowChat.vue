@@ -62,7 +62,7 @@
             {{ msg.role === 'user' ? userInitial : (appInfo?.icon || '🤖') }}
           </div>
           <div class="message-content">
-            <div class="message-text">{{ msg.content }}</div>
+            <div class="message-text" v-html="formatMessageContent(msg.content)"></div>
             <div class="message-time">{{ msg.time }}</div>
           </div>
         </div>
@@ -165,6 +165,19 @@ function getDefaultColor(type) {
   return colors[type] || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
 }
 
+// 格式化消息内容，保留换行和缩进，转换markdown代码块
+function formatMessageContent(content) {
+  if (!content) return ''
+  // 转义 HTML 防止 XSS
+  content = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  // 将换行转换为 <br>
+  content = content.replace(/\n/g, '<br>')
+  return content
+}
+
 // Send message
 const handleSendMessage = async () => {
   if (!inputMessage.value.trim() || isLoading.value) return
@@ -240,9 +253,14 @@ const handleSendMessage = async () => {
             const token = JSON.parse(dataLine)
             messages.value[aiMessageIndex].content += token
           } catch (e) {
-            // JSON解析失败，直接追加文本
-            console.warn('Failed to parse SSE token:', e)
-            messages.value[aiMessageIndex].content += dataLine.trim()
+            // JSON解析失败，尝试提取 data='content' 格式 (ServerSentEvent输出)
+            const dataRegex = /data\s*=\s*(['"])(.*?)\1/
+            const match = dataLine.match(dataRegex)
+            if (match) {
+              messages.value[aiMessageIndex].content += match[2]
+            } else if (dataLine.trim()) {
+              messages.value[aiMessageIndex].content += dataLine.trim()
+            }
           }
           scrollToBottom()
         }

@@ -15,6 +15,9 @@
       </div>
       <div class="toolbar-right">
         <span class="scale-info">{{ Math.round(viewport.scale * 100) }}%</span>
+        <button class="btn-success" @click="goToChat" :disabled="!currentAppId">
+          🗣️ 测试对话
+        </button>
         <button class="btn-primary" @click="handleSave">
           💾 保存
         </button>
@@ -182,6 +185,14 @@ function goBack() {
   router.push('/')
 }
 
+function goToChat() {
+  const appUuid = route.params.uuid
+  if (appUuid) {
+    // 当前页面跳转到工作流对话页面，使用uuid匹配后端接口
+    router.push(`/app/chat/${appUuid}`)
+  }
+}
+
 function handleSave() {
   // Check if at least one non-start/end node
   const validNodes = nodes.value.filter(n => n.type !== 'start' && n.type !== 'end')
@@ -204,7 +215,8 @@ async function confirmSave() {
     const data = JSON.parse(serialize())
     // When opening editor from home list, app already exists, always update
     const requestData = {
-      id: currentAppId.value,
+      app_id: currentAppId.value,
+      uuid: route.params.uuid,
       name: saveForm.name,
       description: saveForm.description,
       icon: saveForm.icon || '🤖',
@@ -415,7 +427,8 @@ onUnmounted(() => {
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-success {
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 14px;
@@ -442,6 +455,20 @@ onUnmounted(() => {
 
 .btn-secondary:hover {
   background: #e5e7eb;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .toast {

@@ -1,33 +1,9 @@
-import operator
-from typing import Literal, Dict, Any, TypedDict, Annotated, Optional, List
+from typing import Dict, Any, Optional, List
 
 from pydantic import BaseModel, Field
 
 from backend.app.common.enums import AgentType
 from backend.app.common.utils.common_util import uuid4_str
-
-
-class Node(BaseModel):
-    """工作流节点基础模型"""
-    id: str = Field(..., description="节点唯一ID")
-    type: Literal["start", "llm", "router", "retrieve", "end"] = Field(..., description="节点类型")
-    config: Dict[str, Any] = Field(default={}, description="节点配置字典")
-
-
-class Edge(BaseModel):
-    """工作流边模型"""
-    source: str = Field(..., description="源节点ID")
-    target: str = Field(..., description="目标节点ID")
-    type: Literal["normal", "conditional"] = Field(..., description="边类型")
-    condition: str | None = Field(default=None, description="条件表达式（router节点专用）")
-
-
-class State(TypedDict, total=False):
-    input: str  # 用户输入（只读）
-    messages: Annotated[list, operator.add]  # 对话上下文（累加）
-    variables: dict  # 节点输出（按节点存储）
-    decision: str  # 路由决策（临时）
-    output: str  # 最终输出
 
 
 # ============ LLM 配置 ============
@@ -81,15 +57,17 @@ class ChatSystemConfigSchema(SystemConfigSchema):
 
 
 # ============ 基础共享 schema ============
-class CreateAppPGSchema(BaseModel):
-    """PostgreSQL 创建应用 schema - 只保留 PG 需要的基本字段"""
+class BaseCreateAppSchema(BaseModel):
     name: str = Field(..., description="Agent名称（必填）")
-    uuid: Optional[str] = Field(default_factory=uuid4_str, description="应用UUID（后端生成）")
-    user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）- PG 外键引用 sys_user.id，必须 int")
     description: Optional[str] = Field(default=None, description="Agent描述（可选）")
     icon: Optional[str] = Field("🤖", description="图标emoji，默认 🤖")
+    is_public: Optional[bool] = Field(default=False, description="是否公开分享，默认不公开")
+
+class CreateAppPGSchema(BaseCreateAppSchema):
+    """PostgreSQL 创建应用 schema - 只保留 PG 需要的基本字段"""
+    uuid: Optional[str] = Field(default_factory=uuid4_str, description="应用UUID（后端生成）")
+    user_id: Optional[int] = Field(None, description="创建用户ID（后端填充）- PG 外键引用 sys_user.id，必须 int")
     type: Optional[AgentType] = Field(AgentType.WORKFLOW, description="Agent类型: WORKFLOW/CHAT（前端自动设置）")
-    is_public: bool = Field(default=False, description="是否公开分享，默认不公开")
 
 
 class CreateAppSchema(CreateAppPGSchema, SystemConfigSchema):
@@ -103,24 +81,13 @@ class CreateAppSchema(CreateAppPGSchema, SystemConfigSchema):
     """
     nodes: Optional[List[Dict[str, Any]]] = Field(default=[], description="初始节点列表（工作流Agent）")
     edges: Optional[List[Dict[str, Any]]] = Field(default=[], description="初始边列表（工作流Agent）")
-    version: Optional[int] = Field(default=1, description="版本号")
+    version: Optional[int] = Field(default=1, description="版本号（创建时自动初始化为1）")
 
 
-# ============ 工作流Agent（可视化编排） ============
-class UpdateWorkflowAgentSchema(CreateAppSchema, WorkflowSystemConfigSchema):
-    """更新工作流Agent请求（可视化编排）"""
-    app_id: int = Field(..., description="app的唯一id")
-
-
-# ============ 对话式Agent（配置式，默认线性） ============
-class UpdateChatAgentSchema(CreateAppSchema, ChatSystemConfigSchema):
-    """更新对话式Agent请求
-
-    对话式Agent自动生成线性工作流：
-    - 默认: start → llm → end
-    - 启用知识库后: start → retrieve → llm → end
-    """
-    app_id: int = Field(..., description="app的唯一id")
+# ============ Agent（可视化编排） ============
+class UpdateAgentSchema(CreateAppSchema, WorkflowSystemConfigSchema,ChatSystemConfigSchema):
+    """更新Agent请求（可视化编排）"""
+    app_id: Optional[int] = Field(None, description="app的PG主键id（deprecated）")
 
 
 class AppInfoSchema(BaseModel):

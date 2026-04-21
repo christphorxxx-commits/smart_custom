@@ -324,7 +324,7 @@
             {{ msg.role === 'user' ? userInitial : (appInfo?.icon || '🤖') }}
           </div>
           <div class="message-content">
-            <div class="message-text">{{ msg.content }}</div>
+            <div class="message-text" v-html="formatMessageContent(msg.content)"></div>
             <div class="message-time">{{ msg.time }}</div>
           </div>
         </div>
@@ -383,7 +383,7 @@ import axios from 'axios'
 const route = useRoute()
 const router = useRouter()
 const chatMessagesRef = ref(null)
-const appId = route.params.app_id || route.params.id
+const appId = route.params.uuid || route.params.app_id || route.params.id
 const isCreating = route.name === 'ChatAgentCreate'
 
 // State
@@ -608,6 +608,19 @@ function getDefaultColor(type) {
   return colors[type] || 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
 }
 
+// 格式化消息内容，保留换行和缩进，转义HTML
+function formatMessageContent(content) {
+  if (!content) return ''
+  // 转义 HTML 防止 XSS
+  content = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  // 将换行转换为 <br>
+  content = content.replace(/\n/g, '<br>')
+  return content
+}
+
 // Save Agent
 const handleSave = async () => {
   if (!basicConfig.value.name.trim()) {
@@ -619,7 +632,8 @@ const handleSave = async () => {
   try {
     // 新数据结构：所有配置展开到顶层（适配后端 UpdateChatAgentSchema）
     const requestData = {
-      id: isCreating ? null : pgId.value,
+      app_id: isCreating ? null : pgId.value,
+      uuid: appId, // appId 就是路由参数中的 uuid
       name: basicConfig.value.name,
       description: basicConfig.value.description,
       icon: basicConfig.value.icon,
@@ -1440,6 +1454,7 @@ axios.interceptors.response.use(
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
+  white-space: pre-wrap;
 }
 
 .user-message .message-text {

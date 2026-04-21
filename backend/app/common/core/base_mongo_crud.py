@@ -2,9 +2,13 @@ from typing import TypeVar, Generic, Optional, Type, List, Any, Union
 from pydantic import BaseModel
 from bson import ObjectId
 
+from backend.app.common.core.exceptions import CustomException
+from backend.app.common.core.logger import log
+from datetime import datetime
 from beanie import SortDirection
 
 from backend.app.common.core.base_model import BaseMongoDocument
+from backend.app.modules.module_system.auth.schema import AuthSchema
 
 # 类型变量
 ModelType = TypeVar("ModelType", bound=BaseMongoDocument)
@@ -19,7 +23,7 @@ class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     封装通用的增删改查操作，所有 MongoDB 文档的 CRUD 类都应该继承此类
     """
 
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: Type[ModelType], auth: AuthSchema):
         """
         初始化 MongoDB CRUD
 
@@ -27,6 +31,7 @@ class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         - model (Type[ModelType]): Beanie 文档模型类
         """
         self.model = model
+        self.auth = auth
 
     async def get_by_id(self, doc_id: str | ObjectId) -> Optional[ModelType]:
         """
@@ -160,9 +165,8 @@ class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def update(
         self,
         id: str | ObjectId,
-        user_id: str,
         data: Union[UpdateSchemaType, dict]
-    ) -> Optional[ModelType]:
+    ) -> ModelType:
         """
         更新文档（检查用户权限）
 
@@ -174,32 +178,34 @@ class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         返回:
         - Optional[ModelType]: 更新后的文档，权限不足或不存在返回 None
         """
-        from datetime import datetime
 
-        doc = await self.get_by_id(id)
-        if not doc:
-            return None
+        try:
+            doc_dict = data if isinstance(data, dict) else data.model_dump(exclude_unset=True,exclude={"id"})
+            doc = await self.get_by_id(id)
+            if not doc:
+                raise CustomException(msg="更新文档不存在")
 
-        # 检查权限
-        if hasattr(doc, "uuid") and str(doc.user_id) != str(user_id):
-            return None
+            if self.auth.user:
+                if hasattr(doc, "updated_id"):
+                    setattr(doc, "updated_id", self.auth.user.id)
 
-        # 更新传入字段
-        for key, value in data.items():
-            if hasattr(doc, key):
-                setattr(doc, key, value)
+            # 更新时间和更新人
+            doc.updated_at = datetime.utcnow()
+            # 更新传入字段 - 只更新非None值，避免覆盖数据库已有的默认值（比如version）
+            for key, value in doc_dict.items():
+                if hasattr(doc, key) and value is not None:
+                    setattr(doc, key, value)
+            log.info("字段更新成功")
 
-        # 更新时间和更新人
-        doc.updated_at = datetime.utcnow()
-        if hasattr(doc, "updated_by"):
-            doc.updated_by = user_id
+            # 增加版本号
+            if hasattr(doc, "version"):
+                doc.version += 1
+                log.info(f"版本号递增: {doc.version - 1} -> {doc.version}")
 
-        # 增加版本号
-        if hasattr(doc, "version"):
-            doc.version += 1
-
-        await doc.save()
-        return doc
+            await doc.save()
+            return doc
+        except Exception as e:
+            raise CustomException(f"更新失败，str{e}")
 
     async def delete(
         self,

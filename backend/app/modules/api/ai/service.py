@@ -8,6 +8,7 @@ from backend.app.common.core.core import tongyillm
 from backend.app.common.core.logger import log
 from backend.app.modules.api.ai.crud import ChatMongoCRUD, ChatItemMongoCRUD
 from backend.app.modules.api.ai.schema import ChatQuerySchema
+from backend.app.modules.module_system.auth.schema import AuthSchema
 from .model import Chat, ChatItem
 
 
@@ -42,9 +43,10 @@ class AIService:
             log.error(f"AI对话出现问题: {e}", exc_info=True)
 
     @classmethod
-    async def chat_stream_generator(cls, query: ChatQuerySchema, chat_id: ObjectId):
+    async def chat_stream_generator(cls, auth: AuthSchema, query: ChatQuerySchema, chat_id: ObjectId):
         """
         异步流式生成，保存AI回复到MongoDB后完成（带记忆功能，加载完整聊天历史）
+        :param auth: 认证信息
         :param query: 聊天查询
         :param chat_id: 会话ID（已经在controller创建好）
         :yield: 每个token字节
@@ -55,7 +57,7 @@ class AIService:
         messages = []
 
         # 加载历史消息作为记忆
-        history = await cls.get_chat_messages(chat_id)
+        history = await cls.get_chat_messages(auth, chat_id)
         # 将历史消息转换为langchain消息格式
         for item in history:
             if item.role == "user":
@@ -75,8 +77,8 @@ class AIService:
 
             # 流式完成，保存完整AI回复
             if full_response:
-                await cls.save_message(chat_id, "assistant", full_response)
-                await cls.update_chat_time(chat_id)
+                await cls.save_message(auth, chat_id, "assistant", full_response)
+                await cls.update_chat_time(auth, chat_id)
 
         except Exception as e:
             log.error(f"AI流式生成出错: {e}", exc_info=True)
@@ -84,9 +86,10 @@ class AIService:
             yield error_msg.encode("utf-8")
 
     @classmethod
-    async def chat_service_sse(cls, query: ChatQuerySchema) -> AsyncIterable[ServerSentEvent]:
+    async def chat_service_sse(cls, auth: AuthSchema, query: ChatQuerySchema) -> AsyncIterable[ServerSentEvent]:
         """
         异步流式生成（带记忆功能，加载完整聊天历史）
+        :param auth: 认证信息
         :param query: 聊天查询
         :param chat_id: 会话ID（已经在controller创建好）
         """
@@ -96,7 +99,7 @@ class AIService:
 
         # 如果有chat_id，加载历史消息作为记忆
         if query.chat_id:
-            history = await cls.get_chat_messages(ObjectId(query.chat_id))
+            history = await cls.get_chat_messages(auth, ObjectId(query.chat_id))
             # 将历史消息转换为langchain消息格式
             for item in history:
                 if item.role == "user":
@@ -113,11 +116,10 @@ class AIService:
                 if response.content:
                     full_response += response.content
                     yield ServerSentEvent(data=response.content,event="token")
-            # yield ServerSentEvent(raw_data="[DONE]", event="done")
             # 流式完成，保存完整AI回复
             if full_response:
-                await cls.save_message(ObjectId(query.chat_id), "assistant", full_response)
-                await cls.update_chat_time(ObjectId(query.chat_id))
+                await cls.save_message(auth, ObjectId(query.chat_id), "assistant", full_response)
+                await cls.update_chat_time(auth, ObjectId(query.chat_id))
 
         except Exception as e:
             log.error(f"AI流式生成出错: {e}", exc_info=True)
@@ -126,21 +128,21 @@ class AIService:
 
 
     @classmethod
-    async def get_or_create_chat(cls, chat_id: str | None, user_id: str, first_message: str) -> Chat:
+    async def get_or_create_chat(cls, auth: AuthSchema, chat_id: str | None, user_id: str, first_message: str) -> Chat:
         """获取或创建一个聊天会话"""
-        chat_crud = ChatMongoCRUD()
+        chat_crud = ChatMongoCRUD(auth)
         return await chat_crud.get_or_create_chat_crud(chat_id, user_id, first_message)
 
     @classmethod
-    async def save_message(cls, chat_id: ObjectId, role: str, content: str) -> ChatItem:
+    async def save_message(cls, auth: AuthSchema, chat_id: ObjectId, role: str, content: str) -> ChatItem:
         """保存一条消息到对话记录"""
-        chat_item_crud = ChatItemMongoCRUD()
+        chat_item_crud = ChatItemMongoCRUD(auth)
         return await chat_item_crud.save_message_crud(chat_id, role, content)
 
     @classmethod
-    async def update_chat_time(cls, chat_id: ObjectId):
+    async def update_chat_time(cls, auth: AuthSchema, chat_id: ObjectId):
         """更新会话最后更新时间"""
-        chat_crud = ChatMongoCRUD()
+        chat_crud = ChatMongoCRUD(auth)
         chat = await chat_crud.get_by_id(chat_id)
         if chat:
             from datetime import datetime
@@ -148,20 +150,19 @@ class AIService:
             await chat.save()
 
     @classmethod
-    async def list_user_chats(cls, user_id: str, skip: int, limit: int):
+    async def list_user_chats(cls, auth: AuthSchema, user_id: str, skip: int, limit: int):
         """获取用户聊天列表"""
-        chat_crud = ChatMongoCRUD()
-
+        chat_crud = ChatMongoCRUD(auth)
         return await chat_crud.list_user_chats_crud(user_id, skip, limit)
 
     @classmethod
-    async def get_chat_messages(cls, chat_id: ObjectId):
+    async def get_chat_messages(cls, auth: AuthSchema, chat_id: ObjectId):
         """获取会话消息列表"""
-        chat_item_crud = ChatItemMongoCRUD()
+        chat_item_crud = ChatItemMongoCRUD(auth)
         return await chat_item_crud.get_chat_messages_crud(chat_id)
 
     @classmethod
-    async def delete_chat(cls, chat_id: ObjectId, user_id: str):
+    async def delete_chat(cls, auth: AuthSchema, chat_id: ObjectId, user_id: str):
         """删除会话"""
-        chat_crud = ChatMongoCRUD()
+        chat_crud = ChatMongoCRUD(auth)
         return await chat_crud.delete(chat_id, user_id)

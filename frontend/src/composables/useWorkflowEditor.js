@@ -321,6 +321,8 @@ export function useWorkflowEditor() {
       return {
         id: node.id,
         type: backendType,
+        x: node.x,
+        y: node.y,
         config: node.data || {}  // config comes from node.data
       }
     })
@@ -416,8 +418,9 @@ export function useWorkflowEditor() {
       if (editorType === 'router') editorType = 'if'
       if (editorType === 'end') editorType = 'endpoint'
 
-      const x = startX + index * (nodeWidth + horizontalSpacing)
-      const y = 150
+      // Use saved position if available, otherwise auto layout
+      const x = typeof node.x === 'number' ? node.x : startX + index * (nodeWidth + horizontalSpacing)
+      const y = typeof node.y === 'number' ? node.y : 150
 
       const defaultData = getDefaultNodeData(editorType)
       let nodeData = { ...defaultData, ...node.config }

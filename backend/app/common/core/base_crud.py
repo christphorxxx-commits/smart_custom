@@ -8,6 +8,7 @@ from sqlalchemy import inspect as sa_inspect
 
 from backend.app.common.core.base_model import MappedBase
 from backend.app.common.core.exceptions import CustomException
+from backend.app.common.core.permission import Permission
 
 from backend.app.modules.module_system.auth.schema import AuthSchema
 
@@ -20,19 +21,177 @@ OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """基础数据层"""
 
-    def __init__(self,model: Type[ModelType], auth: AuthSchema):
+    def __init__(self, model: Type[ModelType], auth: AuthSchema) -> None:
         """
-                初始化CRUDBase类
+        初始化CRUDBase类
 
-                参数:
-                - model (Type[ModelType]): 数据模型类。
-                - auth (AuthSchema): 认证信息。
+        参数:
+        - model (Type[ModelType]): 数据模型类。
+        - auth (AuthSchema): 认证信息。
 
-                返回:
-                - None
-                """
+        返回:
+        - None
+        """
         self.model = model
         self.auth = auth
+
+    async def get(self, preload: Optional[List[Union[str, Any]]] = None, **kwargs) -> Optional[ModelType]:
+        """
+        根据条件获取单个对象
+
+        参数:
+        - preload (Optional[List[Union[str, Any]]]): 预加载关系，支持关系名字符串或SQLAlchemy loader option
+        - **kwargs: 查询条件
+
+        返回:
+        - Optional[ModelType]: 对象实例
+
+        异常:
+        - CustomException: 查询失败时抛出异常
+        """
+        try:
+            conditions = await self.__build_conditions(**kwargs)
+            sql = select(self.model).where(*conditions)
+            # 应用可配置的预加载选项
+            for opt in self.__loader_options(preload):
+                sql = sql.options(opt)
+
+            sql = await self.__filter_permissions(sql)
+
+            result: Result = await self.auth.db.execute(sql)
+            obj = result.scalars().first()
+            return obj
+        except Exception as e:
+            raise CustomException(msg=f"获取查询失败: {str(e)}")
+
+    async def list(self, search: Optional[Dict] = None, order_by: Optional[List[Dict[str, str]]] = None,
+                   preload: Optional[List[Union[str, Any]]] = None) -> Sequence[ModelType]:
+        """
+        根据条件获取对象列表
+
+        参数:
+        - search (Optional[Dict]): 查询条件,格式为 {'id': value, 'name': value}
+        - order_by (Optional[List[Dict[str, str]]]): 排序字段,格式为 [{'id': 'asc'}, {'name': 'desc'}]
+        - preload (Optional[List[Union[str, Any]]]): 预加载关系，支持关系名字符串或SQLAlchemy loader option
+
+        返回:
+        - Sequence[ModelType]: 对象列表
+
+        异常:
+        - CustomException: 查询失败时抛出异常
+        """
+        try:
+            conditions = await self.__build_conditions(**search) if search else []
+            order = order_by or [{'id': 'asc'}]
+            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
+            # 应用可配置的预加载选项
+            for opt in self.__loader_options(preload):
+                sql = sql.options(opt)
+            sql = await self.__filter_permissions(sql)
+            result: Result = await self.auth.db.execute(sql)
+            return result.scalars().all()
+        except Exception as e:
+            raise CustomException(msg=f"列表查询失败: {str(e)}")
+
+    async def tree_list(self, search: Optional[Dict] = None, order_by: Optional[List[Dict[str, str]]] = None,
+                        children_attr: str = 'children', preload: Optional[List[Union[str, Any]]] = None) -> Sequence[
+        ModelType]:
+        """
+        获取树形结构数据列表
+
+        参数:
+        - search (Optional[Dict]): 查询条件
+        - order_by (Optional[List[Dict[str, str]]]): 排序字段
+        - children_attr (str): 子节点属性名
+        - preload (Optional[List[Union[str, Any]]]): 额外预加载关系，若为None则默认包含children_attr
+
+        返回:
+        - Sequence[ModelType]: 树形结构数据列表
+
+        异常:
+        - CustomException: 查询失败时抛出异常
+        """
+        try:
+            conditions = await self.__build_conditions(**search) if search else []
+            order = order_by or [{'id': 'asc'}]
+            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
+
+            # 处理预加载选项
+            final_preload = preload
+            # 如果没有提供preload且children_attr存在，则添加到预加载选项中
+            if preload is None and children_attr and hasattr(self.model, children_attr):
+                # 获取模型默认预加载选项
+                model_defaults = getattr(self.model, "__loader_options__", [])
+                # 将children_attr添加到默认预加载选项中
+                final_preload = list(model_defaults) + [children_attr]
+
+            # 应用预加载选项
+            for opt in self.__loader_options(final_preload):
+                sql = sql.options(opt)
+
+            sql = await self.__filter_permissions(sql)
+            result: Result = await self.auth.db.execute(sql)
+            return result.scalars().all()
+        except Exception as e:
+            raise CustomException(msg=f"树形列表查询失败: {str(e)}")
+
+    async def page(self, offset: int, limit: int, order_by: List[Dict[str, str]], search: Dict,
+                   out_schema: Type[OutSchemaType], preload: Optional[List[Union[str, Any]]] = None) -> Dict:
+        """
+        获取分页数据
+
+        参数:
+        - offset (int): 偏移量
+        - limit (int): 每页数量
+        - order_by (List[Dict[str, str]]): 排序字段
+        - search (Dict): 查询条件
+        - out_schema (Type[OutSchemaType]): 输出数据模型
+        - preload (Optional[List[Union[str, Any]]]): 预加载关系
+
+        返回:
+        - Dict: 分页数据
+
+        异常:
+        - CustomException: 查询失败时抛出异常
+        """
+        try:
+            conditions = await self.__build_conditions(**search) if search else []
+            order = order_by or [{'id': 'asc'}]
+            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
+            # 应用预加载选项
+            for opt in self.__loader_options(preload):
+                sql = sql.options(opt)
+            sql = await self.__filter_permissions(sql)
+
+            # 优化count查询：使用主键计数而非全表扫描
+            mapper = sa_inspect(self.model)
+            pk_cols = list(getattr(mapper, "primary_key", []))
+            if pk_cols:
+                # 使用主键的第一列进行计数（主键必定非NULL，性能更好）
+                count_sql = select(func.count(pk_cols[0])).select_from(self.model)
+            else:
+                # 降级方案：使用count(*)
+                count_sql = select(func.count()).select_from(self.model)
+
+            if conditions:
+                count_sql = count_sql.where(*conditions)
+            count_sql = await self.__filter_permissions(count_sql)
+
+            total_result = await self.auth.db.execute(count_sql)
+            total = total_result.scalar() or 0
+
+            result: Result = await self.auth.db.execute(sql.offset(offset).limit(limit))
+            objs = result.scalars().all()
+
+            return {
+                "page_no": offset // limit + 1 if limit else 1,
+                "page_size": limit if limit else 10,
+                "total": total,
+                "has_next": offset + limit < total,
+                "items": [out_schema.model_validate(obj).model_dump() for obj in objs]
+            }
+        except Exception as e:
+            raise CustomException(msg=f"分页查询失败: {str(e)}")
 
     async def create(self, data: Union[CreateSchemaType, Dict]) -> ModelType:
         """
@@ -198,6 +357,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             raise
         except Exception as e:
             raise CustomException(msg=f"批量更新失败: {str(e)}")
+
+    async def __filter_permissions(self, sql: Select) -> Select:
+        """
+        过滤数据权限（仅用于Select）。
+        """
+        filter = Permission(
+            model=self.model,
+            auth=self.auth
+        )
+        return await filter.filter_query(sql)
 
     async def __build_conditions(self, **kwargs) -> List[ColumnElement]:
         """

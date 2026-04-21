@@ -18,7 +18,7 @@ AuthRouter = APIRouter(prefix="/auth", tags=["认证管理"])
 async def login_controller(
         request: Request,
         login_data: LoginSchema,
-    db: AsyncSession = Depends(db_getter)
+        db: AsyncSession = Depends(db_getter)
 ) -> Union[JSONResponse, Dict]:
     """
     用户登录

@@ -2,6 +2,22 @@
 
 from enum import Enum, unique
 
+@unique
+class NodeEnum(str, Enum):
+    START = 'start'
+    END = 'end'
+    LLM = 'llm'
+    ROUTE = 'router'
+    RETRIEVE = 'retrieve'
+    TOOL = 'tool'
+
+
+@unique
+class EdgeTypeEnum(str, Enum):
+    NORMAL = 'normal'
+    CONDITIONAL = 'conditional'
+
+@unique
 class AgentType(Enum):
     WORKFLOW = "WORKFLOW"
     CHAT = "CHAT"

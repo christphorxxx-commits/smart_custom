@@ -407,11 +407,11 @@ const handleCreate = async () => {
       // 刷新列表
       loadAgentList()
       // 创建成功后跳转到编辑页面
-      const appId = response.data.data.id
+      const uuid = response.data.data.uuid
       if (targetType.value === 'workflow') {
-        router.push(`/workflow/edit/${appId}`)
+        router.push(`/workflow/edit/${uuid}`)
       } else {
-        router.push(`/chatagent/edit/${appId}`)
+        router.push(`/chatagent/edit/${uuid}`)
       }
     } else {
       showToast(response.data.msg || '创建失败', 'error')
@@ -429,13 +429,13 @@ const openAgent = (agent) => {
   // 使用 uuid (UUID) 进行路由和请求
   if (agent.type === 'WORKFLOW') {
     // 工作流 Agent → 跳转到可视化画板编辑
-    router.push(`/workflow/edit/${agent.app_id}`)
+    router.push(`/workflow/edit/${agent.uuid}`)
   } else if (agent.type === 'CHAT') {
     // 对话式 Agent → 跳转到AI配置页面编辑
-    router.push(`/chatagent/edit/${agent.app_id}`)
+    router.push(`/chatagent/edit/${agent.uuid}`)
   } else {
     // 默认 → 直接打开对话
-    router.push(`/app/chat/${agent.app_id}`)
+    router.push(`/app/chat/${agent.uuid}`)
   }
 }
 
