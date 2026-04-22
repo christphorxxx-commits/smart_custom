@@ -1,25 +1,29 @@
-from typing import TypeVar, Generic, Optional, Type, List, Any
+from typing import TypeVar, Generic, Optional, Type, List, Any, Union
 from pydantic import BaseModel
 from bson import ObjectId
 
+from backend.app.common.core.exceptions import CustomException
+from backend.app.common.core.logger import log
+from datetime import datetime
 from beanie import SortDirection
 
 from backend.app.common.core.base_model import BaseMongoDocument
+from backend.app.modules.module_system.auth.schema import AuthSchema
 
 # 类型变量
 ModelType = TypeVar("ModelType", bound=BaseMongoDocument)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 
-
-class BaseMongoCRUD(Generic[ModelType]):
+class BaseMongoCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """
     MongoDB Beanie ODM 基础数据访问层基类
 
     封装通用的增删改查操作，所有 MongoDB 文档的 CRUD 类都应该继承此类
     """
 
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: Type[ModelType], auth: AuthSchema):
         """
         初始化 MongoDB CRUD
 
@@ -27,6 +31,7 @@ class BaseMongoCRUD(Generic[ModelType]):
         - model (Type[ModelType]): Beanie 文档模型类
         """
         self.model = model
+        self.auth = auth
 
     async def get_by_id(self, doc_id: str | ObjectId) -> Optional[ModelType]:
         """
@@ -102,7 +107,7 @@ class BaseMongoCRUD(Generic[ModelType]):
         获取指定用户创建的所有未删除文档（分页）
 
         参数:
-        - user_id (str): 用户 ID
+        - uuid (str): 用户 ID
         - skip (int): 跳过条数
         - limit (int): 返回条数
         - order_by (str): 排序字段
@@ -112,7 +117,7 @@ class BaseMongoCRUD(Generic[ModelType]):
         - List[ModelType]: 文档列表
         """
         docs = await self.model.find(
-            {"user_id": user_id, "is_deleted": False}
+            {"uuid": user_id, "is_deleted": False}
         ).sort([(order_by, sort_dir)]).skip(skip).limit(limit).to_list()
         return docs
 
@@ -133,17 +138,17 @@ class BaseMongoCRUD(Generic[ModelType]):
         统计指定用户创建的未删除文档总数
 
         参数:
-        - user_id (str): 用户 ID
+        - uuid (str): 用户 ID
 
         返回:
         - int: 文档总数
         """
         count = await self.model.find(
-            {"user_id": user_id, "is_deleted": False}
+            {"uuid": user_id, "is_deleted": False}
         ).count()
         return count
 
-    async def create(self, data: dict) -> ModelType:
+    async def create(self, data: Union[CreateSchemaType, dict]) -> ModelType:
         """
         创建新文档
 
@@ -157,53 +162,54 @@ class BaseMongoCRUD(Generic[ModelType]):
         await doc.insert()
         return doc
 
-    async def update_by_id(
+    async def update(
         self,
-        doc_id: str | ObjectId,
-        user_id: str,
-        update_data: dict
-    ) -> Optional[ModelType]:
+        id: str | ObjectId,
+        data: Union[UpdateSchemaType, dict]
+    ) -> ModelType:
         """
         更新文档（检查用户权限）
 
         参数:
         - doc_id (str | ObjectId): 文档 ID
-        - user_id (str): 当前用户 ID（权限检查）
+        - uuid (str): 当前用户 ID（权限检查）
         - update_data (dict): 需要更新的字段
 
         返回:
         - Optional[ModelType]: 更新后的文档，权限不足或不存在返回 None
         """
-        from datetime import datetime
 
-        doc = await self.get_by_id(doc_id)
-        if not doc:
-            return None
+        try:
+            doc_dict = data if isinstance(data, dict) else data.model_dump(exclude_unset=True,exclude={"id"})
+            doc = await self.get_by_id(id)
+            if not doc:
+                raise CustomException(msg="更新文档不存在")
 
-        # 检查权限
-        if hasattr(doc, "user_id") and str(doc.user_id) != str(user_id):
-            return None
+            if self.auth.user:
+                if hasattr(doc, "updated_id"):
+                    setattr(doc, "updated_id", self.auth.user.id)
 
-        # 更新传入字段
-        for key, value in update_data.items():
-            if hasattr(doc, key):
-                setattr(doc, key, value)
+            # 更新时间和更新人
+            doc.updated_at = datetime.utcnow()
+            # 更新传入字段 - 只更新非None值，避免覆盖数据库已有的默认值（比如version）
+            for key, value in doc_dict.items():
+                if hasattr(doc, key) and value is not None:
+                    setattr(doc, key, value)
+            log.info("字段更新成功")
 
-        # 更新时间和更新人
-        doc.updated_at = datetime.utcnow()
-        if hasattr(doc, "updated_by"):
-            doc.updated_by = user_id
+            # 增加版本号
+            if hasattr(doc, "version"):
+                doc.version += 1
+                log.info(f"版本号递增: {doc.version - 1} -> {doc.version}")
 
-        # 增加版本号
-        if hasattr(doc, "version"):
-            doc.version += 1
+            await doc.save()
+            return doc
+        except Exception as e:
+            raise CustomException(f"更新失败，str{e}")
 
-        await doc.save()
-        return doc
-
-    async def delete_by_id(
+    async def delete(
         self,
-        doc_id: str | ObjectId,
+        id: str | ObjectId,
         user_id: str
     ) -> tuple[bool, str]:
         """
@@ -211,21 +217,21 @@ class BaseMongoCRUD(Generic[ModelType]):
 
         参数:
         - doc_id (str | ObjectId): 文档 ID
-        - user_id (str): 当前用户 ID（权限检查）
+        - uuid (str): 当前用户 ID（权限检查）
 
         返回:
         - tuple[bool, str]: (是否成功, 消息)
         """
         from datetime import datetime
 
-        doc = await self.get_by_id(doc_id)
+        doc = await self.get_by_id(id)
         if not doc:
             return False, "文档不存在"
         if doc.is_deleted:
             return False, "文档已删除"
 
         # 检查权限
-        if hasattr(doc, "user_id") and str(doc.user_id) != str(user_id):
+        if hasattr(doc, "uuid") and str(doc.user_id) != str(user_id):
             return False, "无权限删除此文档"
 
         doc.is_deleted = True

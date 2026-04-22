@@ -73,7 +73,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         更新用户最后登录时间
 
         参数:
-        - user_id (int): 用户ID
+        - uuid (int): 用户ID
 
         返回:
         - bool: 更新是否成功
@@ -88,7 +88,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
 
     async def get_by_uuid_crud(self, uuid: str) -> UserModel | None:
         """
-        根据UUID查询用户 (兼容: uuid -> user_id)
+        根据UUID查询用户 (兼容: uuid -> uuid)
 
         参数:
         - uuid (str): 用户UUID
@@ -97,7 +97,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         - UserModel | None: 用户对象或None
         """
         from sqlalchemy import select
-        stmt = (select(self.model).where(self.model.user_id == uuid)
+        stmt = (select(self.model).where(self.model.uuid == uuid)
         .options(
             selectinload(self.model.created_by),
             selectinload(self.model.updated_by)

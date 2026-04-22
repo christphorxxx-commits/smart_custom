@@ -5,7 +5,11 @@
       "Bash(git add:*)",
       "Bash(git restore:*)",
       "Bash(git rm:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(echo -e \"\\\\n\\\\n@AppRouter.post\\(\\\\\"\"/create-chat\\\\\"\", description=\\\\\"\"创建对话式Agent\\\\\"\"\\)\\\\nasync def create_chat_agent\\(\\\\n        data: CreateChatAgentSchema,\\\\n        db: AsyncSession = Depends\\(db_getter\\),\\\\n        current_user: UserModel = Depends\\(get_current_user\\),\\\\n\\) -> JSONResponse:\\\\n    \\\\\"\"\\\\\"\"\\\\\"\"\\\\\"\"\\\\n    创建对话式Agent\\\\n    - 自动生成线性工作流: start → llm → end\\\\n    - 配置信息存储在顶层config字段\\\\n    \\\\\"\"\\\\\"\"\\\\\"\"\\\\n    auth = AuthSchema\\(db=db, user=current_user\\)\\\\n    result = await AppService.create_chat_agent\\(auth=auth, user=current_user, data=data\\)\\\\n    return SuccessResponse\\(\\\\n        data=result,\\\\n        msg=\\\\\"\"创建成功\\\\\"\"\\\\n    \\)\\\\n\\\\n\\\\n@AppRouter.post\\(\\\\\"\"/update-chat/{id}\\\\\"\", description=\\\\\"\"更新对话式Agent\\\\\"\"\\)\\\\nasync def update_chat_agent\\(\\\\n        id: int,\\\\n        data: UpdateChatAgentSchema,\\\\n        db: AsyncSession = Depends\\(db_getter\\),\\\\n        current_user: UserModel = Depends\\(get_current_user\\),\\\\n\\) -> JSONResponse:\\\\n    \\\\\"\"\\\\\"\"\\\\\"\"\\\\\"\"\\\\n    更新对话式Agent\\\\n    \\\\\"\"\\\\\"\"\\\\\"\"\\\\n    auth = AuthSchema\\(db=db, user=current_user\\)\\\\n    result = await AppService.update_chat_agent\\(auth=auth, user=current_user, app_id=id, data=data\\)\\\\n    return SuccessResponse\\(\\\\n        data=result,\\\\n        msg=\\\\\"\"更新成功\\\\\"\"\\\\n    \\)\\\\n\")",
+      "Bash(\"D:/pycharmWorkspace/smart_custom/backend/app/modules/workflow/api/controller.py\")",
+      "Bash(\"D:/pycharmWorkspace/smart_custom/backend/app/modules/workflow/api/service.py\")",
+      "Bash(xargs grep:*)"
     ]
   }
 }

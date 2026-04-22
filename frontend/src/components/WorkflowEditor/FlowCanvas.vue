@@ -45,7 +45,7 @@
             <div>开始节点</div>
           </template>
           <template v-else-if="node.type === 'llm'">
-            <div>{{ node.data.model }}</div>
+            <div>{{ node.data?.model || node.config?.model || 'LLM' }}</div>
           </template>
           <template v-else-if="node.type === 'prompt'">
             <div>提示词模板</div>

@@ -17,7 +17,7 @@ class UserModel(ModelMixin, UserMixin):
 
     username: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, comment="用户名/登录账号")
     password: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")  # ✅ 移除了 unique=True
-    user_id: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
+    uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
                                       comment='UUID全局唯一标识')
     name: Mapped[str] = mapped_column(String(32), nullable=False, comment="昵称")
     mobile: Mapped[Optional[str]] = mapped_column(String(11), unique=True, comment="手机号")

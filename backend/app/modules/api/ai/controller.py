@@ -42,19 +42,20 @@ async def chat_sse(
 
     # 获取或创建聊天会话，并保存用户消息
     chat = await AIService.get_or_create_chat(
+        auth=auth,
         chat_id=query.chat_id,
         user_id=str(current_user.id),
         first_message=query.message
     )
     query.chat_id = chat.id
     # 保存用户提问
-    await AIService.save_message(chat.id, "user", query.message)
+    await AIService.save_message(auth, chat.id, "user", query.message)
     # 更新会话最后更新时间（AI响应失败时依然保持更新，保证聊天列表排序正确）
-    await AIService.update_chat_time(chat.id)
+    await AIService.update_chat_time(auth, chat.id)
 
     # 返回EventSourceResponse包装异步生成器
     return EventSourceResponse(
-        AIService.chat_service_sse(query),
+        AIService.chat_service_sse(auth, query),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -62,18 +63,18 @@ async def chat_sse(
         }
     )
 
-
-
-
 # ============ 额外接口：获取历史对话 ============
 @AIRouter.get("/list", summary="获取用户聊天列表", response_model=ChatListResponse)
 async def list_chats(
         current_user: UserModel = Depends(get_current_user),
+        db: AsyncSession = Depends(db_getter),
         skip: int = 0,
         limit: int = 20
 ) -> ChatListResponse:
     """获取当前用户的所有聊天会话列表"""
+    auth = AuthSchema(db=db, user=current_user)
     chats = await AIService.list_user_chats(
+        auth=auth,
         user_id=str(current_user.id),
         skip=skip,
         limit=limit
@@ -99,10 +100,13 @@ async def list_chats(
 async def get_chat_messages(
         chat_id: str,
         current_user: UserModel = Depends(get_current_user),
+        db: AsyncSession = Depends(db_getter),
 ) -> Union[ChatMessageListResponse, BasicResponse]:
     """获取指定会话的所有消息记录"""
     try:
+        auth = AuthSchema(db=db, user=current_user)
         chat = await AIService.get_or_create_chat(
+            auth=auth,
             chat_id=chat_id,
             user_id=str(current_user.id),
             first_message=""
@@ -110,7 +114,7 @@ async def get_chat_messages(
         if not chat or chat.is_deleted or str(chat.user_id) != str(current_user.id):
             return BasicResponse(success=False, msg="会话不存在或无权限",code=RET.ERROR.code)
 
-        messages = await AIService.get_chat_messages(chat.id)
+        messages = await AIService.get_chat_messages(auth, chat.id)
 
         data = [
             ChatMessageResponseItem(
@@ -133,9 +137,12 @@ async def get_chat_messages(
 async def delete_chat(
         chat_id: str,
         current_user: UserModel = Depends(get_current_user),
+        db: AsyncSession = Depends(db_getter),
 ) -> BasicResponse:
     """软删除聊天会话"""
+    auth = AuthSchema(db=db, user=current_user)
     success, msg = await AIService.delete_chat(
+        auth=auth,
         chat_id=ObjectId(chat_id),
         user_id=str(current_user.id)
     )

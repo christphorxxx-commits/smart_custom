@@ -24,7 +24,7 @@ class LoginSchema(BaseModel):
 
 class JWTPlayloadSchema(BaseModel):
     """JWT载荷模型"""
-    sub: str = Field(..., description='用户登录信息，暂时使用user_id')
+    sub: str = Field(..., description='用户UUID，用于查询用户信息')
     is_refresh: bool = Field(default=False, description="是否刷新token")
     exp: datetime | int = Field(...,description='过期时间')
 

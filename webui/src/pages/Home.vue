@@ -234,7 +234,7 @@ const loadQuickApps = async () => {
       if (data.success && Array.isArray(data.data)) {
         // Map backend format to frontend format
         quickApps.value = data.data.map(app => ({
-          id: app.app_id,  // app_id 就是去MongoDB查询用
+          id: app.app_id,  // uuid 就是去MongoDB查询用
           name: app.name,
           icon: app.icon || '🤖',
           color: app.type === 'workflow'
@@ -332,7 +332,7 @@ const selectChat = async (chat) => {
 
 // Open workflow chat
 const openAppChat = (app) => {
-  // app.id is the pg id, app.app_id is the mongodb app_id
+  // app.id is the pg id, app.uuid is the mongodb uuid
   window.location.href = `/workflow/chat/${app.id}`
 }
 

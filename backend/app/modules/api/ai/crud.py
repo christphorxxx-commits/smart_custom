@@ -9,18 +9,24 @@ from backend.app.common.core.logger import log
 from .model import Chat, ChatItem
 
 
-class ChatMongoCRUD(BaseMongoCRUD[Chat]):
+from pydantic import BaseModel, Field
+
+from ...module_system.auth.schema import AuthSchema
+
+
+class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
     """
     聊天会话数据访问层 (MongoDB)
 
     负责操作 MongoDB 的 Chat 文档，存储聊天会话基本信息
     """
 
-    def __init__(self):
+    def __init__(self, auth: AuthSchema):
         """
         初始化聊天会话CRUD
         """
-        super().__init__(model=Chat)
+        self.auth = auth
+        super().__init__(model=Chat, auth=auth)
 
     async def get_or_create_chat_crud(
         self,
@@ -33,7 +39,7 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
 
         参数:
         - chat_id (Optional[str]): 会话ID，为空则创建新会话
-        - user_id (str): 用户ID
+        - uuid (str): 用户ID
         - first_message (str): 第一条消息，用于生成会话标题
 
         返回:
@@ -79,27 +85,25 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat]):
         返回:
         - List[Chat]: 聊天会话列表，按更新时间倒序
         """
-        return await self.list_by_user(
-            user_id=user_id,
-            skip=skip,
-            limit=limit,
-            order_by="updated_at",
-            sort_dir=SortDirection.DESCENDING
-        )
+        # Chat模型用户ID字段是user_id，不是uuid，所以需要自定义查询
+        docs = await self.model.find(
+            {"user_id": user_id, "is_deleted": False}
+        ).sort([("updated_at", SortDirection.DESCENDING)]).skip(skip).limit(limit).to_list()
+        return docs
 
 
-class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem]):
+class ChatItemMongoCRUD(BaseMongoCRUD[ChatItem, BaseModel, BaseModel]):
     """
     聊天消息数据访问层 (MongoDB)
 
     负责操作 MongoDB 的 ChatItem 文档，存储单条聊天消息
     """
 
-    def __init__(self):
+    def __init__(self, auth: AuthSchema):
         """
         初始化聊天消息CRUD
         """
-        super().__init__(model=ChatItem)
+        super().__init__(model=ChatItem, auth=auth)
 
     async def save_message_crud(
         self,

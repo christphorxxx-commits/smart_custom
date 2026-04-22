@@ -15,6 +15,9 @@
       </div>
       <div class="toolbar-right">
         <span class="scale-info">{{ Math.round(viewport.scale * 100) }}%</span>
+        <button class="btn-success" @click="goToChat" :disabled="!currentAppId">
+          🗣️ 测试对话
+        </button>
         <button class="btn-primary" @click="handleSave">
           💾 保存
         </button>
@@ -182,6 +185,14 @@ function goBack() {
   router.push('/')
 }
 
+function goToChat() {
+  const appUuid = route.params.uuid
+  if (appUuid) {
+    // 当前页面跳转到工作流对话页面，使用uuid匹配后端接口
+    router.push(`/app/chat/${appUuid}`)
+  }
+}
+
 function handleSave() {
   // Check if at least one non-start/end node
   const validNodes = nodes.value.filter(n => n.type !== 'start' && n.type !== 'end')
@@ -202,19 +213,34 @@ async function confirmSave() {
   saving.value = true
   try {
     const data = JSON.parse(serialize())
-    const response = await axios.post('/api/app/save', {
+    // When opening editor from home list, app already exists, always update
+    const requestData = {
+      app_id: currentAppId.value,
+      uuid: route.params.uuid,
       name: saveForm.name,
       description: saveForm.description,
       icon: saveForm.icon || '🤖',
       nodes: data.nodes,
       edges: data.connections,
-      is_public: saveForm.is_public
-    })
+      is_public: saveForm.is_public,
+      type: 'WORKFLOW',
+      enableFileUpload: false,
+      globalVariables: {},
+      enableTTS: false,
+      enableASR: false,
+      guessedQuestions: false,
+      inputGuidance: false,
+      timeExecute: false,
+      autoExecute: false
+    }
+
+    // Always send update request since we're editing an existing app
+    const response = await axios.post('/api/app/update', requestData)
 
     if (response.data.success) {
       showToast('保存成功！', 'success')
       showSaveModal.value = false
-      // Redirect to workflow list or chat page after save
+      // Redirect to workflow list after save
       setTimeout(() => {
         router.push('/')
       }, 1000)
@@ -320,32 +346,39 @@ function handleKeyDown(event) {
   }
 }
 
+// Current PG id (null means not created yet)
+const currentAppId = ref(null)
+
 // Load existing workflow if editing
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown)
-  // Add a default start node
-  addNode('start', 100, 200)
 
-  const id = route.params.id
-  if (id) {
+  const appId = route.params.uuid
+  if (appId) {
     isEditing.value = true
-    // Load existing workflow data
-    axios.get(`/api/app/${id}`).then(res => {
+    // Load existing workflow data - use GET /api/app/{uuid} directly by UUID
+    axios.get(`/api/app/${appId}`).then(res => {
       if (res.data.success) {
         const data = res.data.data
         deserialize({
           nodes: data.nodes,
-          connections: data.edges
+          edges: data.edges
         })
         saveForm.name = data.name
         saveForm.description = data.description || ''
         saveForm.icon = data.icon || '🤖'
         saveForm.is_public = data.is_public || false
+        // Get PG primary key id for update
+        currentAppId.value = data.pg_id || null
       }
     }).catch(err => {
       console.error('Failed to load workflow:', err)
       showToast('加载工作流失败', 'error')
     })
+  } else {
+    // Creating new workflow - open save modal to get basic info first
+    isEditing.value = true
+    showSaveModal.value = true
   }
 })
 
@@ -394,7 +427,8 @@ onUnmounted(() => {
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-success {
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 14px;
@@ -421,6 +455,20 @@ onUnmounted(() => {
 
 .btn-secondary:hover {
   background: #e5e7eb;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .toast {
