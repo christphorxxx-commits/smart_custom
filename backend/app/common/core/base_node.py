@@ -29,10 +29,10 @@ class Edge(BaseModel):
     type: EdgeTypeEnum = Field(..., description="边类型")
     condition: str | None = Field(default=None, description="条件表达式（router节点专用）")
 
-
+#total=False标识允许额外字段，也就是新的字段
 class State(TypedDict, total=False):
     input: str  # 用户输入（只读）
     messages: Annotated[list, operator.add]  # 对话上下文（累加）
-    variables: dict  # 节点输出（按节点存储）
-    decision: str  # 路由决策（临时）
-    output: str  # 最终输出
+    variables: Annotated[dict, lambda old, new: {**old, **new}]  # 节点输出（按节点存储）- 合并字典
+    decision: Annotated[str, lambda old, new: new]  # 路由决策（用新值覆盖旧值）
+    output: Annotated[str, lambda old, new: new]  # 最终输出（用新值覆盖旧值）

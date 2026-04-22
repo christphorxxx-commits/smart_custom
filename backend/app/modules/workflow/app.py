@@ -1,14 +1,15 @@
 from typing import Any, Iterator, AsyncIterator, Dict, Optional, List
 
 from langgraph.graph import StateGraph, START, END
-from pydantic import Field, BaseModel
+from pydantic import BaseModel
 
 from backend.app.common.core.base_node import State, Edge, BaseNode
+from backend.app.common.enums import NodeEnum, EdgeTypeEnum
 from backend.app.common.utils.common_util import uuid4_str
 from backend.app.modules.workflow.nodes.LLMNode import LLMNode
 from backend.app.modules.workflow.nodes.RetrieveNode import RetrieveNode
 from backend.app.modules.workflow.nodes.RouterNode import RouterNode
-from backend.app.common.enums import NodeEnum, EdgeTypeEnum
+from backend.app.modules.workflow.nodes.ToolNode import ToolNode
 
 
 class App(BaseModel):
@@ -37,7 +38,6 @@ class App(BaseModel):
 
     def _parse_nodes_and_edges(self):
         """将原始字典解析为 BaseNode 和 Edge"""
-        from backend.app.common.enums import NodeEnum
         # 解析 nodes
         self._parsed_nodes = []
         for node_dict in self.nodes:
@@ -65,12 +65,13 @@ class App(BaseModel):
                 self.node_instances[node_def.id] = RouterNode(**node_data)
             elif node_type == NodeEnum.RETRIEVE.value:
                 self.node_instances[node_def.id] = RetrieveNode(**node_data)
+            elif node_type == NodeEnum.TOOL.value:
+                self.node_instances[node_def.id] = ToolNode(**node_data)
             else:
                 # start/end 不需要实例
                 self.node_instances[node_def.id] = None
 
     def compile(self):
-        from backend.app.common.enums import NodeEnum
         graph = StateGraph(State)
 
         # 1️⃣ 创建节点
@@ -83,6 +84,8 @@ class App(BaseModel):
                 current_node = RouterNode(**node_data)
             elif node_type == NodeEnum.RETRIEVE.value:
                 current_node = RetrieveNode(**node_data)
+            elif node_type == NodeEnum.TOOL.value:
+                current_node = ToolNode(**node_data)
             else:
                 # start/end 不需要实际节点，由框架处理
                 current_node = lambda x: x
@@ -93,9 +96,9 @@ class App(BaseModel):
         for edge in self._parsed_edges:
             edge_type = edge.type.value if hasattr(edge.type, 'value') else edge.type
             if edge_type == EdgeTypeEnum.NORMAL.value:
-                if edge.source == "start":
+                if edge.source == NodeEnum.START.value:
                     graph.add_edge(START, edge.target)
-                elif edge.target == "end":
+                elif edge.target == NodeEnum.END.value:
                     graph.add_edge(edge.source, END)
                 else:
                     graph.add_edge(edge.source, edge.target)
@@ -104,8 +107,8 @@ class App(BaseModel):
         router_nodes = [n for n in self._parsed_nodes if (n.type.value if hasattr(n.type, 'value') else n.type) == NodeEnum.ROUTE.value]
 
         for router in router_nodes:
-            def route_fn(state):
-                return state.get("decision")
+            # 使用 lambda 捕获当前循环变量，避免闭包陷阱
+            route_fn = lambda state, router_id=router.id: state.get("decision")
 
             mapping = {
                 edge.condition: edge.target
@@ -113,6 +116,7 @@ class App(BaseModel):
                 if edge.source == router.id and (edge.type.value if hasattr(edge.type, 'value') else edge.type) == EdgeTypeEnum.CONDITIONAL.value
             }
 
+            # 添加条件边 - mapping: decision -> target_node_id
             graph.add_conditional_edges(router.id, route_fn, mapping)
 
         return graph.compile()
@@ -129,7 +133,7 @@ class App(BaseModel):
         from backend.app.common.enums import EdgeTypeEnum
         for edge in self._parsed_edges:
             edge_type = edge.type.value if hasattr(edge.type, 'value') else edge.type
-            if edge.source == current_node_id and edge_type == EdgeTypeEnum.NORMAL.value and edge.target != "end":
+            if edge.source == current_node_id and edge_type == EdgeTypeEnum.NORMAL.value and edge.target != NodeEnum.END.value:
                 return edge.target
         return None
 
@@ -149,7 +153,7 @@ class App(BaseModel):
     def _get_start_node(self) -> str | None:
         """获取起始节点（start指向的第一个节点）"""
         for edge in self._parsed_edges:
-            if edge.source == "start":
+            if edge.source == NodeEnum.START.value:
                 return edge.target
         return None
 
@@ -174,8 +178,9 @@ class App(BaseModel):
             node_type = node_def.type.value if hasattr(node_def.type, 'value') else node_def.type
             if node_type == NodeEnum.LLM.value:
                 # LLM节点：调用node.stream()逐个获取token
+                #__call_方法尝试使用node_instance(current_state)
                 full_content = ""
-                for (token, full_content) in node_instance.stream(current_state):
+                for (token, full_content) in node_instance(current_state):
                     yield {
                         "type": "token",
                         "token": token,
@@ -223,6 +228,18 @@ class App(BaseModel):
 
             elif node_type == NodeEnum.RETRIEVE.value:
                 # 知识库检索节点：调用node.__call__检索文档
+                update = node_instance(current_state)
+                current_state.update(update)
+                yield {
+                    "type": "node_complete",
+                    "node_id": current_node_id,
+                    "output": update
+                }
+                # 获取下一个节点（App负责流程控制）
+                current_node_id = self._get_next_node(current_node_id)
+
+            elif node_type == NodeEnum.TOOL.value:
+                # 工具调用节点：调用node.__call__执行工具
                 update = node_instance(current_state)
                 current_state.update(update)
                 yield {

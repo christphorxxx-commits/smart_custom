@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     #AI配置
     DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY')
 
+    #工具调用
+    TAVILY_API_KEY: str = os.getenv('TAVILY_API_KEY')
+
     @property
     def async_db_url(self) -> str:
         """获取异步数据库连接"""

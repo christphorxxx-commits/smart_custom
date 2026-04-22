@@ -78,72 +78,70 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.Demo.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Demo2.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Mongo_test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.ai_core.executor&quot;: &quot;Run&quot;,
-    &quot;Python.builder.executor&quot;: &quot;Run&quot;,
-    &quot;Python.controller.executor&quot;: &quot;Run&quot;,
-    &quot;Python.core.executor&quot;: &quot;Run&quot;,
-    &quot;Python.database.executor&quot;: &quot;Run&quot;,
-    &quot;Python.fastapi_websocket.executor&quot;: &quot;Run&quot;,
-    &quot;Python.hash_bcrpy_util.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.path_conf.executor&quot;: &quot;Run&quot;,
-    &quot;Python.service (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.service.executor&quot;: &quot;Run&quot;,
-    &quot;Python.setting.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_websocket.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-<<<<<<< HEAD
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-=======
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
->>>>>>> dev
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/pycharmWorkspace/smart_custom/backend/env&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.stylelint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.stylelint&quot;: &quot;&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
-    &quot;npm.front.executor&quot;: &quot;Debug&quot;,
-    &quot;npm.webui.executor&quot;: &quot;Debug&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\PyCharm 2025.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
-    &quot;数据库脚本.smart.sql.executor&quot;: &quot;Run&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Demo.executor": "Run",
+    "Python.Demo2.executor": "Debug",
+    "Python.Demo3.executor": "Debug",
+    "Python.Mongo_test.executor": "Run",
+    "Python.ToolNode.executor": "Run",
+    "Python.ai_core.executor": "Run",
+    "Python.builder.executor": "Run",
+    "Python.controller.executor": "Run",
+    "Python.core.executor": "Run",
+    "Python.database.executor": "Run",
+    "Python.fastapi_websocket.executor": "Run",
+    "Python.hash_bcrpy_util.executor": "Run",
+    "Python.main (1).executor": "Run",
+    "Python.main.executor": "Debug",
+    "Python.path_conf.executor": "Run",
+    "Python.service (1).executor": "Run",
+    "Python.service.executor": "Run",
+    "Python.setting.executor": "Run",
+    "Python.test_websocket.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "dev",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "D:/pycharmWorkspace/smart_custom/backend/env",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.stylelint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.stylelint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.dev.executor": "Run",
+    "npm.front.executor": "Debug",
+    "npm.webui.executor": "Debug",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "D:\\PyCharm 2025.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
+    "vue.rearranger.settings.migration": "true",
+    "数据库脚本.smart.sql.executor": "Run"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;mongo&quot;,
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mongo",
+      "postgresql"
     ],
-    &quot;GitStage.ChangesTree.GroupingKeys&quot;: [
-      &quot;directory&quot;,
-      &quot;module&quot;,
-      &quot;repository&quot;
+    "GitStage.ChangesTree.GroupingKeys": [
+      "directory",
+      "module",
+      "repository"
     ],
-    &quot;RunConfigurationTargetLRU&quot;: [
-      &quot;b54fbc49-5fed-43db-a3ea-2ea6aa83ab61/database/\&quot;smart\&quot;/schema/\&quot;public\&quot;&quot;,
-      &quot;b54fbc49-5fed-43db-a3ea-2ea6aa83ab61&quot;
+    "RunConfigurationTargetLRU": [
+      "b54fbc49-5fed-43db-a3ea-2ea6aa83ab61/database/\"smart\"/schema/\"public\"",
+      "b54fbc49-5fed-43db-a3ea-2ea6aa83ab61"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\pycharmWorkspace\smart_custom\backend\env" />
@@ -184,7 +182,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Mongo_test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="Demo2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -199,7 +197,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/Mongo_test.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/Demo2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -208,7 +206,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="database" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="Demo3" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -217,13 +215,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/common/core" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Demo" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/common/core/database.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/Demo3.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -232,7 +230,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="hash_bcrpy_util" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="ToolNode" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -241,13 +239,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/common/utils" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/modules/workflow/nodes" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/common/utils/hash_bcrpy_util.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/modules/workflow/nodes/ToolNode.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -358,19 +356,19 @@
       <item itemvalue="npm.webui" />
       <item itemvalue="npm.front" />
       <item itemvalue="Python.main" />
-      <item itemvalue="Python.Mongo_test" />
-      <item itemvalue="Python.database" />
-      <item itemvalue="Python.hash_bcrpy_util" />
+      <item itemvalue="Python.Demo2" />
+      <item itemvalue="Python.Demo3" />
+      <item itemvalue="Python.ToolNode" />
       <item itemvalue="Python.Demo" />
       <item itemvalue="Python.main (1)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.ToolNode" />
+        <item itemvalue="Python.Demo3" />
+        <item itemvalue="Python.Demo2" />
         <item itemvalue="Python.main (1)" />
         <item itemvalue="Python.Demo" />
-        <item itemvalue="Python.hash_bcrpy_util" />
-        <item itemvalue="Python.database" />
-        <item itemvalue="Python.Mongo_test" />
       </list>
     </recent_temporary>
   </component>
@@ -432,7 +430,8 @@
       <workItem from="1775094658518" duration="39908000" />
       <workItem from="1775612431353" duration="24903000" />
       <workItem from="1775713420980" duration="9157000" />
-      <workItem from="1775801339011" duration="47710000" />
+      <workItem from="1775801339011" duration="54992000" />
+      <workItem from="1776822962675" duration="21751000" />
     </task>
     <task id="LOCAL-00001" summary="第二次提交">
       <option name="closed" value="true" />
@@ -666,9 +665,6 @@
       <option name="project" value="LOCAL" />
       <updated>1775806235053</updated>
     </task>
-<<<<<<< HEAD
-    <option name="localTasksCounter" value="30" />
-=======
     <task id="LOCAL-00030" summary="完善了画板编辑保存功能，配置了pg中app表和mongo中apps表，创建了mongoBaseCRUD基础类等相关内容">
       <option name="closed" value="true" />
       <created>1776155245492</created>
@@ -694,7 +690,6 @@
       <updated>1776766567495</updated>
     </task>
     <option name="localTasksCounter" value="33" />
->>>>>>> dev
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -705,7 +700,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -737,23 +744,15 @@
     <MESSAGE value="定义了前端中画板的实现" />
     <MESSAGE value="增加webui" />
     <MESSAGE value="增加了记忆功能" />
-<<<<<<< HEAD
-    <option name="LAST_COMMIT_MESSAGE" value="增加了记忆功能" />
-=======
     <MESSAGE value="完善了画板编辑保存功能，配置了pg中app表和mongo中apps表，创建了mongoBaseCRUD基础类等相关内容" />
     <MESSAGE value="初步完成画板中创建app（目前以默认配置为例）保存app配置到数据库中，在选择创建的app进行对话的全流程" />
     <MESSAGE value="基本完成当前功能，Agent创建到应用对话的全流程" />
     <option name="LAST_COMMIT_MESSAGE" value="基本完成当前功能，Agent创建到应用对话的全流程" />
->>>>>>> dev
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
     <SUITE FILE_PATH="coverage/smart_custom$controller.coverage" NAME="controller 覆盖结果" MODIFIED="1773397399996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
-<<<<<<< HEAD
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1776152923305" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-=======
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1776766126723" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
->>>>>>> dev
+    <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
+    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1776850106202" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$path_conf.coverage" NAME="path_conf 覆盖结果" MODIFIED="1773284865366" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$fastapi_websocket.coverage" NAME="fastapi_websocket 覆盖结果" MODIFIED="1774861223642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$main__1_.coverage" NAME="main (1) 覆盖结果" MODIFIED="1775115215801" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
@@ -764,9 +763,11 @@
     <SUITE FILE_PATH="coverage/smart_custom$hash_bcrpy_util.coverage" NAME="hash_bcrpy_util 覆盖结果" MODIFIED="1776072326781" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/utils" />
     <SUITE FILE_PATH="coverage/smart_custom$core.coverage" NAME="core 覆盖结果" MODIFIED="1773397812138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/common/core" />
     <SUITE FILE_PATH="coverage/smart_custom$setting.coverage" NAME="setting 覆盖结果" MODIFIED="1773397497032" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
+    <SUITE FILE_PATH="coverage/smart_custom$Demo3.coverage" NAME="Demo3 覆盖结果" MODIFIED="1776837408098" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$builder.coverage" NAME="builder 覆盖结果" MODIFIED="1775036792337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
     <SUITE FILE_PATH="coverage/smart_custom$service.coverage" NAME="service 覆盖结果" MODIFIED="1773302961908" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/module_system/auth" />
     <SUITE FILE_PATH="coverage/smart_custom$Mongo_test.coverage" NAME="Mongo_test 覆盖结果" MODIFIED="1775627630515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
-    <SUITE FILE_PATH="coverage/smart_custom$Demo2.coverage" NAME="Demo2 覆盖结果" MODIFIED="1775010437290" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$Demo2.coverage" NAME="Demo2 覆盖结果" MODIFIED="1776827964185" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
+    <SUITE FILE_PATH="coverage/smart_custom$ToolNode.coverage" NAME="ToolNode 覆盖结果" MODIFIED="1776846191412" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow/nodes" />
   </component>
 </project>

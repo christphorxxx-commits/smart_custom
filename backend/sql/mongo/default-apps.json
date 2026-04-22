@@ -174,5 +174,110 @@
     },
     "enableKnowledgeBase": false,
     "enableToolCall": false
+  },
+  {
+    "uuid": "7f9d2c4e-8a1e-4b3a-9f5d-7c8a2e4b1d3c",
+    "name": "联网搜索助手",
+    "description": "使用 Tavily 搜索引擎搜索网络信息，然后AI回答",
+    "user_id": "1",
+    "icon": "🔍",
+    "type": "CHAT",
+    "is_deleted": false,
+    "status": "active",
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "x": 100,
+        "y": 200,
+        "config": {}
+      },
+      {
+        "id": "web_search",
+        "type": "tool",
+        "x": 350,
+        "y": 200,
+        "config": {
+          "tool_name": "internet_search",
+          "tool_description": "联网搜索最新信息",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "string",
+              "description": "搜索关键词",
+              "required": true
+            },
+            {
+              "name": "max_results",
+              "type": "int",
+              "description": "返回结果数量",
+              "required": false,
+              "default": 5
+            },
+            {
+              "name": "topic",
+              "type": "string",
+              "description": "搜索主题: general/news/finance",
+              "required": false,
+              "default": "general"
+            }
+          ],
+          "input_mapping": {
+            "query": "input"
+          },
+          "output_key": "search_results"
+        }
+      },
+      {
+        "id": "answer",
+        "type": "llm",
+        "x": 600,
+        "y": 200,
+        "config": {
+          "model": "qwen-max",
+          "prompt": "你是一个AI助手，请基于以下搜索结果回答用户问题。\n\n搜索结果：\n{search_results}\n\n用户问题：{input}\n\n请给出准确的回答：",
+          "temperature": 0.7,
+          "maxTokens": 2000
+        }
+      },
+      {
+        "id": "end",
+        "type": "end",
+        "x": 850,
+        "y": 200,
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "source": "start",
+        "target": "web_search",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "web_search",
+        "target": "answer",
+        "type": "normal",
+        "condition": null
+      },
+      {
+        "source": "answer",
+        "target": "end",
+        "type": "normal",
+        "condition": null
+      }
+    ],
+    "is_public": true,
+    "version": 1,
+    "enableFileUpload": false,
+    "globalVariables": {},
+    "enableTTS": false,
+    "enableASR": false,
+    "guessedQuestions": false,
+    "inputGuidance": false,
+    "timeExecute": false,
+    "autoExecute": false,
+    "openingMessage": "你好！我是联网搜索助手，可以帮你查询最新信息，请告诉我你想搜索什么？"
   }
 ]
