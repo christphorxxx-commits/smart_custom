@@ -1,15 +1,13 @@
 from typing import Dict, Any, List
 
 from langchain_community.vectorstores import PGVector
-from langchain_community.embeddings import DashScopeEmbeddings
 from langchain_core.documents import Document
 from pydantic import Field
 
 from backend.app.common.core.base_node import BaseNode
+from backend.app.common.core.core import embeddings
 from backend.app.config.setting import settings
 
-
-from typing import Optional
 
 class RetrieveNode(BaseNode):
     """知识库检索节点
@@ -45,18 +43,17 @@ class RetrieveNode(BaseNode):
         super().__init__(**data)
 
         # 初始化通义千问嵌入模型
-        self.embeddings = DashScopeEmbeddings(
-            model="text-embedding-v3",
-            dashscope_api_key=settings.DASHSCOPE_API_KEY,
-        )
+        self.embeddings = embeddings
 
         # 初始化PGVector连接
         # 从settings获取数据库连接信息，使用已有的postgresql配置
-        connection_string = settings.async_db_url
+        # PGVector 当前使用同步连接，所以用 settings.db_url（不是 async_db_url）
+        connection_string = settings.db_url
         self.vector_store = PGVector(
             collection_name=self.collection_name,
             connection_string=connection_string,
             distance_strategy="cosine",
+            embedding_function=self.embeddings.embedding,
         )
 
     def __call__(self, state: Dict[str, Any]) -> Dict[str, Any]:

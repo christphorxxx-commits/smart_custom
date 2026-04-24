@@ -1,16 +1,14 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+from typing import TYPE_CHECKING
 
-import uuid_utils
-from sqlalchemy import DateTime,String, Integer,Text, ForeignKey
-from sqlalchemy.orm import Mapped,mapped_column,DeclarativeBase, declared_attr, relationship
-from sqlalchemy.ext.asyncio import AsyncAttrs
 from beanie import Document
-from pydantic import Field, BaseModel
+from pydantic import Field
+from sqlalchemy import DateTime, String, Integer, Text, ForeignKey
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, declared_attr, relationship
 
 from backend.app.common.utils.common_util import uuid4_str
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from backend.app.modules.module_system.user.model import UserModel
@@ -63,8 +61,8 @@ class ModelMixin(MappedBase):
 
     # 基础字段
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment='主键ID')
-    # uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
-    #                                   comment='UUID全局唯一标识')
+    uuid: Mapped[str] = mapped_column(String(64), default=uuid4_str, nullable=False, unique=True,
+                                      comment='UUID全局唯一标识')
     status: Mapped[str] = mapped_column(String(10), default='0', nullable=False, comment="是否启用(0:启用 1:禁用)")
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注/描述")
     created_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False, comment='创建时间')
@@ -151,3 +149,5 @@ class BaseMongoDocument(Document):
         # 如果需要查询已删除文档，可以使用 MyDoc.find(MyDoc.is_deleted == True)
         name = None  # 子类必须覆盖设置集合名称
         use_revision = False  # 关闭修订版本历史
+
+

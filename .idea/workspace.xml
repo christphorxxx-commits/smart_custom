@@ -86,6 +86,7 @@
     "Python.Demo2.executor": "Debug",
     "Python.Demo3.executor": "Debug",
     "Python.Mongo_test.executor": "Run",
+    "Python.RetrieveDemo.executor": "Debug",
     "Python.ToolNode.executor": "Run",
     "Python.ai_core.executor": "Run",
     "Python.builder.executor": "Run",
@@ -124,6 +125,7 @@
     "to.speed.mode.migration.done": "true",
     "ts.external.directory.path": "D:\\PyCharm 2025.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
     "vue.rearranger.settings.migration": "true",
+    "数据库脚本.smart.sql (1).executor": "Run",
     "数据库脚本.smart.sql.executor": "Run"
   },
   "keyToStringList": {
@@ -137,6 +139,7 @@
       "repository"
     ],
     "RunConfigurationTargetLRU": [
+      "b54fbc49-5fed-43db-a3ea-2ea6aa83ab61/database/\"smart\"",
       "b54fbc49-5fed-43db-a3ea-2ea6aa83ab61/database/\"smart\"/schema/\"public\"",
       "b54fbc49-5fed-43db-a3ea-2ea6aa83ab61"
     ]
@@ -150,60 +153,24 @@
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\ast_tts" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\api" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\workflow\api" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\workflow\nodes" />
-      <recent name="D:\pycharmWorkspace\smart_custom\backend\app\modules\api" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app" />
       <recent name="D:\pycharmWorkspace\smart_custom\backend\app\common\core" />
     </key>
   </component>
   <component name="RunManager" selected="Python.main">
-    <configuration name="Demo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="smart_custom" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/modules/workflow" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/modules/workflow/Demo.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
+    <configuration name="smart.sql (1)" type="DatabaseScript" editBeforeRun="true" temporary="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/backend/sql/postgres/smart.sql" />
+      <script-mode>FILE</script-mode>
+      <data-source id="b54fbc49-5fed-43db-a3ea-2ea6aa83ab61" namespace="database/&quot;smart&quot;/schema/&quot;public&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Demo2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="smart_custom" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Demo" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/Demo2.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
+    <configuration name="smart.sql" type="DatabaseScript" editBeforeRun="true" temporary="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/backend/sql/postgres/smart.sql" />
+      <script-mode>FILE</script-mode>
+      <data-source id="b54fbc49-5fed-43db-a3ea-2ea6aa83ab61" namespace="database/&quot;smart&quot;" />
       <method v="2" />
     </configuration>
     <configuration name="Demo3" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -230,6 +197,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="RetrieveDemo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="smart_custom" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Demo" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Demo/RetrieveDemo.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="ToolNode" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="smart_custom" />
       <option name="ENV_FILES" value="" />
@@ -246,30 +237,6 @@
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/modules/workflow/nodes/ToolNode.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="smart_custom" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend/app/modules/workflow" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backend/app/modules/workflow/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -356,19 +323,19 @@
       <item itemvalue="npm.webui" />
       <item itemvalue="npm.front" />
       <item itemvalue="Python.main" />
-      <item itemvalue="Python.Demo2" />
+      <item itemvalue="Python.RetrieveDemo" />
       <item itemvalue="Python.Demo3" />
       <item itemvalue="Python.ToolNode" />
-      <item itemvalue="Python.Demo" />
-      <item itemvalue="Python.main (1)" />
+      <item itemvalue="数据库脚本.smart.sql" />
+      <item itemvalue="数据库脚本.smart.sql (1)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="数据库脚本.smart.sql (1)" />
+        <item itemvalue="数据库脚本.smart.sql" />
+        <item itemvalue="Python.RetrieveDemo" />
         <item itemvalue="Python.ToolNode" />
         <item itemvalue="Python.Demo3" />
-        <item itemvalue="Python.Demo2" />
-        <item itemvalue="Python.main (1)" />
-        <item itemvalue="Python.Demo" />
       </list>
     </recent_temporary>
   </component>
@@ -752,7 +719,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/smart_custom$controller.coverage" NAME="controller 覆盖结果" MODIFIED="1773397399996" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
     <SUITE FILE_PATH="coverage/smart_custom$service__1_.coverage" NAME="service (1) 覆盖结果" MODIFIED="1773397442313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/ai" />
-    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1776850106202" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smart_custom$main.coverage" NAME="main 覆盖结果" MODIFIED="1777010614807" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$path_conf.coverage" NAME="path_conf 覆盖结果" MODIFIED="1773284865366" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/config" />
     <SUITE FILE_PATH="coverage/smart_custom$fastapi_websocket.coverage" NAME="fastapi_websocket 覆盖结果" MODIFIED="1774861223642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smart_custom$main__1_.coverage" NAME="main (1) 覆盖结果" MODIFIED="1775115215801" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
@@ -766,6 +733,7 @@
     <SUITE FILE_PATH="coverage/smart_custom$Demo3.coverage" NAME="Demo3 覆盖结果" MODIFIED="1776837408098" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$builder.coverage" NAME="builder 覆盖结果" MODIFIED="1775036792337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow" />
     <SUITE FILE_PATH="coverage/smart_custom$service.coverage" NAME="service 覆盖结果" MODIFIED="1773302961908" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/module_system/auth" />
+    <SUITE FILE_PATH="coverage/smart_custom$RetrieveDemo.coverage" NAME="RetrieveDemo 覆盖结果" MODIFIED="1776914742294" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$Mongo_test.coverage" NAME="Mongo_test 覆盖结果" MODIFIED="1775627630515" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$Demo2.coverage" NAME="Demo2 覆盖结果" MODIFIED="1776827964185" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Demo" />
     <SUITE FILE_PATH="coverage/smart_custom$ToolNode.coverage" NAME="ToolNode 覆盖结果" MODIFIED="1776846191412" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend/app/modules/workflow/nodes" />

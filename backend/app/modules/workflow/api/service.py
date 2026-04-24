@@ -10,7 +10,7 @@ from backend.app.modules.api.ai.schema import ChatQuerySchema
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.model import UserModel
 from backend.app.modules.workflow.api.crud import AppCRUD, AppMongoCRUD
-from backend.app.modules.workflow.api.model import AiApp
+from backend.app.modules.workflow.api.model import AiAppModel
 from backend.app.modules.workflow.api.schema import (
     CreateAppSchema, UpdateAgentSchema, AppInfoSchema, BaseCreateAppSchema,
 )
@@ -207,7 +207,7 @@ class AppService:
             return {"success": False, "message": "应用配置不存在"}
 
         # 5. 执行MongoDB更新
-        app = await app_mongo_crud.update_mongo_app_crud(mongo_app.id, data)
+        await app_mongo_crud.update_mongo_app_crud(mongo_app.id, data)
 
         log.info(f"[{user.username}] 成功更新Agent应用: id={pg_app.id}, type={pg_app.type}")
 
@@ -309,7 +309,7 @@ class AppService:
     async def get_pg_app_by_uuid(
             uuid:str,
             auth: AuthSchema,
-    )-> Coroutine[Any, Any, AiApp | None]:
+    )-> Coroutine[Any, Any, AiAppModel | None]:
         app_crud = AppCRUD(auth)
         return app_crud.get_app_by_uuid_crud(uuid)
 

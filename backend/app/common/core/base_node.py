@@ -20,8 +20,6 @@ class BaseNode(BaseModel):
         "arbitrary_types_allowed": True
     }
 
-
-
 class Edge(BaseModel):
     """工作流边模型"""
     source: str = Field(..., description="源节点ID")

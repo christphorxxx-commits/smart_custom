@@ -105,6 +105,23 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def update_password_crud(self, user_id: int, new_password_hash: str) -> bool:
+        """
+        更新用户密码
+
+        参数:
+        - user_id (int): 用户ID
+        - new_password_hash (str): 加密后的新密码
+
+        返回:
+        - bool: 更新是否成功
+        """
+        from sqlalchemy import update
+        stmt = update(self.model).where(self.model.id == user_id).values(password=new_password_hash)
+        result = await self.auth.db.execute(stmt)
+        await self.auth.db.commit()
+        return result.rowcount > 0
+
     # async def get_by_username_crud(self, username: str) -> UserModel | None:
     #     """
     #     根据用户名查询用户

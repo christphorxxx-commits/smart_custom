@@ -1,19 +1,7 @@
 import logging
-import os
 
 from fastapi import WebSocket
-from piper.voice import PiperVoice
-
-from backend.app.common.constant import MODEL_PATH
-
-# #Piper模型初始化
-# voice = PiperVoice.load(MODEL_PATH)
-# print(f"成功加载Piper模型: {MODEL_PATH}")
-#
-# # 配置日志
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-
+from openai import OpenAI
 
 # --------------------------
 # 核心：WebSocket 连接管理器
@@ -53,21 +41,25 @@ class ConnectionManager:
 # 初始化全局管理器（所有 WebSocket 共用）
 manager = ConnectionManager()
 
-
 #llm
 from langchain_ollama import ChatOllama
-
+from langchain_community.chat_models import ChatTongyi
+from backend.app.config.setting import settings
+from langchain_community.embeddings import DashScopeEmbeddings
 llm = ChatOllama(
     model="qwen3:0.6b"
 )
-
-from langchain_community.chat_models import ChatTongyi
-from backend.app.config.setting import settings
 
 tongyillm = ChatTongyi(
     model="qwen3-max",
     api_key=settings.DASHSCOPE_API_KEY,
 )
+
+embeddings = DashScopeEmbeddings(
+    model=settings.EMBEDDINGS_MODEL,
+    dashscope_api_key=settings.DASHSCOPE_API_KEY,
+)
+
 
 if __name__ == "__main__":
     try:

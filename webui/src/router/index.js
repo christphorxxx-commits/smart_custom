@@ -5,6 +5,7 @@ import Login from '../pages/Login.vue'
 import Register from '../pages/Register.vue'
 import Home from '../pages/Home.vue'
 import WorkflowChat from '../pages/WorkflowChat.vue'
+import KnowledgeBase from '../pages/KnowledgeBase.vue'
 
 // Route configuration
 const routes = [
@@ -28,6 +29,12 @@ const routes = [
     path: '/workflow/chat/:id',
     name: 'WorkflowChat',
     component: WorkflowChat,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/knowledge',
+    name: 'KnowledgeBase',
+    component: KnowledgeBase,
     meta: { requiresAuth: true }
   },
   // Redirect to login page

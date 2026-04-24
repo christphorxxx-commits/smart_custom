@@ -7,17 +7,17 @@ from backend.app.common.core.base_crud import CRUDBase
 from backend.app.common.core.base_mongo_crud import BaseMongoCRUD
 from backend.app.common.core.logger import log
 from backend.app.modules.module_system.auth.schema import AuthSchema
-from backend.app.modules.workflow.api.model import App, AiApp
+from backend.app.modules.workflow.api.model import App, AiAppModel
 from backend.app.modules.workflow.api.schema import (
     CreateAppPGSchema, CreateAppSchema, UpdateAgentSchema, BaseCreateAppSchema,
 )
 
 
-class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
+class AppCRUD(CRUDBase[AiAppModel, CreateAppSchema, UpdateAgentSchema]):
     """
     应用数据访问层 (PostgreSQL)
 
-    负责操作 PostgreSQL 的 AiApp 表，存储应用基本信息和权限控制
+    负责操作 PostgreSQL 的 AiAppModel 表，存储应用基本信息和权限控制
     """
 
     def __init__(self, auth: AuthSchema) -> None:
@@ -28,12 +28,12 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - auth (AuthSchema): 认证信息模型
         """
         self.auth = auth
-        super().__init__(model=AiApp, auth=auth)
+        super().__init__(model=AiAppModel, auth=auth)
 
     async def get_available_apps_for_user_crud(
             self,
             current_user_id: int,
-    ) -> List[AiApp]:
+    ) -> List[AiAppModel]:
         """
         获取当前用户可用的应用列表（PostgreSQL查询）
 
@@ -41,14 +41,14 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - current_user_id (int): 当前用户ID
 
         返回:
-        - List[AiApp]: 可用应用列表
+        - List[AiAppModel]: 可用应用列表
         权限规则：用户自己创建的 OR 公开应用，且状态为启用
         """
-        stmt = select(AiApp).where(
-            (AiApp.user_id == current_user_id) | (AiApp.is_public == True)
+        stmt = select(AiAppModel).where(
+            (AiAppModel.user_id == current_user_id) | (AiAppModel.is_public == True)
         ).where(
-            AiApp.status == '0'  # 只返回启用的应用
-        ).order_by(AiApp.created_time.desc())
+            AiAppModel.status == '0'  # 只返回启用的应用
+        ).order_by(AiAppModel.created_time.desc())
 
         result = await self.auth.db.execute(stmt)
         apps = result.scalars().all()
@@ -57,7 +57,7 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
     async def create_app_pg_crud(
             self,
             data: CreateAppPGSchema
-    ) -> AiApp:
+    ) -> AiAppModel:
         """
         创建应用基本信息到 PostgreSQL
 
@@ -65,9 +65,9 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - data (CreateAppPGSchema): 创建数据，只包含 PG 需要的基本字段
 
         返回:
-        - AiApp: 创建后的 PG 记录
+        - AiAppModel: 创建后的 PG 记录
         """
-        # PostgreSQL AiApp 只存储基本信息，不存储系统配置（系统配置在MongoDB）
+        # PostgreSQL AiAppModel 只存储基本信息，不存储系统配置（系统配置在MongoDB）
         # CreateAppPGSchema 只包含 PG 需要的字段，直接序列化
 
         pg_data = data.model_dump(exclude_unset=True)
@@ -77,7 +77,7 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
             self,
             app_id: int,
             data: BaseCreateAppSchema
-    ) -> AiApp:
+    ) -> AiAppModel:
         """
         更新应用基本信息到 PostgreSQL
 
@@ -86,14 +86,14 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - data: 更新数据，只提取 PG 需要的字段
 
         返回:
-        - AiApp: 更新后的 PG 记录
+        - AiAppModel: 更新后的 PG 记录
         """
-        # PostgreSQL AiApp 只更新基本信息，系统配置只更新 MongoDB
+        # PostgreSQL AiAppModel 只更新基本信息，系统配置只更新 MongoDB
         # 只提取需要更新的字段，避免 user_id=None 覆盖原有非空值
 
         return await self.update(id=app_id, data=data.model_dump())
 
-    async def get_app_by_id_crud(self, id: int) -> Optional[AiApp]:
+    async def get_app_by_id_crud(self, id: int) -> Optional[AiAppModel]:
         """
         根据PG主键ID获取应用基本信息（公开接口）
 
@@ -101,11 +101,11 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - id (int): 应用PostgreSQL主键ID
 
         返回:
-        - Optional[AiApp]: PG应用记录，不存在返回None
+        - Optional[AiAppModel]: PG应用记录，不存在返回None
         """
         return await self.get(id)
 
-    async def get_app_by_uuid_crud(self, uuid: str) -> Optional[AiApp]:
+    async def get_app_by_uuid_crud(self, uuid: str) -> Optional[AiAppModel]:
         """
         根据app_id (UUID)获取应用基本信息
 
@@ -113,10 +113,10 @@ class AppCRUD(CRUDBase[AiApp, CreateAppSchema, UpdateAgentSchema]):
         - app_id (str): 应用UUID
 
         返回:
-        - Optional[AiApp]: PG应用记录，不存在返回None
+        - Optional[AiAppModel]: PG应用记录，不存在返回None
         """
 
-        stmt = select(AiApp).where(AiApp.uuid == uuid)
+        stmt = select(AiAppModel).where(AiAppModel.uuid == uuid)
         result = await self.auth.db.execute(stmt)
         return result.scalar_one_or_none()
 

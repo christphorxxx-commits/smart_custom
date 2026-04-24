@@ -241,12 +241,20 @@ const loadQuickApps = async () => {
             ? 'linear-gradient(135deg, #6B4EED 0%, #8b5cf6 100%)'
             : getDefaultColor(app.type)
         }))
+        // Add Knowledge Base entry
+        quickApps.value.unshift({
+          id: -1,
+          name: '知识库',
+          icon: '📚',
+          color: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)'
+        })
       }
     }
   } catch (error) {
     console.error('加载应用列表失败:', error)
     // Fallback default apps
     quickApps.value = [
+      { id: -1, name: '知识库', icon: '📚', color: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)' },
       { id: 1, name: '智能问答', icon: '💬', color: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' },
       { id: 2, name: '语音合成', icon: '🔊', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
       { id: 3, name: '代码助手', icon: '💻', color: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)' },
@@ -332,6 +340,11 @@ const selectChat = async (chat) => {
 
 // Open workflow chat
 const openAppChat = (app) => {
+  // Special case: Knowledge base
+  if (app.id === -1) {
+    window.location.href = '/knowledge'
+    return
+  }
   // app.id is the pg id, app.uuid is the mongodb uuid
   window.location.href = `/workflow/chat/${app.id}`
 }

@@ -1,5 +1,4 @@
 from backend.app.common.core.exceptions import CustomException
-from sqlalchemy import update
 from backend.app.common.utils.hash_bcrpy_util import PwdUtil
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from backend.app.modules.module_system.user.crud import UserCRUD
@@ -90,10 +89,9 @@ class UserService:
         # 新密码加密
         new_password_hash = PwdUtil.set_password_hash(data.new_password)
 
-        # 直接更新密码
-        stmt = update(UserModel).where(UserModel.id == user.id).values(password=new_password_hash)
-        await auth.db.execute(stmt)
-        await auth.db.commit()
+        # 更新密码到数据库
+        user_crud = UserCRUD(auth)
+        await user_crud.update_password_crud(user.id, new_password_hash)
 
         log.info(f"用户 {user.username} 修改密码成功")
 

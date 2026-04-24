@@ -1,7 +1,7 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from .database import async_db_session, mongo_db
+from .database import async_db_session, mongo_db_session
 from fastapi import Request
 
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
@@ -24,9 +24,9 @@ def mongo_getter() -> AsyncIOMotorDatabase:
     - 如果MongoDB未配置，会抛出 ValueError
     - 在需要MongoDB的路由中使用: `db: AsyncIOMotorDatabase = Depends(mongo_getter)`
     """
-    if mongo_db is None:
+    if mongo_db_session is None:
         raise ValueError("MongoDB未配置或连接失败，请检查环境变量 MONGO_URI 和 MONGO_DB")
-    return mongo_db
+    return mongo_db_session
 
 
 from fastapi import Depends, HTTPException

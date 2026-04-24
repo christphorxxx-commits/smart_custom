@@ -341,6 +341,9 @@ const handleNavClick = (nav) => {
   } else if (nav === 'flow-editor') {
     // 跳转到应用编排（创建新应用）
     openCreateModal('workflow')
+  } else if (nav === 'knowledge') {
+    // 跳转到知识库管理页面
+    router.push('/knowledge')
   }
 }
 
@@ -615,9 +618,10 @@ axios.interceptors.response.use(
 
 .nav-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 8px 6px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -636,13 +640,14 @@ axios.interceptors.response.use(
 .nav-icon {
   font-size: 18px;
   flex-shrink: 0;
-  width: 24px;
   text-align: center;
+  line-height: 1;
 }
 
 .nav-text {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* 底部用户区域 */
