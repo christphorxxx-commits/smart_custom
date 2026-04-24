@@ -188,7 +188,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 "page_size": limit if limit else 10,
                 "total": total,
                 "has_next": offset + limit < total,
-                "items": [out_schema.model_validate(obj).model_dump() for obj in objs]
+                "items": [out_schema.model_validate(obj).model_dump(mode='json') for obj in objs]
             }
         except Exception as e:
             raise CustomException(msg=f"分页查询失败: {str(e)}")

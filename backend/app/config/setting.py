@@ -78,6 +78,7 @@ class Settings(BaseSettings):
 
     #AI配置
     DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY')
+    EMBEDDINGS_MODEL: str = "text-embeddings-v4"
 
     #工具调用
     TAVILY_API_KEY: str = os.getenv('TAVILY_API_KEY')

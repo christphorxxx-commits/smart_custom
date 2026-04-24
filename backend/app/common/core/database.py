@@ -96,16 +96,16 @@ def create_mongo_client(
         logging.error(f'❌ MongoDB连接失败: {e}')
         raise
 
-mongo_client, mongo_db = create_mongo_client()
+mongo_client, mongo_db_session = create_mongo_client()
 # 全局MongoDB客户端和默认数据库
 # 环境变量: MONGO_URI, MONGO_DB
 # try:
-#     mongo_client, mongo_db = create_mongo_client()
+#     mongo_client, mongo_db_session = create_mongo_client()
 # except Exception as e:
 #     # MongoDB可选，如果连接失败不影响PostgreSQL功能
 #     log.warning(f'⚠️ MongoDB未配置或连接失败: {e}。功能将不可用，但不影响主程序运行。')
 #     mongo_client = None
-#     mongo_db = None
+#     mongo_db_session = None
 
 def get_sync_mongo_client(
         mongo_uri: str = settings.mongo_uri,
@@ -139,8 +139,8 @@ def get_sync_mongo_client(
 
 async def init_beanie_odm():
     """初始化Beanie ODM，注册所有MongoDB文档模型"""
-    global mongo_client, mongo_db
-    if mongo_client is None or mongo_db is None:
+    global mongo_client, mongo_db_session
+    if mongo_client is None or mongo_db_session is None:
         log.warning("⚠️ MongoDB未连接，跳过Beanie初始化")
         return
 
@@ -162,7 +162,7 @@ async def init_beanie_odm():
     AsyncIOMotorClient.append_metadata = append_metadata
 
     await init_beanie(
-        database=mongo_db,
+        database=mongo_db_session,
         document_models=document_models
     )
     log.info("✅ Beanie ODM 初始化完成")

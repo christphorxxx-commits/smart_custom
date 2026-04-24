@@ -1,19 +1,18 @@
-# ============ PostgreSQL SQLAlchemy AiApp 模型 ============
+# ============ PostgreSQL SQLAlchemy AiAppModel 模型 ============
 # -*- coding: utf-8 -*-
 
 from typing import Optional, List, Dict, Any
 
-from bson import ObjectId
-from pydantic import Field
+from pydantic import Field, BaseModel
 from sqlalchemy import String, Boolean, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.common.core.base_model import BaseMongoDocument, ModelMixin
+from backend.app.common.core.base_model import BaseMongoDocument, ModelMixin, UserMixin
 from backend.app.common.utils.common_util import uuid4_str
 from backend.app.modules.workflow.api.schema import LLMConfigSchema, KnowledgeBaseConfigSchema
 
 
-class AiApp(ModelMixin):
+class AiAppModel(ModelMixin, UserMixin):
     """AI应用 - PostgreSQL 表
 
     存储应用基本信息和权限控制，工作流配置详情存储在 MongoDB App 中

@@ -68,7 +68,7 @@ sys.path.append(str(Path(__file__).parent / "backend"))
 
 # 注册TTS路由
 try:
-    from backend.app.modules.tts.controller import TTSRouter
+    from backend.app.modules.api.tts.controller import TTSRouter
     app.include_router(TTSRouter, prefix="/api")
     log.info("TTS路由已成功注册")
 except ImportError as e:
@@ -78,7 +78,7 @@ except ImportError as e:
 
 # 注册ASR路由
 try:
-    from backend.app.modules.asr.controller import ASRRouter
+    from backend.app.modules.api.asr.controller import ASRRouter
     app.include_router(ASRRouter, prefix="/api")
     log.info("ASR路由已成功注册")
 except ImportError as e:
@@ -119,6 +119,15 @@ try:
     log.info("WORKFLOW路由已成功注册")
 except ImportError as e:
     log.error(f"导入WORKFLOW模块失败: {e}")
+    log.warning("请确保所有依赖已正确安装")
+
+# 注册知识库路由
+try:
+    from backend.app.modules.module_system.database.controller import router as KbRouter
+    app.include_router(KbRouter, prefix="/api")
+    log.info("知识库路由已成功注册")
+except ImportError as e:
+    log.error(f"导入知识库模块失败: {e}")
     log.warning("请确保所有依赖已正确安装")
 
 # 注册全局异常处理器

@@ -5,6 +5,7 @@ from bson import ObjectId
 from beanie import SortDirection
 
 from backend.app.common.core.base_mongo_crud import BaseMongoCRUD
+from backend.app.common.core.exceptions import CustomException
 from backend.app.common.core.logger import log
 from .model import Chat, ChatItem
 
@@ -54,9 +55,9 @@ class ChatMongoCRUD(BaseMongoCRUD[Chat, BaseModel, BaseModel]):
                     chat.updated_at = datetime.utcnow()
                     await chat.save()
                     return chat
-            except Exception:
+            except Exception as e:
                 # chat_id 格式不正确或不存在，创建新会话
-                pass
+                raise CustomException(str(e))
 
         # 创建新会话，标题自动取第一条消息前20个字
         title = first_message[:20] + ("..." if len(first_message) > 20 else "")

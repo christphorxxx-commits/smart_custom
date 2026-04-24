@@ -122,6 +122,16 @@ cd frontend && npm install
   - `JWT_SECRET_KEY`
   - 可选 MongoDB 配置
 - **MongoDB 基类**: 所有 MongoDB 文档继承 `backend/app/common/core/base_model.py` 中的 `BaseMongoDocument`，自动包含通用字段 (`is_deleted`, `created_at`, `updated_at` 等)。
+- **SQLAlchemy 模型**: 所有 PostgreSQL 表模型继承 `backend/app/common/core/base_model.py` 中的 `Base`，自动包含通用字段 (`id`, `is_deleted`, `created_at`, `updated_at`)。
+  ```python
+  from sqlalchemy import Column, Integer, String, Text
+  from sqlalchemy.dialects import postgresql
+  from backend.app.common.core.base_model import Base
+
+  class YourModel(Base):
+      __tablename__ = "table_name"
+      # your fields here...
+  ```
 - **新增工作流节点**: 添加新节点类型步骤：
   1. 在 `workflow/nodes/` 创建 `.py` 文件，继承 `BaseNode`
   2. 在 `workflow/app.py` 添加 import
