@@ -57,7 +57,7 @@ class KnowledgeListResponse(BaseModel):
 class AddDocumentSchema(BaseModel):
     """添加文档到知识库请求
     说明：content 是单个切片内容，将存入 PGVector 向量库
-    KnowledgeFile 只存文件元信息，不重复存储content
+    KnowledgeFileModel 只存文件元信息，不重复存储content
     """
     knowledge_uuid: str = Field(..., description="知识库UUID")
     title: str = Field(..., description="文件名/文档标题")

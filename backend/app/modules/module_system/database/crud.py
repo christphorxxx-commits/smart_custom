@@ -2,38 +2,34 @@
 知识库CRUD操作
 """
 from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+
+from langchain_core.documents import Document
 
 from backend.app.common.core.base_crud import CRUDBase
-from .model import KnowledgeBase, KnowledgeFile
+from backend.app.common.core.base_vector_crud import BaseVectorCRUD
+from .model import KnowledgeBaseModel, KnowledgeFileModel
 from .schema import AddDocumentSchema, KnowledgeCreateSchema, KnowledgeUpdateSchema
 from ..auth.schema import AuthSchema
 
 
-class KnowledgeBaseCRUD(CRUDBase[KnowledgeBase, KnowledgeCreateSchema, KnowledgeUpdateSchema]):
+class KnowledgeCRUD(CRUDBase[KnowledgeBaseModel, KnowledgeCreateSchema, KnowledgeUpdateSchema]):
     """知识库（集合）CRUD"""
 
     def __init__(self, auth: AuthSchema):
         self.auth = auth
-        super().__init__(model=KnowledgeBase, auth=auth)
+        super().__init__(model=KnowledgeBaseModel, auth=auth)
 
     async def get_by_uuid_crud(
         self,
         uuid: str
-    ) -> Optional[KnowledgeBase]:
+    ) -> Optional[KnowledgeBaseModel]:
         """根据UUID获取知识库"""
-        stmt = select(KnowledgeBase).where(
-            KnowledgeBase.uuid == uuid,
-            KnowledgeBase.is_deleted.is_(False)
-        )
-        result = await self.auth.db.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self.get(uuid=uuid, is_deleted=False)
 
-    async def create_with_collection_name(
+    async def create_crud(
         self,
         data: KnowledgeCreateSchema
-    ) -> Optional[KnowledgeBase]:
+    ) -> Optional[KnowledgeBaseModel]:
         """创建知识库并自动生成 collection_name
 
         因为 collection_name 需要使用自增 id，所以需要先插入再更新
@@ -43,51 +39,79 @@ class KnowledgeBaseCRUD(CRUDBase[KnowledgeBase, KnowledgeCreateSchema, Knowledge
 
         # 自动生成 collection_name = kb_{id}_embedding
         collection_name = f"kb_{kb.id}_embedding"
-        stmt = update(KnowledgeBase).where(
-            KnowledgeBase.id == kb.id
-        ).values(
-            collection_name=collection_name
-        )
-        await self.auth.db.execute(stmt)
-        await self.auth.db.commit()
+        await self.update(id=kb.id, data={"collection_name": collection_name})
 
         # 重新获取更新后的数据
         return await self.get(id=kb.id)
 
     async def list_by_user_crud(
-            self,
+        self,
         user_id: int
-    ) -> List[KnowledgeBase]:
+    ) -> List[KnowledgeBaseModel]:
         """列出用户创建的所有知识库"""
-        stmt = select(KnowledgeBase).where(
-            KnowledgeBase.created_id == user_id,
-            KnowledgeBase.is_deleted.is_(False)
-        ).order_by(KnowledgeBase.created_time.desc())
-        result = await self.auth.db.execute(stmt)
-        await self.auth.db.commit()
-        return list(result.scalars().all())
+        return await self.list(
+            search={"created_id": user_id, "is_deleted": False},
+            order_by=[{"created_time": "desc"}]
+        )
+
+    async def delete_crud(self, ids: list[int]) -> None:
+        """
+        批量删除应用
+
+        参数:
+        - ids (list[int]): 应用ID列表
+        """
+        return await self.delete(ids=ids)
 
 
-class KnowledgeFileCRUD(CRUDBase[KnowledgeFile, AddDocumentSchema, KnowledgeUpdateSchema]):
+class KnowledgeFileCRUD(CRUDBase[KnowledgeFileModel, AddDocumentSchema, KnowledgeUpdateSchema]):
     """知识库文件（单个文档切片）CRUD"""
 
     def __init__(self, auth: AuthSchema):
         self.auth = auth
-        super().__init__(model=KnowledgeFile, auth=auth)
+        super().__init__(model=KnowledgeFileModel, auth=auth)
 
 
     async def list_by_knowledge_base_crud(
-            self,
+        self,
         knowledge_base_id: int
-    ) -> List[KnowledgeFile]:
+    ) -> List[KnowledgeFileModel]:
         """列出知识库下所有文档"""
-        stmt = select(KnowledgeFile).where(
-            KnowledgeFile.knowledge_base_id == knowledge_base_id,
-            KnowledgeFile.is_deleted.is_(False)
-        ).order_by(KnowledgeFile.created_time.desc())
-        result = await self.auth.db.execute(stmt)
-        await self.auth.db.commit()
-        return list(result.scalars().all())
+        return await self.list(
+            search={"knowledge_base_id": knowledge_base_id, "is_deleted": False},
+            order_by=[{"created_time": "desc"}]
+        )
+
+
+class KnowledgeVectorCRUD:
+    """知识库向量表 CRUD（封装 BaseVectorCRUD）"""
+
+    def __init__(self, kb_id: int):
+        """
+        初始化知识库向量 CRUD
+
+        参数:
+            kb_id: 知识库 ID
+        """
+        self.kb_id = kb_id
+        self.collection_name = f"kb_{kb_id}_embedding"
+        self.vector_crud = BaseVectorCRUD(collection_name=self.collection_name)
+
+    def add_documents(self, documents: List[Document]) -> List[str]:
+        """添加文档到向量库"""
+        return self.vector_crud.add_documents(documents)
+
+    def similarity_search_with_score(
+        self,
+        query: str,
+        k: int = 5
+    ) -> List:
+        """相似性检索"""
+        return self.vector_crud.similarity_search_with_score(query, k=k)
+
+    def drop_collection(self) -> bool:
+        """删除向量表"""
+        return self.vector_crud.drop_collection()
 
 
 

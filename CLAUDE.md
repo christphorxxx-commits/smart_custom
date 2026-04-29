@@ -168,3 +168,84 @@ service (业务逻辑)
     ↓
 crud (数据库操作)
 ```
+
+### 代码风格规范（按 database 模块实践）
+
+#### Service 层统一规范
+
+| 特性 | 规范 | 示例 |
+|------|------|------|
+| **方法装饰器** | 统一用 `@classmethod` | `async def create_service(cls, auth, ...)` |
+| **方法命名** | 动词 + `_service` 后缀 | `create_service`, `update_service`, `delete_service` |
+| **返回类型** | 基础类型 `dict`，不用 Pydantic 包装 | `-> dict` / `-> Dict[str, Any]` |
+| **数据转换** | 统一用 `Schema.model_validate(obj).model_dump()` | `KnowledgeOutSchema.model_validate(obj).model_dump()` |
+| **错误处理** | 全部 `raise CustomException(msg="xxx")` | `raise CustomException(msg="更新失败，知识库不存在")` |
+| **CRUD 调用** | 每次调用时实例化，传入 auth | `await KnowledgeCRUD(auth=auth).get(id=id)` |
+
+**Service 层标准流程（create / update / detail / delete）：**
+```python
+@classmethod
+async def xxx_service(cls, auth: AuthSchema, ...) -> Dict[str, Any]:
+    """方法注释"""
+
+    # 1. 前置校验（存在性、唯一性）
+    obj = await KnowledgeCRUD(auth=auth).get(id=id)
+    if not obj:
+        raise CustomException(msg="xxx不存在")
+
+    # 2. 额外业务校验（如重名、权限等）
+    if xxx:
+        raise CustomException(msg="xxx失败，xxx")
+
+    # 3. 执行 CRUD 操作
+    result = await KnowledgeCRUD(auth=auth).xxx(...)
+
+    # 4. 返回基础类型 dict
+    return xxx.model_dump()
+```
+
+---
+
+#### Controller 层统一规范
+
+```python
+@router.post("/xxx", summary="接口描述")
+async def xxx_controller(
+    data: Schema,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(db_getter)
+) -> JSONResponse:
+    auth = AuthSchema(user=current_user, db=db)
+    result = await KnowledgeBaseService.xxx_service(auth, ...)
+    log.info(f"xxx成功: {xxx}")
+    return SuccessResponse(data=result, msg="xxx成功")
+```
+
+| 特性 | 规范 |
+|------|------|
+| **方法命名** | 动词 + `_controller` 后缀 |
+| **日志位置** | Controller 层打 info 日志，Service 层只打 warning/error |
+| **不做业务判断** | 所有异常由 `CustomException` 全局处理器捕获 |
+| **返回格式** | 统一 `SuccessResponse(data=result, msg="xxx")` |
+
+---
+
+#### 命名约定
+
+| 层级 | 命名规则 | 示例 |
+|------|---------|------|
+| CRUD 类 | `{ModuleName}CRUD` | `KnowledgeCRUD`, `KnowledgeFileCRUD`, `KnowledgeVectorCRUD` |
+| Service 方法 | `xxx_service` | `create_service`, `update_service` |
+| Controller 方法 | `xxx_obj_controller` | `create_obj_controller`, `update_obj_controller` |
+
+---
+
+#### 分层依赖原则
+
+```
+controller → service → crud → base_crud / base_vector_crud
+```
+
+- **不跨层调用**：Controller 不直接调 CRUD
+- **不泄露底层**：Service 不出现 PGVector、SQLAlchemy 等底层 API
+- **统一入口**：所有数据库操作通过 CRUD 类，复用 base 层能力

@@ -10,7 +10,7 @@ from backend.app.common.core.base_model import ModelMixin, UserMixin
 # ==========================================
 # 表 1: 知识库主表
 # ==========================================
-class KnowledgeBase(ModelMixin, UserMixin):
+class KnowledgeBaseModel(ModelMixin, UserMixin):
     __tablename__ = "knowledge_base"
 
     # 基础信息
@@ -31,9 +31,9 @@ class KnowledgeBase(ModelMixin, UserMixin):
 
     # 关联文件表（逻辑关联，不做数据库外键约束）
     files = relationship(
-        "KnowledgeFile",
-        primaryjoin="KnowledgeBase.id == KnowledgeFile.knowledge_base_id",
-        foreign_keys="KnowledgeFile.knowledge_base_id",
+        "KnowledgeFileModel",
+        primaryjoin="KnowledgeBaseModel.id == KnowledgeFileModel.knowledge_base_id",
+        foreign_keys="KnowledgeFileModel.knowledge_base_id",
         back_populates="kb",
         # 注意：这里不能用 cascade="all, delete-orphan"，因为软删除不会物理删除行，
         # 否则会报错或导致逻辑混乱。你需要自己在代码里处理级联软删除。
@@ -45,7 +45,7 @@ class KnowledgeBase(ModelMixin, UserMixin):
 # ==========================================
 # 设计思路：软删除 + 应用层维护关系，不做数据库外键约束
 # ==========================================
-class KnowledgeFile(ModelMixin, UserMixin):
+class KnowledgeFileModel(ModelMixin, UserMixin):
     __tablename__ = "knowledge_file"
 
     # 只存知识库ID，不做外键约束（因为是软删除，不物理删除）
@@ -62,9 +62,9 @@ class KnowledgeFile(ModelMixin, UserMixin):
     # 反向关联（逻辑关联）
     # 【修改点】反向关联也要指定条件
     kb = relationship(
-        "KnowledgeBase",
-        primaryjoin="KnowledgeBase.id == KnowledgeFile.knowledge_base_id",
-        foreign_keys="KnowledgeFile.knowledge_base_id",
+        "KnowledgeBaseModel",
+        primaryjoin="KnowledgeBaseModel.id == KnowledgeFileModel.knowledge_base_id",
+        foreign_keys="KnowledgeFileModel.knowledge_base_id",
         back_populates="files"
     )
 

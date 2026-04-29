@@ -3,35 +3,28 @@
 """
 from typing import List, Dict, Any, Optional
 
-from langchain_community.vectorstores.pgvector import DistanceStrategy
-from sqlalchemy.ext.asyncio import AsyncSession
-from langchain_community.vectorstores import PGVector
 from langchain_core.documents import Document
-from sqlalchemy import text
 
+from backend.app.common.core.exceptions import CustomException
 from backend.app.common.core.logger import log
-from backend.app.config.setting import settings
-from backend.app.common.core.core import embeddings
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from .schema import (
     AddDocumentSchema,
-    AddDocumentResponse,
     KnowledgeCreateSchema,
     KnowledgeOutSchema,
     KnowledgeUpdateSchema,
     SearchQuerySchema,
-    SearchResponse,
-    SearchResultItem,
 )
-from .crud import KnowledgeBaseCRUD, KnowledgeFileCRUD
-from .model import KnowledgeBase, KnowledgeFile
+from .crud import KnowledgeCRUD, KnowledgeFileCRUD, KnowledgeVectorCRUD
+from .model import KnowledgeBaseModel, KnowledgeFileModel
 
 
 class KnowledgeBaseService:
     """知识库服务"""
 
-    @staticmethod
-    async def create_knowledge_base(
+    @classmethod
+    async def create_service(
+        cls,
         auth: AuthSchema,
         data: KnowledgeCreateSchema
     ) -> dict:
@@ -39,55 +32,66 @@ class KnowledgeBaseService:
         创建后自动生成 collection_name = kb_{id}_embedding
         """
         # CRUD 层处理创建和自动生成 collection_name
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
-        kb = await kb_crud.create_with_collection_name(data)
 
-        log.info(f"创建知识库成功: id={kb.id}, uuid={kb.uuid}, name={kb.name}, collection_name={kb.collection_name}")
-        return KnowledgeOutSchema.model_validate(kb).model_dump()
+        obj = await KnowledgeCRUD(auth=auth).get(name=data.name)
+        if obj:
+            raise CustomException(msg='创建失败，知识库已经存在')
+        obj = await KnowledgeCRUD(auth=auth).create_crud(data)
+        return KnowledgeOutSchema.model_validate(obj).model_dump()
 
-    @staticmethod
-    async def update_knowledge_base(
+    @classmethod
+    async def update_service(
+        cls,
         auth: AuthSchema,
+        id: int,
         data: KnowledgeUpdateSchema
     ) -> Dict[str, Any]:
         """更新知识库信息"""
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
-        kb = await kb_crud.update(data.id, data)
-        if not kb:
-            log.error(f"知识库不存在：id={kb.id}, uuid={kb.uuid}")
-            return {"success":"False","message":"知识库不存在"}
-        log.info(f"更新知识库成功: id={kb.id}, uuid={kb.uuid}")
-        return {
-            "kb_id":kb.id,
-            "message":"更新成功"
-        }
 
+        obj = await KnowledgeCRUD(auth).get(id=id)
+        if not obj:
+            raise CustomException(msg="更新失败，知识库不存在")
+
+        exist_obj = await KnowledgeCRUD(auth=auth).get(name=data.name)
+        if exist_obj and exist_obj.id != obj.id:
+            raise CustomException(msg="更新失败，知识库名字重复")
+        kb = await KnowledgeCRUD(auth).update(id, data)
+        return KnowledgeOutSchema.model_validate(kb).model_dump()
+
+    @classmethod
+    async def detail_service(cls,auth: AuthSchema,id: int) -> dict:
+        obj = await KnowledgeCRUD(auth=auth).get(id=id)
+        if not obj:
+            raise CustomException(msg="应用不存在")
+        return KnowledgeOutSchema.model_validate(obj).model_dump()
 
     @staticmethod
     async def get_knowledge_base_by_uuid(
         auth: AuthSchema,
         uuid: str
-    ) -> Optional[KnowledgeBase]:
+    ) -> Optional[KnowledgeBaseModel]:
         """根据UUID获取知识库"""
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
+        kb_crud = KnowledgeCRUD(auth=auth)
         return await kb_crud.get_by_uuid_crud(uuid)
 
-    @staticmethod
-    async def list_knowledge_base_by_user(
+
+    @classmethod
+    async def list_service(
+        cls,
         auth: AuthSchema,
         page: int = 1,
         page_size: int = 10,
         status: Optional[str] = None
     ) -> Dict[str, Any]:
         """分页列出用户的知识库"""
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
+
         search = {}
         if status:
             search["status"] = status
         if auth.user:
             search["created_id"] = auth.user.id
 
-        result = await kb_crud.page(
+        result = await KnowledgeCRUD(auth=auth).page(
             offset=(page - 1) * page_size,
             limit=page_size,
             order_by=[{"id": "desc"}],
@@ -96,155 +100,126 @@ class KnowledgeBaseService:
         )
         return result
 
-    @staticmethod
-    async def delete_knowledge_base(
+    @classmethod
+    async def delete_service(
+        cls,
         auth: AuthSchema,
-        kb_id: int
-    ) -> bool:
+        ids: list[int]
+    ) -> Dict[str, Any]:
         """删除知识库
         - 软删除关系表记录
         - DROP TABLE 向量表
         """
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
-        kb = await kb_crud.get(id=kb_id)
-        if not kb:
-            return False
+        if len(ids) < 1:
+            raise CustomException(msg='删除失败，删除对象不能为空')
 
-        # 1. 软删除关系表
-        await kb_crud.delete([kb_id])
+        # 先批量校验所有 id 都存在
+        for id in ids:
+            obj = await KnowledgeCRUD(auth=auth).get(id=id)
+            if not obj:
+                raise CustomException(msg=f"删除失败，知识库{id}不存在")
 
-        # 2. 删除向量表
-        collection_name = f"kb_{kb.id}_embedding"
-        connection_string = settings.db_url
+        # 1. 软删除关系表（用 base_crud 的 delete 方法）
+        await KnowledgeCRUD(auth=auth).delete(ids=ids)
 
-        try:
-            vector_store = PGVector(
-                collection_name=collection_name,
-                connection_string=connection_string,
-                distance_strategy="cosine",
-                embedding_function=embeddings.embedding,
-            )
-            # DROP TABLE
-            with vector_store._get_connection() as connection:
-                connection.execute(text(f"DROP TABLE IF EXISTS {collection_name}"))
-                connection.commit()
-            log.info(f"删除知识库向量表成功: {collection_name}")
-        except Exception as e:
-            log.warning(f"删除向量表失败: {collection_name}, error={e}")
+        # 2. 删除向量表（每个知识库对应一个向量表）
+        for id in ids:
+            vector_crud = KnowledgeVectorCRUD(kb_id=id)
+            vector_crud.drop_collection()
 
-        log.info(f"删除知识库成功: id={kb_id}, name={kb.name}")
-        return True
+        return {"deleted_count": len(ids), "deleted_ids": ids}
 
-    @staticmethod
-    async def add_document(
+
+    @classmethod
+    async def add_document_service(
+        cls,
         auth: AuthSchema,
         kb_id: int,
         data: AddDocumentSchema
-    ) -> AddDocumentResponse:
+    ) -> Dict[str, Any]:
         """添加文档切片到知识库
         步骤：
         1. 保存文件元数据到关系表（不存content，只存元信息）
         2. 计算向量并将(content+向量)插入到 PGVector 向量表
         3. 更新知识库文档计数
         """
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
+        kb_crud = KnowledgeCRUD(auth=auth)
         file_crud = KnowledgeFileCRUD(auth=auth)
-        try:
-            # 1. 获取知识库
-            kb = await kb_crud.get(id=kb_id)
-            if not kb:
-                return AddDocumentResponse(
-                    success=False,
-                    message="知识库不存在"
-                )
 
-            # 2. 保存文件元数据到 PostgreSQL 关系表（content不在这里存）
-            doc_data = data.model_dump(exclude={"content", "metadata"})
-            doc_data["knowledge_base_id"] = kb_id
-            doc = await file_crud.create(doc_data)
+        # 1. 获取知识库
+        kb = await kb_crud.get(id=kb_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
 
-            # 3. 添加到 PGVector 向量库（content+向量存在这里）
-            connection_string = settings.db_url
-            collection_name = f"kb_{kb.id}_embedding"
+        # 2. 保存文件元数据到 PostgreSQL 关系表（content不在这里存）
+        doc_data = data.model_dump(exclude={"content", "metadata"})
+        doc_data["knowledge_base_id"] = kb_id
+        doc = await file_crud.create(doc_data)
 
-            vector_store = PGVector(
-                collection_name=collection_name,
-                connection_string=connection_string,
-                distance_strategy=DistanceStrategy.COSINE,
-                embedding_function=embeddings.embedding,
-            )
+        # 3. 添加到 PGVector 向量库（content+向量存在这里）
+        vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
 
-            # 创建 Document 对象，content存在这里供检索使用
-            document = Document(
-                page_content=data.content,
-                metadata={
-                    "title": data.title,
-                    "file_name": data.file_name or data.title,
-                    "source": data.source,
-                    "knowledge_base_id": kb_id,
-                    "file_id": doc.id,
-                    **(data.metadata or {})
-                }
-            )
+        # 创建 Document 对象，content存在这里供检索使用
+        document = Document(
+            page_content=data.content,
+            metadata={
+                "title": data.title,
+                "file_name": data.file_name or data.title,
+                "source": data.source,
+                "knowledge_base_id": kb_id,
+                "file_id": doc.id,
+                **(data.metadata or {})
+            }
+        )
 
-            # 插入向量到 PGVector
-            ids = vector_store.add_documents([document])
+        # 插入向量到 PGVector
+        ids = vector_crud.add_documents([document])
 
-            log.info(f"添加文档成功: kb_id={kb_id}, title={data.file_name}, doc_id={doc.id}")
+        return {
+            "document_id": doc.id,
+            "vector_id": ids[0] if ids else None
+        }
 
-            return AddDocumentResponse(
-                success=True,
-                document_id=doc.id,
-                vector_id=ids[0] if ids else None,
-                message="添加成功"
-            )
-
-        except Exception as e:
-            log.error(f"添加文档失败: {e}")
-            return AddDocumentResponse(
-                success=False,
-                message=f"添加失败: {str(e)}"
-            )
-
-    @staticmethod
-    async def delete_document(
+    @classmethod
+    async def delete_document_service(
+        cls,
         auth: AuthSchema,
         kb_id: int,
         doc_id: int
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """删除文档
         - 软删除关系表
         - 删除向量表中的对应向量
         """
-        kb_crud = KnowledgeBaseCRUD(auth=auth)
+        kb_crud = KnowledgeCRUD(auth=auth)
         file_crud = KnowledgeFileCRUD(auth=auth)
-        try:
-            # 1. 获取文档
-            doc = await file_crud.get(id=doc_id)
-            if not doc:
-                return False
 
-            kb = await kb_crud.get(id=kb_id)
-            if not kb:
-                return False
+        # 1. 校验知识库存在
+        kb = await kb_crud.get(id=kb_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
 
-            # 2. 软删除文档
-            await file_crud.delete([doc_id])
+        # 2. 校验文档存在
+        doc = await file_crud.get(id=doc_id)
+        if not doc:
+            raise CustomException(msg="文档不存在")
 
-            # 3. 删除向量（LangChain PGVector 不支持单条删除，需要重建索引
-            # 这里先标记删除，定期批量重建索引
-            collection_name = f"kb_{kb_id}_embedding"
-            log.info(f"文档已标记删除: {collection_name}, doc_id={doc_id}")
+        # 3. 软删除文档
+        await file_crud.delete([doc_id])
 
-            log.info(f"删除文档成功: kb_id={kb_id}, doc_id={doc_id}")
-            return True
+        # 4. 删除向量（LangChain PGVector 不支持单条删除，需要重建索引
+        # 这里先标记删除，定期批量重建索引
+        collection_name = f"kb_{kb_id}_embedding"
+        log.info(f"文档已标记删除: {collection_name}, doc_id={doc_id}")
 
-        except Exception as e:
-            log.error(f"删除文档失败: {e}")
-            return False
+        return {
+            "deleted_id": doc_id,
+            "kb_id": kb_id
+        }
 
-    @staticmethod
+    @classmethod
     def search_similar(
+        cls,
         knowledge_base_id: int,
         query: str,
         top_k: int = 5,
@@ -258,22 +233,10 @@ class KnowledgeBaseService:
         - top_k: 返回结果数量
         - score_threshold: 相似度阈值
         """
-        connection_string = settings.db_url
-        collection_name = f"kb_{knowledge_base_id}_embedding"
-
-        vector_store = PGVector(
-            collection_name=collection_name,
-            connection_string=connection_string,
-            distance_strategy=DistanceStrategy.COSINE,
-            # distance_strategy="cosine",
-            embedding_function=embeddings.embedding,
-        )
+        vector_crud = KnowledgeVectorCRUD(kb_id=knowledge_base_id)
 
         # 执行相似性检索
-        results = vector_store.similarity_search_with_score(
-            query,
-            k=top_k
-        )
+        results = vector_crud.similarity_search_with_score(query, k=top_k)
 
         # 格式化结果
         output = []
@@ -288,45 +251,46 @@ class KnowledgeBaseService:
 
         return output
 
-    @staticmethod
-    async def search(
+    @classmethod
+    async def search_service(
+        cls,
+        auth: AuthSchema,
         knowledge_base_id: int,
         query: str,
         top_k: int = 5,
         score_threshold: float = 0.5
-    ) -> SearchResponse:
+    ) -> Dict[str, Any]:
         """检索入口"""
-        results = KnowledgeBaseService.search_similar(
+        # 校验知识库存在
+        kb = await KnowledgeCRUD(auth=auth).get(id=knowledge_base_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        results = cls.search_similar(
             knowledge_base_id=knowledge_base_id,
             query=query,
             top_k=top_k,
             score_threshold=score_threshold
         )
 
-        # 转换为响应格式
-        result_items = []
-        for item in results:
-            result_items.append(SearchResultItem(
-                document=item["content"],
-                metadata=item["metadata"],
-                score=item["score"],
-                document_id=item["document_id"] if item["document_id"] else 0,
-                title=item["title"] if item["title"] else ""
-            ))
+        return {
+            "results": results,
+            "total": len(results)
+        }
 
-        return SearchResponse(
-            success=True,
-            results=result_items,
-            total=len(result_items)
-        )
-
-    @staticmethod
-    async def list_files(
+    @classmethod
+    async def list_files_service(
+        cls,
         auth: AuthSchema,
         kb_id: int
-    ) -> List[dict]:
+    ) -> List[Dict[str, Any]]:
         """列出知识库下所有文件"""
         from .schema import KnowledgeFileInfoSchema
+        # 校验知识库存在
+        kb = await KnowledgeCRUD(auth=auth).get(id=kb_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
         kb_crud = KnowledgeFileCRUD(auth=auth)
         files = await kb_crud.list_by_knowledge_base_crud(kb_id)
         # 转换为字典，自动处理datetime序列化

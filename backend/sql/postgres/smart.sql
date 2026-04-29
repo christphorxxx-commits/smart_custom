@@ -352,7 +352,7 @@ EXECUTE FUNCTION public.update_updated_time();
 -- =================================================================
 -- 设计思路:
 -- 一个用户上传的文件 → 切分为N个chunk → 每个chunk存入PGVector
--- KnowledgeFile 只存这个文件的**元信息**，方便管理和列表展示
+-- KnowledgeFileModel 只存这个文件的**元信息**，方便管理和列表展示
 -- =================================================================
 DROP TABLE IF EXISTS public.knowledge_file CASCADE;
 CREATE TABLE public.knowledge_file (

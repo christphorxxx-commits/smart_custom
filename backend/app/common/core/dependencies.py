@@ -4,6 +4,9 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from .database import async_db_session, mongo_db_session
 from fastapi import Request
 
+from .exceptions import CustomException
+
+
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
     """获取SQL数据库会话连接
 
@@ -63,7 +66,7 @@ async def get_current_user(
     try:
         payload = JwtUtil.decode_token(token)
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise CustomException(status_code=401,msg=f"非法凭证，{str(e)}")
 
     # 获取用户UUID
     user_uuid = payload.sub
@@ -74,6 +77,6 @@ async def get_current_user(
     # 根据UUID获取用户信息
     user = await UserCRUD(auth).get_by_uuid_crud(user_uuid)
     if not user:
-        raise HTTPException(status_code=401, detail="用户不存在")
+        raise CustomException(status_code=401,msg="用户不存在")
 
     return user
