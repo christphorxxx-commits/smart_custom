@@ -3,11 +3,14 @@
 import logging
 from typing import Optional
 from enum import Enum
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
 from backend.app.common.audio_player import AudioPlayer
 from backend.app.common.audio_recorder import AudioRecorder
+from backend.app.common.core.dependencies import db_getter, get_current_user
+from backend.app.modules.module_system.user.model import UserModel
 from backend.app.modules.api.asr.service import ASRService
 
 logger = logging.getLogger(__name__)
@@ -120,8 +123,10 @@ class InteractionResponse(BaseModel):
 
 
 @InteractionRouter.post("/start-recording")
-async def start_recording():
-    """开始录音（会打断当前播放）"""
+async def start_recording(
+    current_user: UserModel = Depends(get_current_user)
+):
+    """开始录音（会打断当前播放）- 需要登录"""
     try:
         await controller.start_recording()
         return {"success": True, "state": "recording", "message": "开始录音"}
@@ -131,8 +136,10 @@ async def start_recording():
 
 
 @InteractionRouter.post("/stop-recording", response_model=InteractionResponse)
-async def stop_recording():
-    """停止录音并进行识别"""
+async def stop_recording(
+    current_user: UserModel = Depends(get_current_user)
+):
+    """停止录音并进行识别 - 需要登录"""
     try:
         audio_data = await controller.stop_recording()
 
@@ -161,6 +168,8 @@ async def stop_recording():
 
 
 @InteractionRouter.get("/state")
-async def get_state():
-    """获取当前交互状态"""
+async def get_state(
+    current_user: UserModel = Depends(get_current_user)
+):
+    """获取当前交互状态 - 需要登录"""
     return {"state": controller.get_state()}

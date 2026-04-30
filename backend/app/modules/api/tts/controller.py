@@ -1,21 +1,26 @@
 # app/tts/controller.py
 import uuid
 import asyncio
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from typing import Optional
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .service import TTSService
 from .schema import TTSStartRequest
+from backend.app.common.core.dependencies import db_getter, get_ws_current_user
 
-TTSRouter = APIRouter(prefix="/ws",tags=["TTS"])
+TTSRouter = APIRouter(prefix="/ws", tags=["TTS"])
 tts_service = TTSService()
 
 
 @TTSRouter.websocket("/tts")
 async def websocket_tts(
         websocket: WebSocket,
+        token: Optional[str] = Query(None, description="JWT认证令牌"),
         model: str = Query("cosyvoice-v3-flash"),
-        voice: str = Query("longanyang")
+        voice: str = Query("longanyang"),
+        db: AsyncSession = Depends(db_getter)
 ):
     """
     WebSocket TTS 接口：
@@ -23,6 +28,12 @@ async def websocket_tts(
     - 服务端开始流式合成，并通过 binary 消息返回 PCM 音频
     - 支持多次发送文本（每次触发一次合成）
     """
+    # 验证用户身份
+    user = await get_ws_current_user(websocket, token, db)
+    if not user:
+        await websocket.close(code=1008, reason="未授权的访问")
+        return
+
     await websocket.accept()
     session_id = str(uuid.uuid4())
 

@@ -7,7 +7,7 @@ class NodeEnum(str, Enum):
     START = 'start'
     END = 'end'
     LLM = 'llm'
-    ROUTE = 'router'
+    ROUTE = 'KnowledgeRouter'
     RETRIEVE = 'retrieve'
     TOOL = 'tool'
 

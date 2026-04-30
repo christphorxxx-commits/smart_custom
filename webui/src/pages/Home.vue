@@ -154,7 +154,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import request from '../utils/request'
 
 const router = useRouter()
 const chatMessagesRef = ref(null)
@@ -476,12 +476,7 @@ const handleSend = async () => {
 // Logout
 const handleLogout = async () => {
   try {
-    const token = localStorage.getItem('access_token')
-    await axios.post('/api/auth/logout', {}, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
+    await request.post('/api/auth/logout')
   } catch (error) {
     console.error('Logout error:', error)
   } finally {
@@ -503,29 +498,6 @@ onMounted(() => {
   // 加载最近对话列表
   loadRecentChats()
 })
-
-// Axios interceptor
-axios.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  error => Promise.reject(error)
-)
-
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('access_token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
 </script>
 
 <style scoped>

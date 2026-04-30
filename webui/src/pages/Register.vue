@@ -106,7 +106,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import axios from 'axios'
+import request from '../utils/request'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -144,7 +144,7 @@ const handleRegister = async () => {
       password: form.password
     }
 
-    await axios.post('/api/user/register', registerData)
+    await request.post('/api/user/register', registerData)
 
     // Registration success, redirect to login
     window.location.href = '/login'

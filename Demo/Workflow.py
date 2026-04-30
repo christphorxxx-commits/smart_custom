@@ -10,7 +10,7 @@
       }
     },
     {
-      "id": "router",
+      "id": "KnowledgeRouter",
       "type": "if",
       "x": 400,
       "y": 150,
@@ -69,26 +69,26 @@
       "id": "conn_0",
       "sourceNodeId": "start",
       "sourcePort": "output",
-      "targetNodeId": "router",
+      "targetNodeId": "KnowledgeRouter",
       "targetPort": "input"
     },
     {
       "id": "conn_1",
-      "sourceNodeId": "router",
+      "sourceNodeId": "KnowledgeRouter",
       "sourcePort": "output",
       "targetNodeId": "story_node",
       "targetPort": "input"
     },
     {
       "id": "conn_2",
-      "sourceNodeId": "router",
+      "sourceNodeId": "KnowledgeRouter",
       "sourcePort": "output",
       "targetNodeId": "joke_node",
       "targetPort": "input"
     },
     {
       "id": "conn_3",
-      "sourceNodeId": "router",
+      "sourceNodeId": "KnowledgeRouter",
       "sourcePort": "output",
       "targetNodeId": "poem_node",
       "targetPort": "input"

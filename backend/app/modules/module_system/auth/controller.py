@@ -3,9 +3,10 @@ from typing import Union, Dict
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.common.core.dependencies import db_getter, get_current_user
+from backend.app.common.core.dependencies import db_getter, get_current_user, extract_token_from_request
 from backend.app.common.core.logger import log
 from backend.app.common.response import JSONResponse, SuccessResponse
+from backend.app.common.utils.token_blacklist import token_blacklist
 from backend.app.modules.module_system.auth.schema import JWTOutSchema
 from .schema import AuthSchema, LoginSchema, RefreshTokenSchema
 from .service import LoginService
@@ -40,18 +41,25 @@ async def login_controller(
 
 @AuthRouter.post("/logout", summary="用户退出", description="用户退出登录")
 async def logout_controller(
+    request: Request,
     current_user: UserModel = Depends(get_current_user)
 ) -> JSONResponse:
     """
-    用户退出登录
+    用户退出登录 - 将当前token加入黑名单
 
     参数:
+    - request: 请求对象（用于提取token）
     - current_user (UserModel): 当前登录用户（通过JWT解析）
 
     返回:
     - JSONResponse: 退出成功响应
     """
-    log.info(f"用户 {current_user.username} 退出登录")
+    # 提取并将token加入黑名单
+    token = await extract_token_from_request(request)
+    if token:
+        token_blacklist.add(token)
+
+    log.info(f"用户 {current_user.username} 退出登录，token已失效")
     return SuccessResponse(msg="退出成功")
 
 

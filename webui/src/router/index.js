@@ -44,7 +44,7 @@ const routes = [
   }
 ]
 
-// Create router instance
+// Create KnowledgeRouter instance
 const router = createRouter({
   history: createWebHistory(),
   routes

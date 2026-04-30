@@ -1,0 +1,166 @@
+"""
+文档服务层
+"""
+from typing import List, Dict, Any, Optional
+
+from langchain_core.documents import Document
+
+from backend.app.common.core.exceptions import CustomException
+from backend.app.common.core.logger import log
+from backend.app.modules.module_system.auth.schema import AuthSchema
+from .schema import (
+    DocumentCreateSchema,
+    DocumentOutSchema,
+    DocumentUpdateSchema,
+)
+from .crud import KnowledgeFileCRUD, KnowledgeVectorCRUD
+from .model import KnowledgeFileModel
+from backend.app.modules.module_system.database.knowledge.crud import KnowledgeCRUD
+
+
+class DocumentService:
+    """文档服务"""
+
+    @classmethod
+    async def create_service(
+        cls,
+        auth: AuthSchema,
+        kb_id: int,
+        data: DocumentCreateSchema
+    ) -> Dict[str, Any]:
+        """添加文档切片到知识库
+        步骤：
+        1. 保存文件元数据到关系表（不存content，只存元信息）
+        2. 计算向量并将(content+向量)插入到 PGVector 向量表
+        3. 更新知识库文档计数
+        """
+        kb_crud = KnowledgeCRUD(auth=auth)
+        file_crud = KnowledgeFileCRUD(auth=auth)
+
+        # 1. 获取知识库
+        kb = await kb_crud.get(id=kb_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        # 2. 保存文件元数据到 PostgreSQL 关系表（content不在这里存）
+        doc_data = data.model_dump(exclude={"content", "knowledge_uuid"})
+        doc_data["knowledge_id"] = kb_id
+        doc = await file_crud.create(doc_data)
+
+        # 3. 添加到 PGVector 向量库（content+向量存在这里）
+        vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
+
+        # 创建 Document 对象，content存在这里供检索使用
+        document = Document(
+            page_content=data.content,
+            metadata={
+                "title": data.title,
+                "file_name": data.file_name or data.title,
+                "source": data.source,
+                "knowledge_id": kb_id,
+                "file_id": doc.id,
+                **(data.meta_data or {})
+            }
+        )
+
+        # 插入向量到 PGVector
+        ids = vector_crud.add_documents([document])
+
+        # 4. 更新文档记录，保存 vector_id
+        vector_id = ids[0] if ids else None
+        if vector_id:
+            await file_crud.update(doc.id, {"vector_id": vector_id})
+
+        return {
+            "document_id": doc.id,
+            "vector_id": vector_id
+        }
+
+    @classmethod
+    async def delete_service(
+        cls,
+        auth: AuthSchema,
+        knowledge_uuid: str,
+        doc_id: int
+    ) -> Dict[str, Any]:
+        """删除文档
+        - 软删除关系表
+        - 删除向量表中的对应向量
+        """
+        kb_crud = KnowledgeCRUD(auth=auth)
+        file_crud = KnowledgeFileCRUD(auth=auth)
+
+        # 1. 校验知识库存在
+        kb = await kb_crud.get(uuid=knowledge_uuid)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        # 2. 校验文档存在
+        doc = await file_crud.get(id=doc_id)
+        if not doc:
+            raise CustomException(msg="文档不存在")
+
+        # 3. 软删除文档
+        await file_crud.delete([doc_id])
+
+        return {
+            "deleted_id": doc_id,
+            "kb_id": kb.id
+        }
+
+    @classmethod
+    async def update_service(
+        cls,
+        auth: AuthSchema,
+        doc_id: int,
+        data: DocumentUpdateSchema
+    ) -> Dict[str, Any]:
+        """更新文档元信息
+        - 仅更新元信息，不修改向量内容
+        - 支持迁移知识库（修改 knowledge_id）
+        """
+        # 1. 校验当前知识库存在
+        kb = await KnowledgeCRUD(auth=auth).get(uuid=data.knowledge_uuid)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        # 2. 校验文档存在
+        doc = await KnowledgeFileCRUD(auth=auth).get(id=doc_id)
+        if not doc:
+            raise CustomException(msg="文档不存在")
+
+        # 3. 如果指定了新的 knowledge_uuid，需要迁移知识库
+        # 使用 exclude_unset=True 支持部分更新，只更新用户显式设置的字段
+        update_data = data.model_dump(exclude={"document_id", "knowledge_uuid"}, exclude_unset=True)
+
+        if data.knowledge_uuid and data.knowledge_uuid != kb.uuid:
+            # 获取目标知识库
+            target_kb = await KnowledgeCRUD(auth=auth).get(uuid=data.knowledge_uuid)
+            if not target_kb:
+                raise CustomException(msg="目标知识库不存在")
+            update_data["knowledge_id"] = target_kb.id
+
+        # 4. 更新文档
+        updated_doc = await KnowledgeFileCRUD(auth=auth).update(doc_id, update_data)
+
+        return DocumentOutSchema.model_validate(updated_doc).model_dump(mode='json')
+
+
+    @classmethod
+    async def detail_service(
+        cls,
+        auth: AuthSchema,
+        id: int,
+        doc_id: int
+    ) -> Dict[str, Any]:
+        """获取文档详情"""
+        # 校验知识库存在
+        kb = await KnowledgeCRUD(auth=auth).get(id=id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        doc = await KnowledgeFileCRUD(auth=auth).get(id=doc_id)
+        if not doc:
+            raise CustomException(msg="文档不存在")
+
+        return DocumentOutSchema.model_validate(doc).model_dump(mode='json')

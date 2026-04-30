@@ -156,8 +156,8 @@ async def get_default_workflow(
         "nodes": [
             {"id": "start", "type": "start", "config": {}},
             {
-                "id": "router",
-                "type": "router",
+                "id": "KnowledgeRouter",
+                "type": "KnowledgeRouter",
                 "config": {"options": ["story", "joke", "poem"]}
             },
             {
@@ -193,10 +193,10 @@ async def get_default_workflow(
             {"id": "end", "type": "end", "config": {}}
         ],
         "edges": [
-            {"source": "start", "target": "router", "type": "normal", "condition": None},
-            {"source": "router", "target": "story_node", "type": "conditional", "condition": "story"},
-            {"source": "router", "target": "joke_node", "type": "conditional", "condition": "joke"},
-            {"source": "router", "target": "poem_node", "type": "conditional", "condition": "poem"},
+            {"source": "start", "target": "KnowledgeRouter", "type": "normal", "condition": None},
+            {"source": "KnowledgeRouter", "target": "story_node", "type": "conditional", "condition": "story"},
+            {"source": "KnowledgeRouter", "target": "joke_node", "type": "conditional", "condition": "joke"},
+            {"source": "KnowledgeRouter", "target": "poem_node", "type": "conditional", "condition": "poem"},
             {"source": "story_node", "target": "end", "type": "normal", "condition": None},
             {"source": "joke_node", "target": "end", "type": "normal", "condition": None},
             {"source": "poem_node", "target": "end", "type": "normal", "condition": None}

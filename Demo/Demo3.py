@@ -117,17 +117,17 @@ def route_logic(state: State):
 builder = StateGraph(State)
 
 # 添加节点
-builder.add_node("router", router_node)
+builder.add_node("KnowledgeRouter", router_node)
 builder.add_node("poem_node", poem_node)
 builder.add_node("story_node", story_node)
 builder.add_node("joke_node", joke_node)
 
 # 设置入口
-builder.set_entry_point("router")
+builder.set_entry_point("KnowledgeRouter")
 
 # 添加条件边 (路由)
 builder.add_conditional_edges(
-    "router",
+    "KnowledgeRouter",
     route_logic,
     {
         "poem_node": "poem_node",

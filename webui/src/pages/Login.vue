@@ -100,7 +100,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import axios from 'axios'
+import request from '../utils/request'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -123,7 +123,7 @@ const handleLogin = async () => {
       ? { mobile: form.account, password: form.password }
       : { email: form.account, password: form.password }
 
-    const response = await axios.post('/api/auth/login', loginData)
+    const response = await request.post('/api/auth/login', loginData)
 
     // Save tokens
     localStorage.setItem('access_token', response.data.data.access_token)
@@ -131,11 +131,7 @@ const handleLogin = async () => {
     localStorage.setItem('token_type', response.data.data.token_type)
 
     // Get user info
-    const userInfoRes = await axios.get('/api/user/info', {
-      headers: {
-        Authorization: `${response.data.data.token_type} ${response.data.data.access_token}`
-      }
-    })
+    const userInfoRes = await request.get('/api/user/info')
     localStorage.setItem('user_info', JSON.stringify(userInfoRes.data.data))
 
     // Redirect to home

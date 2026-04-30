@@ -1,19 +1,25 @@
 import asyncio
+from typing import Optional
 
-from fastapi import APIRouter, WebSocket,Query,WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, Query, WebSocketDisconnect, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 from backend.app.common.core.logger import log
+from backend.app.common.core.dependencies import db_getter, get_ws_current_user
 from backend.app.modules.api.asr.service import ASRService
 
 ASRRouter = APIRouter(prefix="/ws", tags=["ASR"])
 asr_service = ASRService()
 
+
 @ASRRouter.websocket("/asr")
 async def speech_to_text(
         websocket: WebSocket,
+        token: Optional[str] = Query(None, description="JWT认证令牌"),
         model: str = Query("fun-asr-realtime"),
         sample_rate: int = Query(16000),
-        format: str = Query("pcm")
+        format: str = Query("pcm"),
+        db: AsyncSession = Depends(db_getter)
 ):
     """
        WebSocket 接口：客户端发送音频流，服务端推送识别结果
@@ -21,6 +27,12 @@ async def speech_to_text(
        - 然后持续发送二进制音频数据（PCM 16k mono）
        - 服务端通过 text 消息推送 ASRResult（JSON）
        """
+    # 验证用户身份
+    user = await get_ws_current_user(websocket, token, db)
+    if not user:
+        await websocket.close(code=1008, reason="未授权的访问")
+        return
+
     await websocket.accept()
     session_id = str(uuid.uuid4())
 

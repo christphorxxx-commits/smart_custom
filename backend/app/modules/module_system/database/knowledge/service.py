@@ -3,24 +3,38 @@
 """
 from typing import List, Dict, Any, Optional
 
+from fastapi import Path
 from langchain_core.documents import Document
+from pydantic import Field
 
 from backend.app.common.core.exceptions import CustomException
 from backend.app.common.core.logger import log
 from backend.app.modules.module_system.auth.schema import AuthSchema
 from .schema import (
-    AddDocumentSchema,
     KnowledgeCreateSchema,
     KnowledgeOutSchema,
     KnowledgeUpdateSchema,
-    SearchQuerySchema,
 )
-from .crud import KnowledgeCRUD, KnowledgeFileCRUD, KnowledgeVectorCRUD
-from .model import KnowledgeBaseModel, KnowledgeFileModel
+from .crud import KnowledgeCRUD
+from .model import KnowledgeBaseModel
+from backend.app.modules.module_system.database.document.crud import KnowledgeVectorCRUD, KnowledgeFileCRUD
+from backend.app.modules.module_system.database.document.schema import DocumentOutSchema
 
 
 class KnowledgeBaseService:
     """知识库服务"""
+
+    @staticmethod
+    async def get_knowledge(
+        auth: AuthSchema,
+        id: int,
+    ) -> Dict[str, Any]:
+        """根据UUID获取知识库"""
+        obj = await KnowledgeCRUD(auth=auth).get([id])
+        if not obj:
+            raise CustomException(msg=f"知识库不存在，id:{id}")
+        return KnowledgeOutSchema.model_validate(obj).model_dump()
+
 
     @classmethod
     async def create_service(
@@ -59,21 +73,11 @@ class KnowledgeBaseService:
         return KnowledgeOutSchema.model_validate(kb).model_dump()
 
     @classmethod
-    async def detail_service(cls,auth: AuthSchema,id: int) -> dict:
+    async def detail_service(cls, auth: AuthSchema, id: int) -> dict:
         obj = await KnowledgeCRUD(auth=auth).get(id=id)
         if not obj:
             raise CustomException(msg="应用不存在")
         return KnowledgeOutSchema.model_validate(obj).model_dump()
-
-    @staticmethod
-    async def get_knowledge_base_by_uuid(
-        auth: AuthSchema,
-        uuid: str
-    ) -> Optional[KnowledgeBaseModel]:
-        """根据UUID获取知识库"""
-        kb_crud = KnowledgeCRUD(auth=auth)
-        return await kb_crud.get_by_uuid_crud(uuid)
-
 
     @classmethod
     async def list_service(
@@ -129,94 +133,6 @@ class KnowledgeBaseService:
 
         return {"deleted_count": len(ids), "deleted_ids": ids}
 
-
-    @classmethod
-    async def add_document_service(
-        cls,
-        auth: AuthSchema,
-        kb_id: int,
-        data: AddDocumentSchema
-    ) -> Dict[str, Any]:
-        """添加文档切片到知识库
-        步骤：
-        1. 保存文件元数据到关系表（不存content，只存元信息）
-        2. 计算向量并将(content+向量)插入到 PGVector 向量表
-        3. 更新知识库文档计数
-        """
-        kb_crud = KnowledgeCRUD(auth=auth)
-        file_crud = KnowledgeFileCRUD(auth=auth)
-
-        # 1. 获取知识库
-        kb = await kb_crud.get(id=kb_id)
-        if not kb:
-            raise CustomException(msg="知识库不存在")
-
-        # 2. 保存文件元数据到 PostgreSQL 关系表（content不在这里存）
-        doc_data = data.model_dump(exclude={"content", "metadata"})
-        doc_data["knowledge_base_id"] = kb_id
-        doc = await file_crud.create(doc_data)
-
-        # 3. 添加到 PGVector 向量库（content+向量存在这里）
-        vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
-
-        # 创建 Document 对象，content存在这里供检索使用
-        document = Document(
-            page_content=data.content,
-            metadata={
-                "title": data.title,
-                "file_name": data.file_name or data.title,
-                "source": data.source,
-                "knowledge_base_id": kb_id,
-                "file_id": doc.id,
-                **(data.metadata or {})
-            }
-        )
-
-        # 插入向量到 PGVector
-        ids = vector_crud.add_documents([document])
-
-        return {
-            "document_id": doc.id,
-            "vector_id": ids[0] if ids else None
-        }
-
-    @classmethod
-    async def delete_document_service(
-        cls,
-        auth: AuthSchema,
-        kb_id: int,
-        doc_id: int
-    ) -> Dict[str, Any]:
-        """删除文档
-        - 软删除关系表
-        - 删除向量表中的对应向量
-        """
-        kb_crud = KnowledgeCRUD(auth=auth)
-        file_crud = KnowledgeFileCRUD(auth=auth)
-
-        # 1. 校验知识库存在
-        kb = await kb_crud.get(id=kb_id)
-        if not kb:
-            raise CustomException(msg="知识库不存在")
-
-        # 2. 校验文档存在
-        doc = await file_crud.get(id=doc_id)
-        if not doc:
-            raise CustomException(msg="文档不存在")
-
-        # 3. 软删除文档
-        await file_crud.delete([doc_id])
-
-        # 4. 删除向量（LangChain PGVector 不支持单条删除，需要重建索引
-        # 这里先标记删除，定期批量重建索引
-        collection_name = f"kb_{kb_id}_embedding"
-        log.info(f"文档已标记删除: {collection_name}, doc_id={doc_id}")
-
-        return {
-            "deleted_id": doc_id,
-            "kb_id": kb_id
-        }
-
     @classmethod
     def search_similar(
         cls,
@@ -228,7 +144,7 @@ class KnowledgeBaseService:
         """语义相似性检索
 
         参数：
-        - knowledge_base_id: 知识库ID
+        - knowledge_id: 知识库ID
         - query: 查询文本
         - top_k: 返回结果数量
         - score_threshold: 相似度阈值
@@ -285,7 +201,6 @@ class KnowledgeBaseService:
         kb_id: int
     ) -> List[Dict[str, Any]]:
         """列出知识库下所有文件"""
-        from .schema import KnowledgeFileInfoSchema
         # 校验知识库存在
         kb = await KnowledgeCRUD(auth=auth).get(id=kb_id)
         if not kb:
@@ -293,8 +208,12 @@ class KnowledgeBaseService:
 
         kb_crud = KnowledgeFileCRUD(auth=auth)
         files = await kb_crud.list_by_knowledge_base_crud(kb_id)
-        # 转换为字典，自动处理datetime序列化
-        return [KnowledgeFileInfoSchema.model_validate(f).model_dump(mode='json') for f in files]
 
-
+        # 转换为字典，添加 knowledge_uuid，自动处理datetime序列化
+        result = []
+        for f in files:
+            file_dict = DocumentOutSchema.model_validate(f).model_dump(mode='json')
+            file_dict["knowledge_uuid"] = kb.uuid
+            result.append(file_dict)
+        return result
 

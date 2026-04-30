@@ -207,7 +207,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import request from '../utils/request'
 
 const router = useRouter()
 
@@ -242,14 +242,9 @@ const filteredList = computed(() => {
 const loadKbList = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await axios.post('/api/knowledge/list', {
+    const response = await request.post('/api/knowledge/list', {
       page: 1,
       page_size: 100
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
     })
     if (response.data.success && response.data.data) {
       kbList.value = response.data.data.data || []
@@ -290,10 +285,7 @@ const handleCreateKb = async () => {
   }
   creating.value = true
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await axios.post('/api/knowledge/create', createForm.value, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const response = await request.post('/api/knowledge/create', createForm.value)
     if (response.data.success) {
       closeCreateModal()
       await loadKbList()
@@ -368,28 +360,6 @@ onMounted(() => {
   loadKbList()
 })
 
-// Axios interceptor
-axios.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  error => Promise.reject(error)
-)
-
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('access_token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
 </script>
 
 <style scoped>

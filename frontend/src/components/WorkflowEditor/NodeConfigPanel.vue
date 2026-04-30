@@ -76,7 +76,7 @@
         </div>
       </template>
 
-      <!-- if (router) node specific config -->
+      <!-- if (KnowledgeRouter) node specific config -->
       <template v-if="selectedNode.type === 'if'">
         <div class="form-group">
           <label>分支列表</label>

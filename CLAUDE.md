@@ -38,6 +38,7 @@ backend/
 │       ├── asr/           # 自动语音识别
 │       ├── tts/           # 文本转语音
 │       └── module_system  # 用户认证系统 (JWT)
+├── sql/                  # 数据库表结构文档
 └── env/                  # .env 文件（不提交到git）
 
 main.py                 # 后端入口
@@ -145,6 +146,7 @@ cd frontend && npm install
   # 失败响应
   return ErrorResponse(msg="error message")
   ```
+- **数据库文档位置**: 数据库表结构设计文档位于 `backend/sql/database_schema.md`
 
 ## 代码组织规范
 
@@ -223,7 +225,8 @@ async def xxx_controller(
 
 | 特性 | 规范 |
 |------|------|
-| **方法命名** | 动词 + `_controller` 后缀 |
+| **方法命名** | 动词 + `_obj_controller` 后缀 | `create_obj_controller`, `update_obj_controller`, `delete_obj_controller`, `get_obj_detail_controller`, `list_obj_controller` |
+| **Router 命名** | `{ModuleName}Router` | `KnowledgeRouter`, `DocumentRouter` |
 | **日志位置** | Controller 层打 info 日志，Service 层只打 warning/error |
 | **不做业务判断** | 所有异常由 `CustomException` 全局处理器捕获 |
 | **返回格式** | 统一 `SuccessResponse(data=result, msg="xxx")` |
@@ -249,3 +252,70 @@ controller → service → crud → base_crud / base_vector_crud
 - **不跨层调用**：Controller 不直接调 CRUD
 - **不泄露底层**：Service 不出现 PGVector、SQLAlchemy 等底层 API
 - **统一入口**：所有数据库操作通过 CRUD 类，复用 base 层能力
+
+---
+
+#### Schema 三层继承架构
+
+所有模块的 Pydantic Schema 遵循统一的三层继承架构，保证代码一致性：
+
+```
+{Module}CreateSchema (BaseModel)
+    ↳ {Module}UpdateSchema ({Module}CreateSchema) + id/uuid/status
+    ↳ {Module}OutSchema ({Module}CreateSchema, BaseSchema, UserBySchema) + 额外输出字段
+```
+
+**示例 - 知识库模块：**
+```python
+class KnowledgeCreateSchema(BaseModel):
+    # 创建时必填字段
+    name: str
+    description: Optional[str] = None
+    embedding_model: str = "text-embedding-v4"
+    search_model: str = "qwen-max"
+
+class KnowledgeUpdateSchema(KnowledgeCreateSchema):
+    # 继承 CreateSchema 所有字段 + 更新特有字段
+    id: int
+    uuid: str
+    status: Optional[str] = None
+    # 如需支持部分更新，在子类重写字段为 Optional
+
+class KnowledgeOutSchema(KnowledgeCreateSchema, BaseSchema, UserBySchema):
+    # 继承 CreateSchema 所有字段 + 基础字段 + 输出特有字段
+    collection_name: str
+    dimension: int
+    is_deleted: bool
+```
+
+**示例 - 文档模块：**
+```python
+class DocumentCreateSchema(BaseModel):
+    # 创建时必填字段
+    title: str
+    knowledge_uuid: str
+    content: str
+    file_name: Optional[str] = None
+    meta_data: Optional[Dict[str, Any]] = None
+
+class DocumentUpdateSchema(DocumentCreateSchema):
+    # 继承 CreateSchema 所有字段 + 更新特有字段
+    document_id: int
+    status: Optional[int] = None
+    # 支持部分更新：重写所有继承字段为 Optional
+    title: Optional[str] = None
+    knowledge_uuid: Optional[str] = None
+    content: Optional[str] = None
+
+class DocumentOutSchema(DocumentCreateSchema, BaseSchema, UserBySchema):
+    # 继承 CreateSchema 所有字段 + 基础字段 + 输出特有字段
+    knowledge_base_id: int
+    vector_id: Optional[str] = None
+    is_deleted: bool
+```
+
+**设计原则：**
+1. **字段复用**：公共字段只在 CreateSchema 中定义一次
+2. **部分更新支持**：UpdateSchema 可重写字段为 Optional，配合 `exclude_unset=True` 使用
+3. **输出完整性**：OutSchema 自动获得 `id`, `uuid`, `created_at`, `updated_at`, `created_by` 等基础字段
+4. **类型兼容**：重写字段时添加 `# type: ignore[assignment]` 抑制类型检查器警告

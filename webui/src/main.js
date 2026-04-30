@@ -2,13 +2,13 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router'
-import axios from 'axios'
+import request from './utils/request'
 
 const app = createApp(App)
 
-// Configure axios
-axios.defaults.baseURL = '/'
-app.config.globalProperties.$axios = axios
+// 使用配置好的request实例（带认证拦截器）
+app.config.globalProperties.$axios = request
+app.config.globalProperties.$http = request
 
 app.use(router)
 app.mount('#app')
