@@ -45,9 +45,20 @@ class DocumentDeleteSchema(BaseModel):
     knowledge_uuid: str = Field(..., description="知识库UUID")
 
 
-class DocumentOutSchema(DocumentCreateSchema, BaseSchema, UserBySchema):
-    """文档信息响应 - 统一输出格式"""
+class DocumentOutSchema(BaseSchema, UserBySchema):
+    """文档信息响应 - 统一输出格式
+    注意：不继承 DocumentCreateSchema，因为 content 只存向量库不存关系表
+    """
+    title: str = Field(..., description="文件名/文档标题")
+    file_name: Optional[str] = Field(default=None, description="原始文件名")
+    file_size: Optional[int] = Field(default=None, description="原始文件大小(字节)")
+    chunk_count: Optional[int] = Field(default=0, description="切片总数")
+    source: Optional[str] = Field(default=None, description="文档来源(文件路径/URL)")
+    description: Optional[str] = Field(default=None, description="文件描述")
+    meta_data: Optional[Dict[str, Any]] = Field(default=None, description="额外元数据")
     knowledge_id: int = Field(..., description="所属知识库ID")
+    knowledge_uuid: str = Field(..., description="所属知识库UUID")
+    status: Optional[int] = Field(default=0, description="状态: 0-处理中 1-成功 2-失败")
     vector_id: Optional[str] = Field(default=None, description="向量ID(PGVector)")
     is_deleted: bool = Field(..., description="是否软删除")
 
@@ -60,7 +71,22 @@ class DocumentActionResponse(BaseModel):
     message: str = Field(default="", description="提示信息")
 
 
-# ========== 兼容别名（逐步迁移） ==========
-AddDocumentSchema = DocumentCreateSchema
-AddDocumentResponse = DocumentActionResponse
-KnowledgeFileInfoSchema = DocumentOutSchema
+class ChunkOutSchema(BaseModel):
+    """切片信息响应"""
+    id: str = Field(..., description="向量ID")
+    content: str = Field(..., description="切片内容")
+    file_id: Optional[int] = Field(default=None, description="所属文件ID")
+    file_name: Optional[str] = Field(default=None, description="所属文件名")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="元数据")
+
+
+class ChunkListQuerySchema(BaseModel):
+    """切片列表查询参数"""
+    knowledge_uuid: str = Field(..., description="知识库UUID")
+    file_id: Optional[int] = Field(default=None, description="按文件ID过滤")
+    keyword: Optional[str] = Field(default=None, description="搜索关键词（模糊匹配内容）")
+    page: int = Field(default=1, description="页码")
+    page_size: int = Field(default=20, description="每页数量")
+
+
+

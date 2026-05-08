@@ -11,7 +11,7 @@ class KnowledgeFileModel(ModelMixin, UserMixin):
     __tablename__ = "knowledge_file"
 
     # 只存知识库ID，不做外键约束（因为是软删除，不物理删除）
-    knowledge_base_id: Column = Column(Integer, nullable=False, comment="所属知识库ID")
+    knowledge_id: Column = Column(Integer, nullable=False, comment="所属知识库ID")
 
     title: Column = Column(String(256), nullable=False, comment="文档标题/切片名称")
     file_name: Column = Column(String(256), nullable=False, comment="原始文件名")
@@ -34,5 +34,5 @@ class KnowledgeFileModel(ModelMixin, UserMixin):
 
     # 性能优化：给 knowledge_id 加索引，查询某个知识库下的文件时会快很多
     __table_args__ = (
-        Index('idx_knowledge_base_id', 'knowledge_id'),
+        Index('idx_knowledge_id', 'knowledge_id'),
     )

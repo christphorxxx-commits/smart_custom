@@ -2,8 +2,11 @@
 文档服务层
 """
 from typing import List, Dict, Any, Optional
+import os
+import tempfile
 
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from backend.app.common.core.exceptions import CustomException
 from backend.app.common.core.logger import log
@@ -164,3 +167,159 @@ class DocumentService:
             raise CustomException(msg="文档不存在")
 
         return DocumentOutSchema.model_validate(doc).model_dump(mode='json')
+
+    @classmethod
+    async def upload_file_service(
+        cls,
+        auth: AuthSchema,
+        kb_id: int,
+        file_content: bytes,
+        file_name: str,
+        chunk_size: int = 500,
+        chunk_overlap: int = 50
+    ) -> Dict[str, Any]:
+        """
+        上传文件并自动切片存入知识库
+
+        参数:
+            kb_id: 知识库ID
+            file_content: 文件内容字节
+            file_name: 文件名
+            chunk_size: 切片大小
+            chunk_overlap: 切片重叠
+
+        返回:
+            上传结果
+        """
+        kb_crud = KnowledgeCRUD(auth=auth)
+        file_crud = KnowledgeFileCRUD(auth=auth)
+
+        # 1. 获取知识库
+        kb = await kb_crud.get(id=kb_id)
+        if not kb:
+            raise CustomException(msg="知识库不存在")
+
+        # 2. 保存临时文件
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as tmp:
+            tmp.write(file_content)
+            tmp_path = tmp.name
+
+        try:
+            # 3. 加载文件内容
+            content = DocumentService.load_file_content(tmp_path, file_name)
+            if not content or len(content.strip()) == 0:
+                raise CustomException(msg="文件内容为空")
+
+            # 4. 文本切片
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                separators=["\n\n", "\n", "。", "！", "？", ".", "!", "?", " ", ""],
+                length_function=len
+            )
+            chunks = text_splitter.split_text(content)
+
+            if not chunks:
+                raise CustomException(msg="切片后没有生成有效切片")
+
+            # 5. 保存文件元数据（主文件记录）
+            file_size = len(file_content)
+            doc_data = {
+                "title": file_name,
+                "file_name": file_name,
+                "file_size": file_size,
+                "chunk_count": len(chunks),
+                "source": file_name,
+                "status": 1,  # 成功
+                "knowledge_id": kb_id,
+            }
+            doc = await file_crud.create(doc_data)
+
+            # 6. 创建 Document 对象列表
+            documents = []
+            for i, chunk in enumerate(chunks):
+                documents.append(Document(
+                    page_content=chunk,
+                    metadata={
+                        "title": file_name,
+                        "file_name": file_name,
+                        "source": file_name,
+                        "knowledge_id": kb_id,
+                        "file_id": doc.id,
+                        "chunk_index": i,
+                        "total_chunks": len(chunks)
+                    }
+                ))
+
+            # 7. 批量插入向量到 PGVector
+            vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
+            vector_ids = vector_crud.add_documents(documents)
+
+            # 8. 更新文件记录，保存第一个 vector_id
+            if vector_ids:
+                await file_crud.update(doc.id, {"vector_id": vector_ids[0]})
+
+            log.info(f"文件上传成功: {file_name}, 切片数: {len(chunks)}, 向量数: {len(vector_ids)}")
+
+            return {
+                "document_id": doc.id,
+                "file_name": file_name,
+                "file_size": file_size,
+                "chunk_count": len(chunks),
+                "vector_count": len(vector_ids)
+            }
+
+        finally:
+            # 清理临时文件
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+
+    @staticmethod
+    def load_file_content(file_path: str, file_name: str) -> str:
+        """根据文件扩展名加载文件内容"""
+        ext = os.path.splitext(file_name)[1].lower()
+
+        if ext in ['.txt', '.md', '.py', '.js', '.json', '.yaml', '.yml', '.xml', '.html', '.css', '.java', '.go',
+                   '.cpp', '.c', '.h', '.rs']:
+            return DocumentService.load_text_file(file_path)
+        elif ext == '.pdf':
+            try:
+                from PyPDF2 import PdfReader
+                reader = PdfReader(file_path)
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() or ""
+                return text
+            except ImportError:
+                raise CustomException(msg="PDF 支持需要安装 PyPDF2：pip install PyPDF2")
+        elif ext in ['.docx', '.doc']:
+            try:
+                from docx import Document as DocxDocument
+                doc = DocxDocument(file_path)
+                text = ""
+                for para in doc.paragraphs:
+                    text += para.text + "\n"
+                return text
+            except ImportError:
+                raise CustomException(msg="Word 文档支持需要安装 python-docx：pip install python-docx")
+        else:
+            # 默认按文本加载
+            return DocumentService.load_text_file(file_path)
+
+    @staticmethod
+    # 文档加载器
+    def load_text_file(file_path: str) -> str:
+        """加载纯文本文件"""
+        encodings = ['utf-8', 'gbk', 'gb2312', 'utf-16']
+        for encoding in encodings:
+            try:
+                with open(file_path, 'r', encoding=encoding) as f:
+                    return f.read()
+            except UnicodeDecodeError:
+                continue
+        raise CustomException(msg="文件编码不支持，仅支持 UTF-8、GBK、GB2312 编码")
+
+
+

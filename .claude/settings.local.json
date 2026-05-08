@@ -16,7 +16,8 @@
       "Bash(python:*)",
       "Bash(dir:*)",
       "Bash(findstr /V __pycache__)",
-      "Bash(if not:*)"
+      "Bash(if not:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

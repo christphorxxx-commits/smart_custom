@@ -16,6 +16,7 @@ from .schema import (
     KnowledgeListQuerySchema,
     SearchQuerySchema,
 )
+from backend.app.modules.module_system.database.document.schema import ChunkListQuerySchema
 from .service import KnowledgeBaseService
 
 KnowledgeRouter = APIRouter(prefix="/knowledge", tags=["知识库"])
@@ -127,3 +128,22 @@ async def list_files_controller(
     files = await KnowledgeBaseService.list_files_service(auth, kb.id)
     log.info(f"获取文件列表成功: kb_id={kb.id}, count={len(files)}")
     return SuccessResponse(data=files, msg="获取成功")
+
+
+@KnowledgeRouter.post("/chunks/list", summary="获取知识库的切片列表（分页+搜索+过滤）")
+async def list_chunks_controller(
+    query: ChunkListQuerySchema,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(db_getter)
+) -> JSONResponse:
+    auth = AuthSchema(user=current_user, db=db)
+    result = await KnowledgeBaseService.list_chunks_service(
+        auth=auth,
+        knowledge_uuid=query.knowledge_uuid,
+        file_id=query.file_id,
+        keyword=query.keyword,
+        page=query.page,
+        page_size=query.page_size
+    )
+    log.info(f"获取切片列表成功: kb_uuid={query.knowledge_uuid}, total={result['total']}, page_no={result['page_no']}")
+    return SuccessResponse(data=result, msg="获取成功")

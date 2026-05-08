@@ -144,40 +144,143 @@
           </div>
 
           <div class="detail-content">
-            <!-- 中间：文件列表 -->
+            <!-- 中间：文件/切片列表 -->
             <div class="files-area">
-              <div class="files-header">
-                <span class="title">文件列表</span>
-                <button class="btn-upload" @click="handleUploadFile">
-                  <span>+</span> 上传文件
-                </button>
-              </div>
-              <div class="file-list">
-                <div
-                  class="file-item"
-                  v-for="file in fileList"
-                  :key="file.id"
-                >
-                  <div class="file-icon">📄</div>
-                  <div class="file-info">
-                    <div class="file-name">{{ file.file_name }}</div>
-                    <div class="file-meta">
-                      <span>切片: {{ file.chunk_count || 0 }}</span>
-                      <span v-if="file.file_size"> • {{ formatFileSize(file.file_size) }}</span>
-                    </div>
+              <!-- Tab 导航 -->
+              <div class="tabs-header">
+                <div class="tabs-nav">
+                  <div
+                    class="tab-item"
+                    :class="{ active: activeTab === 'files' }"
+                    @click="switchTab('files')"
+                  >
+                    文件列表
                   </div>
-                  <div class="file-status" :class="'status-' + file.status">
-                    {{ getStatusText(file.status) }}
+                  <div
+                    class="tab-item"
+                    :class="{ active: activeTab === 'chunks' }"
+                    @click="switchTab('chunks')"
+                  >
+                    切片列表
                   </div>
-                  <button class="btn-delete-file" @click="confirmDeleteFile(file)">
-                    🗑️
+                </div>
+
+                <!-- 文件列表操作按钮 -->
+                <div class="header-actions">
+                  <!-- 隐藏的文件选择器 -->
+                  <input
+                    type="file"
+                    ref="fileInputRef"
+                    style="display: none"
+                    accept=".txt,.md,.pdf,.doc,.docx,.py,.js,.json,.yaml,.yml,.xml,.html,.css,.java,.go,.cpp,.c,.h,.rs"
+                    @change="handleFileSelect"
+                  />
+                  <button class="btn-upload" v-if="activeTab === 'files'" @click="handleUploadFile" :disabled="uploading">
+                    <span v-if="!uploading">+ 上传文件</span>
+                    <span v-else>上传中 {{ uploadProgress }}%</span>
                   </button>
                 </div>
               </div>
 
-              <!-- 空文件状态 -->
-              <div class="empty-files" v-if="fileList.length === 0">
-                <p>该知识库暂无文件，请上传文档</p>
+              <!-- 文件列表内容 -->
+              <div class="tab-content" v-if="activeTab === 'files'">
+                <div class="file-list">
+                  <div
+                    class="file-item"
+                    v-for="file in fileList"
+                    :key="file.id"
+                  >
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                      <div class="file-name">{{ file.file_name }}</div>
+                      <div class="file-meta">
+                        <span>切片: {{ file.chunk_count || 0 }}</span>
+                        <span v-if="file.file_size"> • {{ formatFileSize(file.file_size) }}</span>
+                      </div>
+                    </div>
+                    <div class="file-status" :class="'status-' + file.status">
+                      {{ getStatusText(file.status) }}
+                    </div>
+                    <button class="btn-delete-file" @click="confirmDeleteFile(file)">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 空文件状态 -->
+                <div class="empty-files" v-if="fileList.length === 0">
+                  <p>该知识库暂无文件，请上传文档</p>
+                </div>
+              </div>
+
+              <!-- 切片列表内容 -->
+              <div class="tab-content" v-if="activeTab === 'chunks'">
+                <!-- 切片搜索和过滤 -->
+                <div class="chunks-toolbar">
+                  <div class="chunk-search-box">
+                    <span class="search-icon">🔍</span>
+                    <input
+                      v-model="chunkSearchKeyword"
+                      type="text"
+                      placeholder="搜索切片内容..."
+                      @keyup.enter="handleChunkSearch"
+                    />
+                  </div>
+                  <div class="file-filter-list">
+                    <span
+                      class="file-filter-tag"
+                      :class="{ active: chunkFilterFileId === null }"
+                      @click="handleFileFilter(null)"
+                    >
+                      全部
+                    </span>
+                    <span
+                      class="file-filter-tag"
+                      :class="{ active: chunkFilterFileId === file.id }"
+                      v-for="file in fileList"
+                      :key="'filter-' + file.id"
+                      @click="handleFileFilter(file.id)"
+                    >
+                      {{ file.file_name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 切片列表 -->
+                <div class="chunk-list" v-if="!chunkLoading">
+                  <div class="chunk-item" v-for="chunk in chunkList" :key="chunk.id">
+                    <div class="chunk-header">
+                      <span class="chunk-file-name">📄 {{ chunk.file_name || '未知文件' }}</span>
+                      <span class="chunk-id">{{ chunk.id }}</span>
+                    </div>
+                    <div class="chunk-content">{{ chunk.content }}</div>
+                    <div class="chunk-meta" v-if="chunk.metadata">
+                      <span v-for="(value, key) in chunk.metadata" :key="key">
+                        {{ key }}: {{ typeof value === 'object' ? JSON.stringify(value) : value }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 空切片状态 -->
+                <div class="empty-files" v-if="chunkList.length === 0 && !chunkLoading">
+                  <p>暂无切片数据</p>
+                </div>
+
+                <!-- 加载状态 -->
+                <div class="chunk-loading" v-if="chunkLoading">
+                  <div class="loading-spinner-small"></div>
+                  <span>加载中...</span>
+                </div>
+
+                <!-- 分页 -->
+                <div class="chunk-pagination" v-if="chunkTotal > 0">
+                  <span class="page-info">共 {{ chunkTotal }} 条，第 {{ chunkPage }} / {{ Math.ceil(chunkTotal / chunkPageSize) }} 页</span>
+                  <div class="page-buttons">
+                    <button class="page-btn" :disabled="chunkPage <= 1" @click="handlePrevPage">上一页</button>
+                    <button class="page-btn" :disabled="chunkPage >= Math.ceil(chunkTotal / chunkPageSize)" @click="handleNextPage">下一页</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -336,6 +439,16 @@ const fileList = ref([])
 const showCreateModal = ref(false)
 const creating = ref(false)
 
+// 切片列表相关状态
+const activeTab = ref('files') // 'files' | 'chunks'
+const chunkList = ref([])
+const chunkSearchKeyword = ref('')
+const chunkFilterFileId = ref(null)
+const chunkLoading = ref(false)
+const chunkPage = ref(1)
+const chunkPageSize = ref(20)
+const chunkTotal = ref(0)
+
 // 创建表单
 const createForm = ref({
   name: '',
@@ -397,7 +510,7 @@ const loadKbList = async () => {
       }
     })
     if (response.data.success && response.data.data) {
-      kbList.value = response.data.data.data || []
+      kbList.value = response.data.data.items || []
     }
   } catch (error) {
     console.error('加载知识库列表失败:', error)
@@ -456,9 +569,19 @@ const handleCreateKb = async () => {
   }
 }
 
+// 切换Tab
+const switchTab = async (tab) => {
+  activeTab.value = tab
+  if (tab === 'chunks' && selectedKb.value) {
+    await loadChunkList()
+  }
+}
+
 // 选择知识库
 const selectKb = async (item) => {
   selectedKb.value = item
+  activeTab.value = 'files'
+  chunkList.value = []
   await loadFileList(item.id)
 }
 
@@ -475,6 +598,61 @@ const loadFileList = async (kbId) => {
     }
   } catch (error) {
     console.error('加载文件列表失败:', error)
+  }
+}
+
+// 加载切片列表
+const loadChunkList = async () => {
+  if (!selectedKb.value) return
+  chunkLoading.value = true
+  try {
+    const token = localStorage.getItem('access_token')
+    const response = await axios.post('/api/knowledge/chunks/list', {
+      knowledge_uuid: selectedKb.value.uuid,
+      file_id: chunkFilterFileId.value,
+      keyword: chunkSearchKeyword.value || undefined,
+      page: chunkPage.value,
+      page_size: chunkPageSize.value
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (response.data.success && response.data.data) {
+      chunkList.value = response.data.data.items || []
+      chunkTotal.value = response.data.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载切片列表失败:', error)
+  } finally {
+    chunkLoading.value = false
+  }
+}
+
+// 搜索切片
+const handleChunkSearch = () => {
+  chunkPage.value = 1
+  loadChunkList()
+}
+
+// 按文件过滤切片
+const handleFileFilter = (fileId) => {
+  chunkFilterFileId.value = chunkFilterFileId.value === fileId ? null : fileId
+  chunkPage.value = 1
+  loadChunkList()
+}
+
+// 分页
+const handlePrevPage = () => {
+  if (chunkPage.value > 1) {
+    chunkPage.value--
+    loadChunkList()
+  }
+}
+
+const handleNextPage = () => {
+  const totalPages = Math.ceil(chunkTotal.value / chunkPageSize.value)
+  if (chunkPage.value < totalPages) {
+    chunkPage.value++
+    loadChunkList()
   }
 }
 
@@ -497,10 +675,84 @@ const getStatusText = (status) => {
   return statusMap[status] || '未知'
 }
 
-// 上传文件
+// 上传文件相关状态
+const fileInputRef = ref(null)
+const uploading = ref(false)
+const uploadProgress = ref(0)
+
+// 触发文件选择
 const handleUploadFile = () => {
-  // TODO: 后续实现文件上传和切片
-  alert('文件上传功能开发中...')
+  if (!selectedKb.value) {
+    alert('请先选择一个知识库')
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+// 处理文件选择
+const handleFileSelect = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (!selectedKb.value) {
+    alert('请先选择一个知识库')
+    return
+  }
+
+  // 校验文件大小
+  if (file.size > 50 * 1024 * 1024) {
+    alert('文件大小不能超过 50MB')
+    return
+  }
+
+  // 开始上传
+  uploading.value = true
+  uploadProgress.value = 0
+
+  try {
+    const token = localStorage.getItem('access_token')
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('chunk_size', 500)
+    formData.append('chunk_overlap', 50)
+
+    const response = await axios.post(
+      `/api/document/upload/${selectedKb.value.id}`,
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          }
+        }
+      }
+    )
+
+    if (response.data.success) {
+      alert(`上传成功！文件已切分为 ${response.data.data.chunk_count} 个切片`)
+      // 刷新文件列表和切片列表
+      await loadFileList(selectedKb.value.id)
+      if (activeTab.value === 'chunks') {
+        await loadChunkList()
+      }
+    } else {
+      alert(`上传失败：${response.data.msg}`)
+    }
+  } catch (error) {
+    console.error('文件上传失败:', error)
+    alert(`上传失败：${error.response?.data?.msg || error.message}`)
+  } finally {
+    uploading.value = false
+    uploadProgress.value = 0
+    // 清空文件选择
+    if (fileInputRef.value) {
+      fileInputRef.value.value = ''
+    }
+  }
 }
 
 // 删除文件确认
@@ -622,9 +874,12 @@ axios.interceptors.response.use(
 
 .kb-page-container {
   display: flex;
-  height: 100vh;
+  height: 100%;
+  min-height: 0;
   background: var(--background-color);
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  width: 100%;
 }
 
 /* 左侧导航栏 */
@@ -636,7 +891,7 @@ axios.interceptors.response.use(
   border-right: 1px solid var(--border-color);
   flex-shrink: 0;
   transition: all 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0, 0.05);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .left-sidebar.collapsed {
@@ -826,7 +1081,10 @@ axios.interceptors.response.use(
 
 .kb-container {
   display: flex;
+  flex-direction: row;
+  width: 100%;
   height: 100%;
+  min-height: 0;
   background: var(--background-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -834,11 +1092,14 @@ axios.interceptors.response.use(
 /* 左侧知识库列表 */
 .kb-list-sidebar {
   width: 320px;
+  min-width: 320px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  min-height: 0;
+  height: 100%;
 }
 
 .sidebar-header {
@@ -988,6 +1249,8 @@ axios.interceptors.response.use(
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
+  height: 100%;
 }
 
 .detail-header {
@@ -1012,19 +1275,228 @@ axios.interceptors.response.use(
   flex: 1;
   overflow-y: auto;
   padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.files-header {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-upload:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Tab 导航 */
+.tabs-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.files-header .title {
-  font-size: 16px;
-  font-weight: 600;
+.tabs-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-item {
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.tab-item:hover {
+  background: var(--hover-bg);
+}
+
+.tab-item.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* 切片工具栏 */
+.chunks-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chunk-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.chunk-search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
   color: var(--text-primary);
+}
+
+.file-filter-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.file-filter-tag {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: white;
+  border: 1px solid var(--border-color);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.file-filter-tag:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.file-filter-tag.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* 切片列表 */
+.chunk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chunk-item {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.chunk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.chunk-file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.chunk-id {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.chunk-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+
+.chunk-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 加载状态 */
+.chunk-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* 分页 */
+.chunk-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.page-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: white;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-upload {
@@ -1215,7 +1687,7 @@ axios.interceptors.response.use(
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1427,17 +1899,13 @@ axios.interceptors.response.use(
   }
 }
 
-@media (max-width: 900px) {
-  .kb-page-container {
-    flex-direction: column;
-  }
+@media (max-width: 768px) {
   .left-sidebar {
-    width: 100%;
-    max-height: auto;
-  }
-  .kb-list-sidebar {
-    width: 100%;
-    max-height: 40vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
   }
 }
 </style>

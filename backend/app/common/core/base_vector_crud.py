@@ -2,7 +2,7 @@
 向量库基础 CRUD
 封装 PGVector 向量表操作，与业务层解耦
 """
-from typing import List
+from typing import List, Dict, Any, Optional
 
 from langchain_community.vectorstores import PGVector
 from langchain_community.vectorstores.pgvector import DistanceStrategy
@@ -30,7 +30,7 @@ class BaseVectorCRUD:
             collection_name=self.collection_name,
             connection_string=self.connection_string,
             distance_strategy=DistanceStrategy.COSINE,
-            embedding_function=embeddings.embedding,
+            embedding_function=embeddings,
         )
 
     def add_documents(self, documents: List[Document]) -> List[str]:
@@ -79,3 +79,144 @@ class BaseVectorCRUD:
         except Exception as e:
             log.warning(f"删除向量表失败: {self.collection_name}, error={e}")
             return False
+
+    def get_all_documents(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        file_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        分页获取所有切片文档
+
+        参数:
+            page: 页码，从1开始
+            page_size: 每页数量
+            file_id: 按文件ID过滤（可选）
+
+        返回:
+            Dict: {total, items, page_no, page_size}
+        """
+        try:
+            engine = create_engine(self.connection_string)
+            offset = (page - 1) * page_size
+
+            # 构建查询条件
+            where_clause = ""
+            params = {}
+            if file_id is not None:
+                where_clause = "WHERE cmetadata->>'file_id' = :file_id"
+                params["file_id"] = str(file_id)
+
+            # 查询总数
+            count_sql = f"SELECT COUNT(*) FROM {self.collection_name} {where_clause}"
+            with engine.connect() as connection:
+                result = connection.execute(text(count_sql), params)
+                total = result.scalar() or 0
+
+            # 分页查询数据
+            sql = f"""
+                SELECT id, document, cmetadata
+                FROM {self.collection_name}
+                {where_clause}
+                ORDER BY id
+                LIMIT :limit OFFSET :offset
+            """
+            params["limit"] = page_size
+            params["offset"] = offset
+
+            with engine.connect() as connection:
+                result = connection.execute(text(sql), params)
+                rows = result.fetchall()
+
+            # 转换为字典列表
+            items = []
+            for row in rows:
+                items.append({
+                    "id": row[0],
+                    "content": row[1],
+                    "metadata": row[2]
+                })
+
+            return {
+                "total": total,
+                "items": items,
+                "page_no": page,
+                "page_size": page_size
+            }
+        except Exception as e:
+            log.warning(f"获取切片列表失败: {self.collection_name}, error={e}")
+            return {
+                "total": 0,
+                "items": [],
+                "page_no": page,
+                "page_size": page_size
+            }
+
+    def search_documents(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 10
+    ) -> Dict[str, Any]:
+        """
+        按关键词搜索切片内容（使用LIKE模糊查询）
+
+        参数:
+            keyword: 搜索关键词
+            page: 页码，从1开始
+            page_size: 每页数量
+
+        返回:
+            Dict: {total, items, page_no, page_size}
+        """
+        try:
+            engine = create_engine(self.connection_string)
+            offset = (page - 1) * page_size
+            search_pattern = f"%{keyword}%"
+
+            # 查询总数
+            count_sql = f"SELECT COUNT(*) FROM {self.collection_name} WHERE document LIKE :keyword"
+            with engine.connect() as connection:
+                result = connection.execute(text(count_sql), {"keyword": search_pattern})
+                total = result.scalar() or 0
+
+            # 分页查询数据
+            sql = f"""
+                SELECT id, document, cmetadata
+                FROM {self.collection_name}
+                WHERE document LIKE :keyword
+                ORDER BY id
+                LIMIT :limit OFFSET :offset
+            """
+            with engine.connect() as connection:
+                result = connection.execute(text(sql), {
+                    "keyword": search_pattern,
+                    "limit": page_size,
+                    "offset": offset
+                })
+                rows = result.fetchall()
+
+            # 转换为字典列表
+            items = []
+            for row in rows:
+                items.append({
+                    "id": row[0],
+                    "content": row[1],
+                    "metadata": row[2]
+                })
+
+            return {
+                "total": total,
+                "items": items,
+                "page_no": page,
+                "page_size": page_size
+            }
+        except Exception as e:
+            log.warning(f"搜索切片失败: {self.collection_name}, keyword={keyword}, error={e}")
+            return {
+                "total": 0,
+                "items": [],
+                "page_no": page,
+                "page_size": page_size
+            }

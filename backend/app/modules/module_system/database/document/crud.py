@@ -59,3 +59,41 @@ class KnowledgeVectorCRUD:
     def drop_collection(self) -> bool:
         """删除向量表"""
         return self.vector_crud.drop_collection()
+
+    def list_chunks(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        file_id: Optional[int] = None
+    ) -> dict:
+        """
+        分页获取知识库所有切片
+
+        参数:
+            page: 页码
+            page_size: 每页数量
+            file_id: 按文件ID过滤（可选）
+
+        返回:
+            dict: {total, items, page_no, page_size}
+        """
+        return self.vector_crud.get_all_documents(page, page_size, file_id)
+
+    def search_chunks(
+        self,
+        keyword: str,
+        page: int = 1,
+        page_size: int = 10
+    ) -> dict:
+        """
+        按关键词搜索切片内容
+
+        参数:
+            keyword: 搜索关键词
+            page: 页码
+            page_size: 每页数量
+
+        返回:
+            dict: {total, items, page_no, page_size}
+        """
+        return self.vector_crud.search_documents(keyword, page, page_size)

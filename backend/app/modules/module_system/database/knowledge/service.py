@@ -29,11 +29,22 @@ class KnowledgeBaseService:
         auth: AuthSchema,
         id: int,
     ) -> Dict[str, Any]:
-        """根据UUID获取知识库"""
-        obj = await KnowledgeCRUD(auth=auth).get([id])
+        """根据ID获取知识库"""
+        obj = await KnowledgeCRUD(auth=auth).get(id=id)
         if not obj:
             raise CustomException(msg=f"知识库不存在，id:{id}")
         return KnowledgeOutSchema.model_validate(obj).model_dump()
+
+    @staticmethod
+    async def get_knowledge_base_by_uuid(
+        auth: AuthSchema,
+        uuid: str,
+    ) -> Optional[KnowledgeBaseModel]:
+        """根据UUID获取知识库对象"""
+        obj = await KnowledgeCRUD(auth=auth).get(uuid=uuid)
+        if not obj:
+            raise CustomException(msg=f"知识库不存在，uuid:{uuid}")
+        return obj
 
 
     @classmethod
@@ -212,8 +223,59 @@ class KnowledgeBaseService:
         # 转换为字典，添加 knowledge_uuid，自动处理datetime序列化
         result = []
         for f in files:
-            file_dict = DocumentOutSchema.model_validate(f).model_dump(mode='json')
-            file_dict["knowledge_uuid"] = kb.uuid
+            # 先转字典添加额外字段，再做验证
+            from sqlalchemy import inspect as sa_inspect
+            file_data = {c.key: getattr(f, c.key) for c in sa_inspect(f).mapper.column_attrs}
+            file_data["knowledge_uuid"] = kb.uuid
+            file_dict = DocumentOutSchema.model_validate(file_data).model_dump(mode='json')
             result.append(file_dict)
+        return result
+
+    @classmethod
+    async def list_chunks_service(
+        cls,
+        auth: AuthSchema,
+        knowledge_uuid: str,
+        file_id: Optional[int] = None,
+        keyword: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Dict[str, Any]:
+        """
+        列出知识库所有切片（支持分页、搜索、按文件过滤）
+
+        参数:
+            knowledge_uuid: 知识库UUID
+            file_id: 按文件ID过滤（可选）
+            keyword: 搜索关键词（可选）
+            page: 页码
+            page_size: 每页数量
+
+        返回:
+            Dict: {total, items, page_no, page_size}
+        """
+        # 校验知识库存在
+        kb = await cls.get_knowledge_base_by_uuid(auth=auth, uuid=knowledge_uuid)
+
+        vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
+
+        # 关键词搜索或普通列表
+        if keyword:
+            result = vector_crud.search_chunks(keyword=keyword, page=page, page_size=page_size)
+        else:
+            result = vector_crud.list_chunks(page=page, page_size=page_size, file_id=file_id)
+
+        # 补充文件名信息
+        file_cache = {}
+        for item in result["items"]:
+            metadata = item.get("metadata") or {}
+            item_file_id = metadata.get("file_id")
+
+            if item_file_id and item_file_id not in file_cache:
+                file_obj = await KnowledgeFileCRUD(auth=auth).get(id=item_file_id)
+                file_cache[item_file_id] = file_obj.title if file_obj else "未知文件"
+
+            item["file_name"] = file_cache.get(item_file_id, "未知文件")
+
         return result
 

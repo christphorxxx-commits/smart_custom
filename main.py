@@ -123,11 +123,20 @@ except ImportError as e:
 
 # 注册知识库路由
 try:
-    from backend.app.modules.module_system.database.controller import router as KbRouter
-    app.include_router(KbRouter, prefix="/api")
+    from backend.app.modules.module_system.database.knowledge.controller import KnowledgeRouter
+    app.include_router(KnowledgeRouter, prefix="/api")
     log.info("知识库路由已成功注册")
 except ImportError as e:
     log.error(f"导入知识库模块失败: {e}")
+    log.warning("请确保所有依赖已正确安装")
+
+# 注册文档路由
+try:
+    from backend.app.modules.module_system.database.document.controller import DocumentRouter
+    app.include_router(DocumentRouter, prefix="/api")
+    log.info("文档路由已成功注册")
+except ImportError as e:
+    log.error(f"导入文档模块失败: {e}")
     log.warning("请确保所有依赖已正确安装")
 
 # 注册全局异常处理器
