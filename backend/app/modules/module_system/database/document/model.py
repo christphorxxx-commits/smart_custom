@@ -8,7 +8,7 @@ from backend.app.common.core.base_model import ModelMixin, UserMixin
 
 
 class KnowledgeFileModel(ModelMixin, UserMixin):
-    __tablename__ = "knowledge_file"
+    __tablename__ = "document"
 
     # 只存知识库ID，不做外键约束（因为是软删除，不物理删除）
     knowledge_id: Column = Column(Integer, nullable=False, comment="所属知识库ID")

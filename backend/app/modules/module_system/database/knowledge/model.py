@@ -8,7 +8,7 @@ from backend.app.common.core.base_model import ModelMixin, UserMixin
 
 
 class KnowledgeBaseModel(ModelMixin, UserMixin):
-    __tablename__ = "knowledge_base"
+    __tablename__ = "knowledge"
 
     # 基础信息
     name: Column = Column(String(256), nullable=False, comment="知识库名称")

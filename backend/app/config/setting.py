@@ -59,6 +59,23 @@ class Settings(BaseSettings):
     MONGO_USER: str = os.getenv('MONGO_USER', '')
     MONGO_PASSWORD: str = os.getenv('MONGO_PASSWORD', '')
 
+    # JWT过期时间
+    ACCESS_TOKEN_EXPIRE_TIME: int = 60 * 60 * 24 * 1  # access_token过期时间(秒)1 天
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 24 * 7
+    JWT_SECRET_KEY: str = os.getenv('JWT_SECRET_KEY')
+    ALGORITHM: str = "HS256"
+    TOKEN_TYPE: str = "bearer"
+
+    # AI配置
+    DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY')
+    EMBEDDINGS_MODEL: str = "text-embedding-v4"
+
+    #vector
+    TABLE_NAME: str = "chunk"
+
+    # 工具调用
+    TAVILY_API_KEY: str = os.getenv('TAVILY_API_KEY')
+
     @property
     def mongo_uri(self) -> str:
         """获取MongoDB连接URI，自动构建如果没有直接设置"""
@@ -69,22 +86,8 @@ class Settings(BaseSettings):
             return f"mongodb://{quote_plus(self.MONGO_USER)}:{quote_plus(self.MONGO_PASSWORD)}@{self.MONGO_HOST}:{self.MONGO_PORT}/"
         return f"mongodb://{self.MONGO_HOST}:{self.MONGO_PORT}/"
 
-    #JWT过期时间
-    ACCESS_TOKEN_EXPIRE_TIME : int = 60 * 60 * 24 * 1                     # access_token过期时间(秒)1 天
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 24 * 7
-    JWT_SECRET_KEY: str = os.getenv('JWT_SECRET_KEY')
-    ALGORITHM: str = "HS256"
-    TOKEN_TYPE: str = "bearer"
-
-    #AI配置
-    DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY')
-    EMBEDDINGS_MODEL: str = "text-embedding-v4"
-
-    #工具调用
-    TAVILY_API_KEY: str = os.getenv('TAVILY_API_KEY')
-
     @property
-    def async_db_url(self) -> str:
+    def ASYNC_DB_URL(self) -> str:
         """获取异步数据库连接"""
         if self.DATABASE_TYPE == "mysql":
             return f"mysql+asyncmy://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
@@ -98,7 +101,7 @@ class Settings(BaseSettings):
             raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 请选择 请选择 mysql、postgres")
 
     @property
-    def db_url(self) -> str:
+    def DB_URL(self) -> str:
         """获取同步数据库连接"""
         if self.DATABASE_TYPE == "mysql":
             return f"mysql+pymysql://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"

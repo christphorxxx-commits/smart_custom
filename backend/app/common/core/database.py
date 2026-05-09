@@ -6,7 +6,11 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import MongoClient
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Engine,create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine, create_async_engine
+
+from backend.app.common.core.exceptions import CustomException
 from backend.app.modules.api.ai.model import Chat,ChatItem
 from backend.app.modules.workflow.api.model import App
 
@@ -26,8 +30,40 @@ load_dotenv()
 from backend.app.config.setting import settings
 
 
+def create_engine_and_session(
+        db_url: str = settings.DB_URL
+) -> tuple[Engine, sessionmaker]:
+    """
+    创建同步数据库引擎和会话工厂。
+
+    参数:
+    - DB_URL (str): 数据库连接URL,默认从配置中获取。
+
+    返回:
+    - tuple[Engine, sessionmaker]: 同步数据库引擎和会话工厂。
+    """
+    try:
+        if not settings.SQL_DB_ENABLE:
+            raise CustomException(msg="请先开启数据库连接", data="请启用 app/config/setting.py: SQL_DB_ENABLE")
+        # 同步数据库引擎
+        engine: Engine = create_engine(
+            url=db_url,
+            echo=settings.DATABASE_ECHO,
+            pool_pre_ping=settings.POOL_PRE_PING,
+            pool_recycle=settings.POOL_RECYCLE,
+        )
+    except Exception as e:
+        log.error(f'❌ 数据库连接失败 {e}')
+        raise
+    else:
+        # 同步数据库会话工厂
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        return engine, SessionLocal
+
+engine, db_session = create_engine_and_session(settings.DB_URL)
+
 def create_async_engine_and_session(
-        db_url: str = settings.async_db_url
+        db_url: str = settings.ASYNC_DB_URL
 ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
     """
     创建异步数据库引擎和会话工厂。
@@ -65,7 +101,7 @@ def create_async_engine_and_session(
         return async_engine, async_session_factory
 
 
-async_engine, async_db_session = create_async_engine_and_session(settings.async_db_url)
+async_engine, async_db_session = create_async_engine_and_session(settings.ASYNC_DB_URL)
 
 
 # =========================

@@ -54,7 +54,8 @@ class KnowledgeBaseService:
         data: KnowledgeCreateSchema
     ) -> dict:
         """创建空知识库
-        创建后自动生成 collection_name = kb_{id}_embedding
+        创建后自动生成 collection_name = kb_{id} (PGVectorStore v2 表名)
+        三表两库架构：每个知识库对应独立向量表 kb_{id}
         """
         # CRUD 层处理创建和自动生成 collection_name
 
@@ -256,6 +257,8 @@ class KnowledgeBaseService:
         """
         # 校验知识库存在
         kb = await cls.get_knowledge_base_by_uuid(auth=auth, uuid=knowledge_uuid)
+        if not kb:
+            raise CustomException(msg=f"知识库不存在knowledge_uuid:{knowledge_uuid}")
 
         vector_crud = KnowledgeVectorCRUD(kb_id=kb.id)
 
@@ -265,11 +268,10 @@ class KnowledgeBaseService:
         else:
             result = vector_crud.list_chunks(page=page, page_size=page_size, file_id=file_id)
 
-        # 补充文件名信息
+        # 补充文件名信息（file_id 已从 cmetadata 解析到顶级）
         file_cache = {}
         for item in result["items"]:
-            metadata = item.get("metadata") or {}
-            item_file_id = metadata.get("file_id")
+            item_file_id = item.get("file_id")
 
             if item_file_id and item_file_id not in file_cache:
                 file_obj = await KnowledgeFileCRUD(auth=auth).get(id=item_file_id)

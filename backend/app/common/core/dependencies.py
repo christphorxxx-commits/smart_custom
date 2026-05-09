@@ -3,7 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from .database import async_db_session, mongo_db_session
 from fastapi import Request, WebSocket
-
+from fastapi import Depends, HTTPException
+from backend.app.common.utils.jwt_util import JwtUtil
+from backend.app.common.utils.token_blacklist import token_blacklist
+from backend.app.modules.module_system.auth.schema import AuthSchema
+from backend.app.modules.module_system.user.crud import UserCRUD
 from .exceptions import CustomException
 
 
@@ -32,11 +36,7 @@ def mongo_getter() -> AsyncIOMotorDatabase:
     return mongo_db_session
 
 
-from fastapi import Depends, HTTPException
-from backend.app.common.utils.jwt_util import JwtUtil
-from backend.app.common.utils.token_blacklist import token_blacklist
-from backend.app.modules.module_system.auth.schema import AuthSchema
-from backend.app.modules.module_system.user.crud import UserCRUD
+
 
 
 async def _get_user_by_token(token: str, db: AsyncSession):

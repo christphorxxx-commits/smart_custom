@@ -29,7 +29,7 @@ class KnowledgeUpdateSchema(KnowledgeCreateSchema):
 class KnowledgeOutSchema(KnowledgeCreateSchema, BaseSchema, UserBySchema):
     """知识库详情响应"""
 
-    collection_name: str = Field(..., description="向量表名称")
+    collection_name: str = Field(..., description="向量表名称 (格式: kb_{id}，PGVectorStore v2)")
     dimension: int = Field(..., description="向量维度")
     is_deleted: bool = Field(..., description="是否软删除")
 

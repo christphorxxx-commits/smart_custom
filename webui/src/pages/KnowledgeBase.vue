@@ -303,14 +303,20 @@ const handleCreateKb = async () => {
 // 选择知识库
 const selectKb = async (item) => {
   selectedKb.value = item
-  await loadFileList(item.id)
+  await loadFileList(item.uuid)
 }
 
 // 加载文件列表
-const loadFileList = async (kbId) => {
-  // TODO: 需要后端添加文件列表API，先占位
-  // 这里暂时获取不到，后续后端添加接口后完善
-  fileList.value = []
+const loadFileList = async (knowledgeUuid) => {
+  if (!knowledgeUuid) return
+  try {
+    const response = await request.get(`/api/knowledge/document/list/${knowledgeUuid}`)
+    if (response.data.success) {
+      fileList.value = response.data.data || []
+    }
+  } catch (error) {
+    console.error('加载文件列表失败:', error)
+  }
 }
 
 // 格式化文件大小
@@ -334,24 +340,82 @@ const getStatusText = (status) => {
 
 // 上传文件
 const handleUploadFile = () => {
-  // TODO: 后续实现文件上传和切片
-  alert('文件上传功能开发中...')
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.txt,.md,.pdf,.docx,.doc,.json'
+  input.onchange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('chunk_size', 500)
+    formData.append('chunk_overlap', 50)
+
+    try {
+      // 使用知识库uuid调用上传接口
+      const response = await request.post(
+        `/api/document/upload/${selectedKb.value.uuid}`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        }
+      )
+      if (response.data.success) {
+        alert('文件上传成功，正在处理中...')
+        await loadFileList(selectedKb.value.uuid)
+      } else {
+        alert(response.data.msg || '上传失败')
+      }
+    } catch (error) {
+      console.error('文件上传失败:', error)
+      alert('文件上传失败')
+    }
+  }
+  input.click()
 }
 
 // 删除文件确认
-const confirmDeleteFile = (file) => {
+const confirmDeleteFile = async (file) => {
   if (confirm(`确认删除文件 "${file.file_name}"？`)) {
-    // TODO: 调用删除API
-    console.log('删除文件:', file)
+    try {
+      const response = await request.delete('/api/document/delete', {
+        data: {
+          knowledge_uuid: selectedKb.value.uuid,
+          document_id: file.id
+        }
+      })
+      if (response.data.success) {
+        await loadFileList(selectedKb.value.uuid)
+      } else {
+        alert(response.data.msg || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除文件失败:', error)
+      alert('删除文件失败')
+    }
   }
 }
 
 // 删除知识库确认
-const confirmDeleteKb = () => {
+const confirmDeleteKb = async () => {
   if (!selectedKb.value) return
   if (confirm(`确认删除知识库 "${selectedKb.value.name}"？\n删除后无法恢复，向量表也会被删除。`)) {
-    // TODO: 调用删除API
-    console.log('删除知识库:', selectedKb.value)
+    try {
+      const response = await request.post('/api/knowledge/delete', {
+        ids: [selectedKb.value.id]
+      })
+      if (response.data.success) {
+        selectedKb.value = null
+        fileList.value = []
+        await loadKbList()
+      } else {
+        alert(response.data.msg || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除知识库失败:', error)
+      alert('删除知识库失败')
+    }
   }
 }
 

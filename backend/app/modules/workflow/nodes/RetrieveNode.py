@@ -47,8 +47,8 @@ class RetrieveNode(BaseNode):
 
         # 初始化PGVector连接
         # 从settings获取数据库连接信息，使用已有的postgresql配置
-        # PGVector 当前使用同步连接，所以用 settings.db_url（不是 async_db_url）
-        connection_string = settings.db_url
+        # PGVector 当前使用同步连接，所以用 settings.DB_URL（不是 ASYNC_DB_URL）
+        connection_string = settings.DB_URL
         self.vector_store = PGVector(
             collection_name=self.collection_name,
             connection_string=connection_string,

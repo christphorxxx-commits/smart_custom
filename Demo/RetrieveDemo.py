@@ -35,7 +35,7 @@ def test_retrieve_direct():
     print(f"✓ 使用通义千问 text-embeddings-v3 初始化完成")
 
     # 连接 PGVector
-    connection_string = settings.db_url  # 使用同步连接字符串（适用于同步代码）
+    connection_string = settings.DB_URL  # 使用同步连接字符串（适用于同步代码）
     collection_name = "test_knowledge"
 
     vector_store = PGVector(

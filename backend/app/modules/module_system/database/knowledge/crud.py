@@ -30,12 +30,13 @@ class KnowledgeCRUD(CRUDBase[KnowledgeBaseModel, KnowledgeCreateSchema, Knowledg
         """创建知识库并自动生成 collection_name
 
         因为 collection_name 需要使用自增 id，所以需要先插入再更新
+        三表两库架构：每个知识库对应独立向量表 kb_{id}
         """
         # 先创建记录获取自增 id
         kb = await self.create(data)
 
-        # 自动生成 collection_name = kb_{id}_embedding
-        collection_name = f"kb_{kb.id}_embedding"
+        # 自动生成 collection_name = kb_{id} (PGVectorStore v2 表名格式)
+        collection_name = f"kb_{kb.id}"
         await self.update(id=kb.id, data={"collection_name": collection_name})
 
         # 重新获取更新后的数据
